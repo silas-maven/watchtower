@@ -1,12 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { assets } from '@/lib/mock';
+import { watchlist } from '@/lib/mock';
 import { Card } from '@/components/Card';
 import { Badge } from '@/components/Badge';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 
 function fmt(n: number) {
   return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -14,20 +14,13 @@ function fmt(n: number) {
 
 export default function AssetPage() {
   const { id } = useParams<{ id: string }>();
-  const asset = assets.find(a => a.id === id);
+  const row = watchlist.find(r => r.id === id);
   const [insight, setInsight] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
-  const series = useMemo(() => {
-    if (!asset) return [];
-    const base = asset.price;
-    return Array.from({ length: 30 }).map((_, i) => {
-      const noise = (Math.sin(i / 4) + Math.random() - 0.5) * (base * 0.01);
-      return { day: i + 1, price: Math.max(1, base + noise - (15 - i) * (base * 0.001)) };
-    });
-  }, [asset]);
+  const series = useMemo(() => row?.series30d ?? [], [row]);
 
-  if (!asset) {
+  if (!row) {
     return (
       <div className="space-y-4">
         <div className="text-sm text-zinc-600">Asset not found.</div>
@@ -43,7 +36,7 @@ export default function AssetPage() {
       const res = await fetch('/api/ai-insight', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ assetId: asset.id }),
+        body: JSON.stringify({ assetId: row.id }),
       });
       const json = await res.json();
       setInsight(json);
@@ -57,24 +50,28 @@ export default function AssetPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <Link href="/" className="text-sm font-semibold text-blue-700">← Dashboard</Link>
-          <h1 className="mt-2 text-xl font-semibold tracking-tight">{asset.symbol} <span className="text-zinc-500">·</span> {asset.name}</h1>
+          <h1 className="mt-2 text-xl font-semibold tracking-tight">{row.ticker} <span className="text-zinc-500">·</span> {row.name}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <Badge tone="zinc">{asset.type}</Badge>
-            {asset.tags.map(t => <Badge key={t} tone="blue">{t}</Badge>)}
+            <Badge tone="zinc">{row.assetType}</Badge>
+            <Badge tone="blue">{row.ccy}</Badge>
+            {row.tradeAlert !== 'NONE' && (
+              <Badge tone={row.tradeAlert === 'BUY' ? 'emerald' : 'rose'}>{row.tradeAlert}</Badge>
+            )}
           </div>
+          {row.reason && <div className="mt-2 text-sm text-zinc-600">{row.reason}</div>}
         </div>
         <div className="text-right">
-          <div className="text-lg font-semibold">{fmt(asset.price)} {asset.currency}</div>
-          <div className={`text-sm ${asset.changePct >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
-            {asset.changePct >= 0 ? '+' : ''}{fmt(asset.changePct)}%
+          <div className="text-lg font-semibold">{row.currentPrice == null ? '—' : fmt(row.currentPrice)} {row.ccy}</div>
+          <div className={`text-sm ${(row.dailyChangePct ?? 0) >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+            {row.dailyChangePct == null ? '—' : `${row.dailyChangePct >= 0 ? '+' : ''}${fmt(row.dailyChangePct)}%`}
           </div>
-          <div className="mt-1 text-xs text-zinc-500">Updated {new Date(asset.updatedAt).toLocaleString()}</div>
+          <div className="mt-1 text-xs text-zinc-500">Updated {new Date(row.updatedAt).toLocaleString()}</div>
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <Card title="Price (mock)">
+          <Card title="30-day trend (mock)">
             <div className="h-56 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={series} margin={{ left: 8, right: 8, top: 10, bottom: 0 }}>
@@ -82,30 +79,31 @@ export default function AssetPage() {
                   <YAxis tick={{ fontSize: 12 }} domain={['dataMin', 'dataMax']} />
                   <Tooltip />
                   <Line type="monotone" dataKey="price" stroke="#1f6feb" strokeWidth={2} dot={false} />
+                  {row.targetEntryForAveraging != null && <ReferenceLine y={row.targetEntryForAveraging} stroke="#10b981" strokeDasharray="4 4" />}
+                  {row.targetExit != null && <ReferenceLine y={row.targetExit} stroke="#f43f5e" strokeDasharray="4 4" />}
                 </LineChart>
               </ResponsiveContainer>
             </div>
-            <div className="mt-3 text-xs text-zinc-500">Mock series just to visualise UI.</div>
+            <div className="mt-3 text-xs text-zinc-500">Green = target entry, red = target exit (mock).</div>
           </Card>
         </div>
-        <Card title="Levels">
-          <div className="space-y-3">
-            {asset.levels.map(l => (
-              <div key={l.id} className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="text-sm font-semibold">{l.label}</div>
-                  <div className="text-sm font-semibold">{fmt(l.price)}</div>
-                </div>
-                <div className="mt-1 text-xs text-zinc-600">{l.type.replaceAll('_',' ')}</div>
-                {l.note && <div className="mt-2 text-xs text-zinc-600">{l.note}</div>}
-              </div>
-            ))}
+
+        <Card title="Key fields">
+          <div className="space-y-3 text-sm">
+            <div className="flex justify-between"><span className="text-zinc-600">Entry (broker)</span><span className="font-semibold">{row.entryPrice ?? '—'}</span></div>
+            <div className="flex justify-between"><span className="text-zinc-600">Avg entry</span><span className="font-semibold">{row.avgEntryPrice ?? '—'}</span></div>
+            <div className="flex justify-between"><span className="text-zinc-600">Shares</span><span className="font-semibold">{row.shares ?? '—'}</span></div>
+            <div className="flex justify-between"><span className="text-zinc-600">Target entry</span><span className="font-semibold">{row.targetEntryForAveraging ?? '—'}</span></div>
+            <div className="flex justify-between"><span className="text-zinc-600">Target exit</span><span className="font-semibold">{row.targetExit ?? '—'}</span></div>
+            <div className="flex justify-between"><span className="text-zinc-600">52w low/high</span><span className="font-semibold">{row.low52 ?? '—'} / {row.high52 ?? '—'}</span></div>
+            <div className="flex justify-between"><span className="text-zinc-600">Beta</span><span className="font-semibold">{row.beta ?? '—'}</span></div>
+            <div className="flex justify-between"><span className="text-zinc-600">PE</span><span className="font-semibold">{row.pe ?? '—'}</span></div>
           </div>
         </Card>
       </div>
 
       <Card
-        title="AI Insight (simulated)"
+        title="AI Sweep (simulated)"
         right={
           <button
             onClick={generateInsight}
@@ -115,7 +113,7 @@ export default function AssetPage() {
           </button>
         }
       >
-        {!insight && <div className="text-sm text-zinc-600">Click Generate to simulate an AI summary + bullets.</div>}
+        {!insight && <div className="text-sm text-zinc-600">Simulates an agent reading the watchlist row and producing a plan.</div>}
         {insight?.ok && (
           <div className="space-y-3">
             <div className="text-sm font-semibold">{insight.summary}</div>
