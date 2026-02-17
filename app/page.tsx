@@ -13,7 +13,7 @@ export default function Page() {
       <div>
         <h1 className="text-xl font-semibold tracking-tight">Dashboard</h1>
         <p className="mt-1 text-sm text-zinc-600">
-          Mock data to visualise the spreadsheet as an app: assets, levels, and alerts.
+          Mock data to visualise the spreadsheet as an app: assets, levels, alerts, and a daily AI-style summary.
         </p>
       </div>
 
