@@ -8,6 +8,16 @@ This repo is intentionally **mock-only** for now:
 - **No payments/subscriptions**
 - Uses **mock data** and **simulated AI** endpoints to demonstrate UX and workflow.
 
+## What the business owner asked for (from VNs)
+- Replace the spreadsheet workflow (it’s slow/brittle and easy to miss alerts).
+- **Access control matters** (subscription-style onboarding/offboarding). They explored Google Sheets web-app/sharing but hit walls.
+- The app should reflect the full master watchlist, with an **owner/admin “backend”** to manage inputs.
+- Add an **AI sweep** that learns the watchlist and produces:
+  - Daily summary of current **BUY** alerts and **SELL** alerts
+  - What became **new today**
+  - What **dropped off** today
+  - Extra insights/anomalies the operator might miss
+
 ## Two user types
 
 ### 1) Community members (varying market knowledge)
