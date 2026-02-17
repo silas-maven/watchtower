@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { Card } from '@/components/Card';
-import { assets as mockAssets } from '@/lib/mock';
+import { watchlist as mockAssets } from '@/lib/mock';
 
 export default function AdminPage() {
   const [selected, setSelected] = useState(mockAssets[0]?.id);
