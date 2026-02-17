@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="g" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <rect x="6" y="6" width="52" height="52" rx="14" fill="#ffffff"/>
+  <rect x="6" y="6" width="52" height="52" rx="14" fill="none" stroke="#e4e4e7"/>
+  <!-- stylised watchtower -->
+  <path d="M32 12l10 6v8c0 10-6 18-10 20-4-2-10-10-10-20v-8l10-6z" fill="url(#g)"/>
+  <path d="M24 28h16" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+  <path d="M26 34h12" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.9"/>
+  <path d="M22 46h20" stroke="#0f172a" stroke-width="3" stroke-linecap="round" opacity="0.25"/>
+</svg>
