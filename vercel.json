@@ -1,0 +1,17 @@
+{
+  "installCommand": "npm install --legacy-peer-deps",
+  "crons": [
+    {
+      "path": "/api/cron/refresh-market",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/generate-daily-brief",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/subscription-overdue-check",
+      "schedule": "0 8 * * *"
+    }
+  ]
+}
