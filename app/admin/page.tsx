@@ -10,6 +10,7 @@ import { computeSignalState } from '@/lib/signals/engine';
 import { getFormulaParityProof } from '@/lib/server/formulaParity';
 
 export const dynamic = 'force-dynamic';
+export const preferredRegion = 'fra1';
 
 export default async function AdminPage() {
   await requirePageRole([Role.OWNER, Role.ADMIN], '/admin');

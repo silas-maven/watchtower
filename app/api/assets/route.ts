@@ -5,6 +5,7 @@ import { fromCaughtError } from '@/lib/route';
 import { computeSignalState } from '@/lib/signals/engine';
 
 export const runtime = 'nodejs';
+export const preferredRegion = 'fra1';
 
 export async function GET() {
   try {

@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   description: 'Mock watchlist + alerts dashboard',
 };
 
+// Keep server rendering close to Supabase (eu-central) to reduce roundtrip latency.
+export const preferredRegion = 'fra1';
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">

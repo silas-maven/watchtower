@@ -7,6 +7,7 @@ import { requirePageUser } from '@/lib/server/pageAuth';
 import { buildFallbackBrief } from '@/lib/ai/dailyBrief';
 
 export const dynamic = 'force-dynamic';
+export const preferredRegion = 'fra1';
 
 function asStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];

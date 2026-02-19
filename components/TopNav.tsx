@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 type SessionUser = {
   id: string;
@@ -11,9 +11,18 @@ type SessionUser = {
   role: 'OWNER' | 'ADMIN' | 'MEMBER';
 };
 
+const NAV_ITEMS = [
+  { href: '/community', label: 'Member View' },
+  { href: '/summary', label: 'Daily Brief' },
+  { href: '/proof', label: 'POC Proof' },
+  { href: '/owner', label: 'User Management' },
+  { href: '/admin', label: 'Asset Management' },
+];
+
 export function TopNav() {
   const [user, setUser] = useState<SessionUser | null>(null);
   const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     let cancelled = false;
@@ -39,25 +48,25 @@ export function TopNav() {
     window.location.href = '/login';
   }
 
-  const navItems = [
-    { href: '/community', label: 'Member View' },
-    { href: '/summary', label: 'Daily Brief' },
-    { href: '/proof', label: 'POC Proof' },
-    { href: '/owner', label: 'User Management' },
-    { href: '/admin', label: 'Asset Management' },
-  ];
+  useEffect(() => {
+    for (const item of NAV_ITEMS) {
+      router.prefetch(item.href);
+    }
+    router.prefetch('/');
+  }, [router]);
 
   return (
     <div className="sticky top-0 z-10 border-b border-zinc-200 bg-white/80 backdrop-blur">
       <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
         <Link href="/" className="font-semibold tracking-tight text-zinc-900">Watchtower</Link>
         <div className="flex flex-wrap items-center gap-2 text-sm">
-          {navItems.map((item) => {
+          {NAV_ITEMS.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch
                 className={`rounded-lg border px-3 py-1.5 font-semibold transition ${isActive
                   ? 'border-zinc-900 bg-zinc-900 text-white'
                   : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900'

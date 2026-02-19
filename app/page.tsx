@@ -6,6 +6,7 @@ import { getAssetsForDashboard, getPortfolioSummary } from '@/lib/server/dashboa
 import { watchlist as mockWatchlist, portfolioConfig } from '@/lib/mock';
 
 export const dynamic = 'force-dynamic';
+export const preferredRegion = 'fra1';
 
 function fmt(n: number) {
   return n.toLocaleString(undefined, { maximumFractionDigits: 2 });

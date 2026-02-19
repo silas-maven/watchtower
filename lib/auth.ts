@@ -69,7 +69,16 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 
   const session = await prisma.session.findFirst({
     where: { tokenHash: sha256(token), expiresAt: { gt: new Date() } },
-    include: { user: { include: { subscription: true } } },
+    include: {
+      user: {
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+        },
+      },
+    },
   });
   if (!session) return null;
 
@@ -78,7 +87,6 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     email: session.user.email,
     name: session.user.name,
     role: session.user.role,
-    subscriptionStatus: session.user.subscription?.status,
   };
 }
 

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { fromCaughtError } from '@/lib/route';
 
 export const runtime = 'nodejs';
+export const preferredRegion = 'fra1';
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   try {

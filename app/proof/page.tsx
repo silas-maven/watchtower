@@ -8,6 +8,7 @@ import { requirePageRole } from '@/lib/server/pageAuth';
 import { getFormulaParityProof } from '@/lib/server/formulaParity';
 
 export const dynamic = 'force-dynamic';
+export const preferredRegion = 'fra1';
 
 type CheckStatus = 'PASS' | 'WARN';
 

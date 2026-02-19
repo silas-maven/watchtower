@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { requirePageRole } from '@/lib/server/pageAuth';
 
 export const dynamic = 'force-dynamic';
+export const preferredRegion = 'fra1';
 
 export default async function OwnerPage() {
   await requirePageRole([Role.OWNER, Role.ADMIN], '/owner');
