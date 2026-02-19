@@ -1,8 +1,16 @@
-import { NextResponse } from 'next/server';
-import { mockAlerts } from '@/lib/mock';
+import { ok } from '@/lib/api';
+import { requireUser } from '@/lib/auth';
+import { fromCaughtError } from '@/lib/route';
+import { getActiveSignals } from '@/lib/server/signals';
 
-export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function GET() {
-  return NextResponse.json({ ok: true, alerts: mockAlerts() });
+  try {
+    await requireUser();
+    const alerts = await getActiveSignals();
+    return ok({ alerts });
+  } catch (error) {
+    return fromCaughtError(error);
+  }
 }

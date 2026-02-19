@@ -1,107 +1,114 @@
-'use client';
-
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { Role } from '@prisma/client';
 import { Card } from '@/components/Card';
-import { watchlist as mockAssets, portfolioConfig } from '@/lib/mock';
+import { AssetOperationsPanel } from '@/components/AssetOperationsPanel';
+import { AssetCatalogManager } from '@/components/AssetCatalogManager';
+import { HelpTip } from '@/components/ui/HelpTip';
+import { prisma } from '@/lib/prisma';
+import { requirePageRole } from '@/lib/server/pageAuth';
+import { computeSignalState } from '@/lib/signals/engine';
+import { getFormulaParityProof } from '@/lib/server/formulaParity';
 
-function fmt(n: number) {
-  return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
-}
+export const dynamic = 'force-dynamic';
 
-export default function AdminPage() {
-  const [selected, setSelected] = useState(mockAssets[0]?.id);
-  const asset = useMemo(() => mockAssets.find(a => a.id === selected), [selected]);
+export default async function AdminPage() {
+  await requirePageRole([Role.OWNER, Role.ADMIN], '/admin');
+
+  const [assets, parity] = await Promise.all([
+    prisma.asset.findMany({
+      where: { isActive: true },
+      include: {
+        rule: true,
+        snapshots: { orderBy: { capturedAt: 'desc' }, take: 1 },
+      },
+      orderBy: { symbol: 'asc' },
+      take: 200,
+    }).catch(() => []),
+    getFormulaParityProof().catch(() => ({ sampleAsset: null, formulas: [] })),
+  ]);
 
   return (
     <div className="space-y-6">
       <div>
         <Link href="/" className="text-sm font-semibold text-blue-700">← Dashboard</Link>
-        <h1 className="mt-2 text-xl font-semibold tracking-tight">Admin (mock)</h1>
+        <h1 className="mt-2 text-xl font-semibold tracking-tight">Asset Management</h1>
         <p className="mt-1 text-sm text-zinc-600">
-          UI-only: this visualises the owner/admin inputs that replace spreadsheet editing. No DB/auth in this mock.
+          Manage the master asset list, amend asset details, update targets, and run signal operations.
         </p>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card title="Portfolio settings (from sheet)">
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-zinc-600">Portfolio size</span><span className="font-semibold">£{fmt(portfolioConfig.portfolioSize)}</span></div>
-            <div className="flex justify-between"><span className="text-zinc-600">Max per stock</span><span className="font-semibold">£{fmt(portfolioConfig.maxPerStock)}</span></div>
-            <div className="flex justify-between"><span className="text-zinc-600">Min entry</span><span className="font-semibold">£{fmt(portfolioConfig.minEntry)}</span></div>
-            <div className="flex justify-between"><span className="text-zinc-600">Target holdings</span><span className="font-semibold">{portfolioConfig.targetHoldings}</span></div>
-            <div className="flex justify-between"><span className="text-zinc-600">No ETFs/REITs</span><span className="font-semibold">{portfolioConfig.noEtfsOrReits ? 'Yes' : 'No'}</span></div>
-          </div>
-          <div className="mt-3 text-xs text-zinc-500">In a real build this would be editable and stored server-side.</div>
-        </Card>
+      <Card title="Asset Operations">
+        <AssetOperationsPanel />
+      </Card>
 
-        <Card title="Select asset">
-          <select
-            className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm"
-            value={selected}
-            onChange={(e) => setSelected(e.target.value)}
-          >
-            {mockAssets.map(a => (
-              <option key={a.id} value={a.id}>{a.ticker} — {a.name}</option>
-            ))}
-          </select>
-          <div className="mt-2 text-xs text-zinc-500">In a real build this would be role-gated.</div>
-        </Card>
-
-        <div className="lg:col-span-1" />
-
-        <div className="lg:col-span-3">
-          <Card title="Edit targets + trade alert (mock)">
-            {!asset ? (
-              <div className="text-sm text-zinc-600">No asset selected.</div>
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-3">
-                  <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
-                    <div className="text-xs text-zinc-600">Ticker</div>
-                    <div className="text-sm font-semibold">{asset.ticker}</div>
-                    <div className="mt-1 text-xs text-zinc-600">{asset.name}</div>
-                  </div>
-
-                  <div className="rounded-xl border border-zinc-200 bg-white p-3">
-                    <div className="text-xs text-zinc-600">Target entry for averaging</div>
-                    <input className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm" readOnly value={asset.targetEntryForAveraging ?? ''} />
-                    <div className="mt-3 text-xs text-zinc-600">Target exit</div>
-                    <input className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm" readOnly value={asset.targetExit ?? ''} />
-                  </div>
-
-                  <div className="rounded-xl border border-zinc-200 bg-white p-3">
-                    <div className="text-xs text-zinc-600">Trade alert</div>
-                    <input className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm" readOnly value={asset.tradeAlert} />
-                    <div className="mt-2 text-xs text-zinc-500">Real build: dropdown + audit trail + notify members.</div>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="rounded-xl border border-zinc-200 bg-white p-3">
-                    <div className="text-xs text-zinc-600">Reason / notes</div>
-                    <textarea className="mt-1 h-36 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm" readOnly value={asset.reason || ''} />
-                    <div className="mt-2 text-xs text-zinc-500">Real build: editable, versioned notes per asset.</div>
-                  </div>
-
-                  <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
-                    <div className="text-xs text-zinc-600">Automation hooks (planned)</div>
-                    <ul className="mt-2 list-disc pl-5 text-sm text-zinc-700 space-y-1">
-                      <li>When tradeAlert changes → add to daily brief + push notification</li>
-                      <li>When price enters target bands → create “signal event”</li>
-                      <li>Exception report if missing targets / missing data</li>
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="md:col-span-2 text-xs text-zinc-500">
-                  This mock is read-only. The goal is to show what admin inputs replace spreadsheet editing.
-                </div>
-              </div>
-            )}
-          </Card>
+      <Card
+        title={
+          <span>
+            Spreadsheet Function Proof
+            <HelpTip text="Shows implemented spreadsheet-style functions and live sample outputs for one asset." />
+          </span>
+        }
+      >
+        <div className="text-xs text-zinc-600 mb-3">
+          {parity.sampleAsset
+            ? `Sample asset: ${parity.sampleAsset.symbol} (${parity.sampleAsset.name})`
+            : 'No sample asset loaded.'}
         </div>
-      </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="border-b border-zinc-200 text-left text-zinc-600">
+                <th className="py-2 pr-3">Function</th>
+                <th className="py-2 pr-3">Excel Pattern</th>
+                <th className="py-2 pr-3">Status</th>
+                <th className="py-2 pr-3">Sample Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              {parity.formulas.map((f) => (
+                <tr key={f.id} className="border-b border-zinc-100 align-top">
+                  <td className="py-2 pr-3 font-semibold">{f.label}</td>
+                  <td className="py-2 pr-3 text-xs text-zinc-700">{f.excelPattern}</td>
+                  <td className="py-2 pr-3">
+                    <span className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+                      {f.implemented ? 'Implemented' : 'Missing'}
+                    </span>
+                  </td>
+                  <td className="py-2 pr-3 text-xs text-zinc-700">{f.sampleValue}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      <Card title="Master Watchlist Editor">
+        <AssetCatalogManager
+          initialAssets={assets.map((asset) => {
+            const snapshot = asset.snapshots[0];
+            return {
+              id: asset.id,
+              symbol: asset.symbol,
+              name: asset.name,
+              reason: asset.reason,
+              assetType: asset.assetType,
+              currency: asset.currency,
+              isActive: asset.isActive,
+              targetEntry: asset.rule?.targetEntry ?? null,
+              targetExit: asset.rule?.targetExit ?? null,
+              signalState: computeSignalState({
+                dailyLow: snapshot?.dailyLow ?? null,
+                dailyHigh: snapshot?.dailyHigh ?? null,
+                targetEntry: asset.rule?.targetEntry ?? null,
+                targetExit: asset.rule?.targetExit ?? null,
+              }),
+              currentPrice: snapshot?.currentPrice ?? null,
+              dailyLow: snapshot?.dailyLow ?? null,
+              dailyHigh: snapshot?.dailyHigh ?? null,
+            };
+          })}
+        />
+      </Card>
     </div>
   );
 }

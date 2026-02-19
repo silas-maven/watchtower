@@ -1,0 +1,281 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+
+  @@map("watchtower_role")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  OVERDUE
+  PAUSED
+  REMOVED
+
+  @@map("watchtower_subscription_status")
+}
+
+enum AssetType {
+  STOCK
+  ETF
+  CRYPTO
+  COMMODITY
+  FOREX
+  INDEX
+  OTHER
+
+  @@map("watchtower_asset_type")
+}
+
+enum SignalState {
+  NONE
+  BUY
+  SELL
+  BOTH
+
+  @@map("watchtower_signal_state")
+}
+
+enum SignalEventType {
+  ENTER_BUY
+  EXIT_BUY
+  ENTER_SELL
+  EXIT_SELL
+  ENTER_BOTH
+  EXIT_BOTH
+
+  @@map("watchtower_signal_event_type")
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  name         String
+  role         Role          @default(MEMBER)
+  passwordHash String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  sessions      Session[]
+  subscription  Subscription?
+  watches       PersonalWatch[]
+  notifications Notification[]
+
+  @@map("watchtower_users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("watchtower_sessions")
+}
+
+model Subscription {
+  id                      String             @id @default(cuid())
+  userId                  String             @unique
+  status                  SubscriptionStatus @default(ACTIVE)
+  dueAt                   DateTime?
+  lastPaidAt              DateTime?
+  pausedAt                DateTime?
+  removedAt               DateTime?
+  overdueStage            Int                @default(0)
+  lastOverdueNotifiedAt   DateTime?
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@map("watchtower_subscriptions")
+}
+
+model Asset {
+  id                 String    @id @default(cuid())
+  symbol             String    @unique
+  name               String
+  reason             String?
+  assetType          AssetType @default(STOCK)
+  currency           String    @default("USD")
+  sourceRow          Int?
+
+  brokerEntryPrice   Float?
+  averageEntryPrice  Float?
+  shares             Float?
+
+  currentCostGBP     Float?
+  currentValueGBP    Float?
+  weightPct          Float?
+  returnPct          Float?
+
+  beta               Float?
+  low52              Float?
+  high52             Float?
+  volumeAvg          Float?
+  pe                 Float?
+  dataDelay          Float?
+  marketCap          Float?
+
+  closeYest          Float?
+  tags               Json?
+  isActive           Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  rule         AssetRule?
+  snapshots    AssetSnapshot[]
+  signalEvents SignalEvent[]
+  watches      PersonalWatch[]
+
+  @@map("watchtower_assets")
+}
+
+model AssetRule {
+  id          String   @id @default(cuid())
+  assetId     String   @unique
+  targetEntry Float?
+  targetExit  Float?
+  note        String?
+  updatedAt   DateTime @updatedAt
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@map("watchtower_asset_rules")
+}
+
+model AssetSnapshot {
+  id             String     @id @default(cuid())
+  assetId        String
+  capturedAt     DateTime   @default(now())
+  currentPrice   Float?
+  dailyChangePct Float?
+  dailyChange    Float?
+  dailyHigh      Float?
+  dailyLow       Float?
+  closeYest      Float?
+
+  beta           Float?
+  low52          Float?
+  high52         Float?
+  volumeAvg      Float?
+  pe             Float?
+  dataDelay      Float?
+  marketCap      Float?
+
+  signalState    SignalState @default(NONE)
+  source         String?
+  raw            Json?
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId, capturedAt(sort: Desc)])
+  @@map("watchtower_asset_snapshots")
+}
+
+model SignalEvent {
+  id         String          @id @default(cuid())
+  assetId    String
+  eventType  SignalEventType
+  fromState  SignalState
+  toState    SignalState
+  occurredAt DateTime        @default(now())
+  metadata   Json?
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId, occurredAt(sort: Desc)])
+  @@index([occurredAt(sort: Desc)])
+  @@map("watchtower_signal_events")
+}
+
+model PersonalWatch {
+  id        String   @id @default(cuid())
+  userId    String
+  assetId   String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, assetId])
+  @@index([userId])
+  @@map("watchtower_personal_watches")
+}
+
+model DailyBrief {
+  id         String   @id @default(cuid())
+  briefDate  DateTime
+  timezone   String
+  summary    String
+  buy        Json
+  sell       Json
+  newToday   Json
+  droppedOff Json
+  insights   Json
+  model      String
+  isFallback Boolean  @default(false)
+  generatedAt DateTime @default(now())
+
+  @@unique([briefDate, timezone])
+  @@index([briefDate(sort: Desc)])
+  @@map("watchtower_daily_briefs")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String?
+  role      Role?
+  type      String
+  title     String
+  body      String
+  metadata  Json?
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([role, createdAt(sort: Desc)])
+  @@map("watchtower_notifications")
+}
+
+model MockEmailLog {
+  id        String   @id @default(cuid())
+  toEmail   String
+  subject   String
+  body      String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt(sort: Desc)])
+  @@map("watchtower_mock_email_logs")
+}
+
+model ImportRun {
+  id        String   @id @default(cuid())
+  sourceFile String
+  status    String
+  rowCount  Int      @default(0)
+  assetCount Int     @default(0)
+  notes     Json?
+  createdAt DateTime @default(now())
+
+  @@map("watchtower_import_runs")
+}

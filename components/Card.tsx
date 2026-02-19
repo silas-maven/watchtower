@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 
-export function Card({ title, right, children }: { title?: string; right?: ReactNode; children: ReactNode }) {
+export function Card({ title, right, children }: { title?: ReactNode; right?: ReactNode; children: ReactNode }) {
   return (
     <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm">
       {(title || right) && (
