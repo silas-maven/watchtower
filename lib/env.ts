@@ -1,10 +1,15 @@
-const REQUIRED_IN_PROD = ['DATABASE_URL', 'SESSION_SECRET', 'CRON_SECRET'] as const;
+const REQUIRED_IN_PROD = [
+  'DATABASE_URL',
+  'DIRECT_URL',
+  'CRON_SECRET',
+  'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY',
+  'CLERK_SECRET_KEY',
+  'OPENAI_API_KEY',
+] as const;
 
 export function env(name: string, fallback?: string): string {
   const value = process.env[name] ?? fallback;
-  if (value == null) {
-    throw new Error(`Missing environment variable: ${name}`);
-  }
+  if (value == null) throw new Error(`Missing environment variable: ${name}`);
   return value;
 }
 
@@ -19,8 +24,6 @@ export const APP_TIMEZONE = process.env.APP_TIMEZONE || 'Europe/London';
 export function assertRuntimeEnv() {
   if (process.env.NODE_ENV !== 'production') return;
   for (const name of REQUIRED_IN_PROD) {
-    if (!process.env[name]) {
-      throw new Error(`Missing required production env: ${name}`);
-    }
+    if (!process.env[name]) throw new Error(`Missing required production env: ${name}`);
   }
 }

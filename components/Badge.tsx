@@ -1,12 +1,13 @@
-export function Badge({ children, tone = 'zinc' }: { children: React.ReactNode; tone?: 'zinc' | 'blue' | 'emerald' | 'rose' }) {
+export function Badge({ children, tone = 'zinc' }: { children: React.ReactNode; tone?: 'zinc' | 'blue' | 'emerald' | 'rose' | 'amber' }) {
   const map: Record<string, string> = {
-    zinc: 'bg-zinc-100 text-zinc-800 border-zinc-200',
-    blue: 'bg-blue-50 text-blue-700 border-blue-100',
-    emerald: 'bg-emerald-50 text-emerald-700 border-emerald-100',
-    rose: 'bg-rose-50 text-rose-700 border-rose-100',
+    zinc: 'bg-white/5 text-slate-300 border-white/10',
+    blue: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
+    emerald: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    rose: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+    amber: 'bg-[#f5c451]/10 text-[#f5c451] border-[#f5c451]/20',
   };
   return (
-    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${map[tone]}`}>
+    <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${map[tone]}`}>
       {children}
     </span>
   );

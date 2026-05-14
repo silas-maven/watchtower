@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
@@ -13,7 +13,7 @@ enum Role {
   ADMIN
   MEMBER
 
-  @@map("watchtower_role")
+  @@map("watchtower_spa_role")
 }
 
 enum SubscriptionStatus {
@@ -22,7 +22,37 @@ enum SubscriptionStatus {
   PAUSED
   REMOVED
 
-  @@map("watchtower_subscription_status")
+  @@map("watchtower_spa_subscription_status")
+}
+
+enum AccessState {
+  ACTIVE
+  PAUSED
+  REMOVED
+
+  @@map("watchtower_spa_access_state")
+}
+
+enum BillingAlertStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+
+  @@map("watchtower_spa_billing_alert_status")
+}
+
+enum UsageEventType {
+  SIGN_IN
+  PAGE_VIEW
+  ASSET_VIEW
+  WATCHLIST_ADD
+  WATCHLIST_REMOVE
+  ALERT_OPEN
+  AI_BRIEF_GENERATE
+  AVERAGE_PLAN_CREATE
+  DUE_DILIGENCE_UPDATE
+
+  @@map("watchtower_spa_usage_event_type")
 }
 
 enum AssetType {
@@ -34,7 +64,7 @@ enum AssetType {
   INDEX
   OTHER
 
-  @@map("watchtower_asset_type")
+  @@map("watchtower_spa_asset_type")
 }
 
 enum SignalState {
@@ -43,7 +73,7 @@ enum SignalState {
   SELL
   BOTH
 
-  @@map("watchtower_signal_state")
+  @@map("watchtower_spa_signal_state")
 }
 
 enum SignalEventType {
@@ -54,24 +84,58 @@ enum SignalEventType {
   ENTER_BOTH
   EXIT_BOTH
 
-  @@map("watchtower_signal_event_type")
+  @@map("watchtower_spa_signal_event_type")
 }
 
 model User {
-  id           String        @id @default(cuid())
-  email        String        @unique
+  id           String   @id @default(cuid())
+  email        String   @unique
   name         String
-  role         Role          @default(MEMBER)
+  role         Role     @default(MEMBER)
   passwordHash String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   sessions      Session[]
   subscription  Subscription?
   watches       PersonalWatch[]
   notifications Notification[]
 
-  @@map("watchtower_users")
+  @@map("watchtower_spa_users")
+}
+
+model Profile {
+  id                   String      @id @default(cuid())
+  clerkUserId          String      @unique
+  email                String      @unique
+  name                 String
+  role                 Role        @default(MEMBER)
+  accessState          AccessState @default(ACTIVE)
+  accessNote           String?
+  declaredPortfolioGBP Float?
+  averageInvestmentGBP Float?
+  lastSeenAt           DateTime?
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  stripeCustomer         StripeCustomer?
+  subscriptionMirror     SubscriptionMirror?
+  portfolios             UserPortfolio[]
+  watchlists             UserWatchlist[]
+  holdings               UserHolding[]
+  averagePlans           AveragePlan[]
+  dueDiligenceRecords    DueDiligenceRecord[]
+  closedPositions        ClosedPosition[]
+  usageEvents            UsageEvent[]
+  notifications          Notification[]
+  billingAlerts          BillingAlert[]
+  accessActions          AdminAccessAction[]  @relation("AdminAccessTarget")
+  performedAccessActions AdminAccessAction[]  @relation("AdminAccessActor")
+  assetActions           AdminAssetAction[]   @relation("AdminAssetActor")
+
+  @@index([role, accessState])
+  @@index([lastSeenAt(sort: Desc)])
+  @@map("watchtower_spa_profiles")
 }
 
 model Session {
@@ -85,66 +149,139 @@ model Session {
 
   @@index([userId])
   @@index([expiresAt])
-  @@map("watchtower_sessions")
+  @@map("watchtower_spa_sessions")
 }
 
 model Subscription {
-  id                      String             @id @default(cuid())
-  userId                  String             @unique
-  status                  SubscriptionStatus @default(ACTIVE)
-  dueAt                   DateTime?
-  lastPaidAt              DateTime?
-  pausedAt                DateTime?
-  removedAt               DateTime?
-  overdueStage            Int                @default(0)
-  lastOverdueNotifiedAt   DateTime?
-  createdAt               DateTime           @default(now())
-  updatedAt               DateTime           @updatedAt
+  id                    String             @id @default(cuid())
+  userId                String             @unique
+  status                SubscriptionStatus @default(ACTIVE)
+  dueAt                 DateTime?
+  lastPaidAt            DateTime?
+  pausedAt              DateTime?
+  removedAt             DateTime?
+  overdueStage          Int                @default(0)
+  lastOverdueNotifiedAt DateTime?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([status])
-  @@map("watchtower_subscriptions")
+  @@map("watchtower_spa_subscriptions")
+}
+
+model StripeCustomer {
+  id               String   @id @default(cuid())
+  profileId        String   @unique
+  stripeCustomerId String   @unique
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("watchtower_spa_stripe_customers")
+}
+
+model SubscriptionMirror {
+  id                   String             @id @default(cuid())
+  profileId            String             @unique
+  stripeSubscriptionId String?            @unique
+  status               SubscriptionStatus @default(ACTIVE)
+  stripeStatus         String?
+  currentPeriodEnd     DateTime?
+  lastPaidAt           DateTime?
+  lastPaymentFailedAt  DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([status, currentPeriodEnd])
+  @@map("watchtower_spa_subscription_mirrors")
+}
+
+model PaymentEvent {
+  id             String   @id @default(cuid())
+  stripeEventId  String   @unique
+  stripeObjectId String?
+  type           String
+  profileId      String?
+  amount         Int?
+  currency       String?
+  status         String?
+  payload        Json?
+  createdAt      DateTime @default(now())
+
+  @@index([profileId, createdAt(sort: Desc)])
+  @@index([type, createdAt(sort: Desc)])
+  @@map("watchtower_spa_payment_events")
+}
+
+model BillingAlert {
+  id            String             @id @default(cuid())
+  profileId     String?
+  type          String
+  title         String
+  body          String
+  status        BillingAlertStatus @default(OPEN)
+  stripeEventId String?
+  metadata      Json?
+  createdAt     DateTime           @default(now())
+  resolvedAt    DateTime?
+
+  profile Profile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([profileId, createdAt(sort: Desc)])
+  @@map("watchtower_spa_billing_alerts")
 }
 
 model Asset {
-  id                 String    @id @default(cuid())
-  symbol             String    @unique
-  name               String
-  reason             String?
-  assetType          AssetType @default(STOCK)
-  currency           String    @default("USD")
-  sourceRow          Int?
+  id        String    @id @default(cuid())
+  symbol    String    @unique
+  name      String
+  reason    String?
+  assetType AssetType @default(STOCK)
+  currency  String    @default("USD")
+  sourceRow Int?
 
-  brokerEntryPrice   Float?
-  averageEntryPrice  Float?
-  shares             Float?
+  brokerEntryPrice  Float?
+  averageEntryPrice Float?
+  shares            Float?
 
-  currentCostGBP     Float?
-  currentValueGBP    Float?
-  weightPct          Float?
-  returnPct          Float?
+  currentCostGBP  Float?
+  currentValueGBP Float?
+  weightPct       Float?
+  returnPct       Float?
 
-  beta               Float?
-  low52              Float?
-  high52             Float?
-  volumeAvg          Float?
-  pe                 Float?
-  dataDelay          Float?
-  marketCap          Float?
+  beta      Float?
+  low52     Float?
+  high52    Float?
+  volumeAvg Float?
+  pe        Float?
+  dataDelay Float?
+  marketCap Float?
 
-  closeYest          Float?
-  tags               Json?
-  isActive           Boolean   @default(true)
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  closeYest Float?
+  tags      Json?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  rule         AssetRule?
-  snapshots    AssetSnapshot[]
-  signalEvents SignalEvent[]
-  watches      PersonalWatch[]
+  rule                AssetRule?
+  snapshots           AssetSnapshot[]
+  signalEvents        SignalEvent[]
+  watches             PersonalWatch[]
+  watchlistItems      UserWatchlistItem[]
+  holdings            UserHolding[]
+  averagePlans        AveragePlan[]
+  dueDiligenceRecords DueDiligenceRecord[]
+  closedPositions     ClosedPosition[]
+  assetActions        AdminAssetAction[]
 
-  @@map("watchtower_assets")
+  @@map("watchtower_spa_assets")
 }
 
 model AssetRule {
@@ -157,13 +294,13 @@ model AssetRule {
 
   asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
 
-  @@map("watchtower_asset_rules")
+  @@map("watchtower_spa_asset_rules")
 }
 
 model AssetSnapshot {
-  id             String     @id @default(cuid())
+  id             String   @id @default(cuid())
   assetId        String
-  capturedAt     DateTime   @default(now())
+  capturedAt     DateTime @default(now())
   currentPrice   Float?
   dailyChangePct Float?
   dailyChange    Float?
@@ -171,22 +308,22 @@ model AssetSnapshot {
   dailyLow       Float?
   closeYest      Float?
 
-  beta           Float?
-  low52          Float?
-  high52         Float?
-  volumeAvg      Float?
-  pe             Float?
-  dataDelay      Float?
-  marketCap      Float?
+  beta      Float?
+  low52     Float?
+  high52    Float?
+  volumeAvg Float?
+  pe        Float?
+  dataDelay Float?
+  marketCap Float?
 
-  signalState    SignalState @default(NONE)
-  source         String?
-  raw            Json?
+  signalState SignalState @default(NONE)
+  source      String?
+  raw         Json?
 
   asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
 
   @@index([assetId, capturedAt(sort: Desc)])
-  @@map("watchtower_asset_snapshots")
+  @@map("watchtower_spa_asset_snapshots")
 }
 
 model SignalEvent {
@@ -202,7 +339,7 @@ model SignalEvent {
 
   @@index([assetId, occurredAt(sort: Desc)])
   @@index([occurredAt(sort: Desc)])
-  @@map("watchtower_signal_events")
+  @@map("watchtower_spa_signal_events")
 }
 
 model PersonalWatch {
@@ -216,44 +353,216 @@ model PersonalWatch {
 
   @@unique([userId, assetId])
   @@index([userId])
-  @@map("watchtower_personal_watches")
+  @@map("watchtower_spa_personal_watches")
+}
+
+model UserPortfolio {
+  id                String   @id @default(cuid())
+  profileId         String
+  name              String   @default("Main Portfolio")
+  declaredValueGBP  Float?
+  investedAmountGBP Float?
+  cashAmountGBP     Float?
+  measuredAt        DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, measuredAt(sort: Desc)])
+  @@map("watchtower_spa_user_portfolios")
+}
+
+model UserHolding {
+  id              String   @id @default(cuid())
+  profileId       String
+  assetId         String
+  shares          Float?
+  averagePrice    Float?
+  investedGBP     Float?
+  currentValueGBP Float?
+  note            String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  asset   Asset   @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, assetId])
+  @@index([assetId])
+  @@map("watchtower_spa_user_holdings")
+}
+
+model UserWatchlist {
+  id        String   @id @default(cuid())
+  profileId String
+  name      String   @default("My Watchlist")
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile Profile             @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  items   UserWatchlistItem[]
+
+  @@unique([profileId, name])
+  @@index([profileId, isDefault])
+  @@map("watchtower_spa_user_watchlists")
+}
+
+model UserWatchlistItem {
+  id          String   @id @default(cuid())
+  watchlistId String
+  assetId     String
+  createdAt   DateTime @default(now())
+
+  watchlist UserWatchlist @relation(fields: [watchlistId], references: [id], onDelete: Cascade)
+  asset     Asset         @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([watchlistId, assetId])
+  @@index([assetId])
+  @@map("watchtower_spa_user_watchlist_items")
+}
+
+model AveragePlan {
+  id                     String   @id @default(cuid())
+  profileId              String
+  assetId                String
+  currency               String
+  tradeOneGBP            Float?
+  tradeTwoGBP            Float?
+  tradeThreeGBP          Float?
+  targetPriceOne         Float?
+  targetPriceTwo         Float?
+  targetPriceThree       Float?
+  calculatedAveragePrice Float?
+  calculatedShares       Float?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  asset   Asset   @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, createdAt(sort: Desc)])
+  @@index([assetId])
+  @@map("watchtower_spa_average_plans")
+}
+
+model DueDiligenceRecord {
+  id        String   @id @default(cuid())
+  profileId String
+  assetId   String
+  checklist Json
+  notes     String?
+  score     Int?
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  asset   Asset   @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, assetId])
+  @@index([assetId])
+  @@map("watchtower_spa_due_diligence_records")
+}
+
+model UsageEvent {
+  id        String         @id @default(cuid())
+  profileId String?
+  type      UsageEventType
+  path      String?
+  metadata  Json?
+  createdAt DateTime       @default(now())
+
+  profile Profile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
+
+  @@index([profileId, createdAt(sort: Desc)])
+  @@index([type, createdAt(sort: Desc)])
+  @@map("watchtower_spa_usage_events")
+}
+
+model AnalyticsRollup {
+  id         String   @id @default(cuid())
+  rollupDate DateTime
+  key        String
+  value      Float
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@unique([rollupDate, key])
+  @@index([key, rollupDate(sort: Desc)])
+  @@map("watchtower_spa_analytics_rollups")
 }
 
 model DailyBrief {
-  id         String   @id @default(cuid())
-  briefDate  DateTime
-  timezone   String
-  summary    String
-  buy        Json
-  sell       Json
-  newToday   Json
-  droppedOff Json
-  insights   Json
-  model      String
-  isFallback Boolean  @default(false)
+  id          String   @id @default(cuid())
+  briefDate   DateTime
+  timezone    String
+  summary     String
+  buy         Json
+  sell        Json
+  newToday    Json
+  droppedOff  Json
+  insights    Json
+  model       String
+  isFallback  Boolean  @default(false)
   generatedAt DateTime @default(now())
 
   @@unique([briefDate, timezone])
   @@index([briefDate(sort: Desc)])
-  @@map("watchtower_daily_briefs")
+  @@map("watchtower_spa_daily_briefs")
 }
 
 model Notification {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String?
+  profileId String?
   role      Role?
   type      String
   title     String
   body      String
   metadata  Json?
   readAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
-  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile Profile? @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt(sort: Desc)])
+  @@index([profileId, createdAt(sort: Desc)])
   @@index([role, createdAt(sort: Desc)])
-  @@map("watchtower_notifications")
+  @@map("watchtower_spa_notifications")
+}
+
+model AdminAccessAction {
+  id              String       @id @default(cuid())
+  targetProfileId String
+  actorProfileId  String?
+  fromState       AccessState?
+  toState         AccessState
+  reason          String?
+  createdAt       DateTime     @default(now())
+
+  targetProfile Profile  @relation("AdminAccessTarget", fields: [targetProfileId], references: [id], onDelete: Cascade)
+  actorProfile  Profile? @relation("AdminAccessActor", fields: [actorProfileId], references: [id], onDelete: SetNull)
+
+  @@index([targetProfileId, createdAt(sort: Desc)])
+  @@map("watchtower_spa_admin_access_actions")
+}
+
+model AdminAssetAction {
+  id             String   @id @default(cuid())
+  assetId        String
+  actorProfileId String?
+  action         String
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  asset        Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  actorProfile Profile? @relation("AdminAssetActor", fields: [actorProfileId], references: [id], onDelete: SetNull)
+
+  @@index([assetId, createdAt(sort: Desc)])
+  @@index([actorProfileId, createdAt(sort: Desc)])
+  @@map("watchtower_spa_admin_asset_actions")
 }
 
 model MockEmailLog {
@@ -265,17 +574,40 @@ model MockEmailLog {
   createdAt DateTime @default(now())
 
   @@index([createdAt(sort: Desc)])
-  @@map("watchtower_mock_email_logs")
+  @@map("watchtower_spa_mock_email_logs")
 }
 
 model ImportRun {
-  id        String   @id @default(cuid())
+  id         String   @id @default(cuid())
   sourceFile String
-  status    String
-  rowCount  Int      @default(0)
-  assetCount Int     @default(0)
-  notes     Json?
-  createdAt DateTime @default(now())
+  status     String
+  rowCount   Int      @default(0)
+  assetCount Int      @default(0)
+  notes      Json?
+  createdAt  DateTime @default(now())
 
-  @@map("watchtower_import_runs")
+  @@map("watchtower_spa_import_runs")
+}
+
+model ClosedPosition {
+  id                 String   @id @default(cuid())
+  profileId          String
+  assetId            String
+  shares             Float?
+  investmentValueGBP Float?
+  averageEntryPrice  Float?
+  exitPrice          Float?
+  returnPct          Float?
+  profitGBP          Float?
+  reason             String?
+  closedAt           DateTime @default(now())
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  asset   Asset   @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, closedAt(sort: Desc)])
+  @@index([assetId])
+  @@map("watchtower_spa_closed_positions")
 }

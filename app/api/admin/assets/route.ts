@@ -41,7 +41,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    await requireRole([Role.OWNER, Role.ADMIN]);
+    const actor = await requireRole([Role.OWNER, Role.ADMIN]);
 
     const body = await req.json().catch(() => ({}));
     const parsed = CreateSchema.safeParse(body);
@@ -83,6 +83,15 @@ export async function POST(req: Request) {
         },
       });
     }
+
+    await prisma.adminAssetAction.create({
+      data: {
+        assetId: created.id,
+        actorProfileId: actor.id,
+        action: 'CREATE_ASSET',
+        metadata: { symbol: created.symbol },
+      },
+    });
 
     return ok({ asset: created });
   } catch (error) {

@@ -1,15 +1,19 @@
 import { ReactNode } from 'react';
+import { MagicCard } from '@/components/ui/magic-card';
 
-export function Card({ title, right, children }: { title?: ReactNode; right?: ReactNode; children: ReactNode }) {
+export function Card({ title, right, children, className }: { title?: ReactNode; right?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm">
+    <MagicCard
+      className={`flex-col rounded-[1.75rem] border-border bg-card shadow-[0_18px_50px_rgba(0,0,0,0.05)] backdrop-blur-xl ${className || ''}`}
+      gradientColor="var(--muted)"
+    >
       {(title || right) && (
-        <div className="flex items-center justify-between gap-3 border-b border-zinc-100 px-4 py-3">
-          <div className="text-sm font-semibold text-zinc-900">{title}</div>
-          <div className="text-sm text-zinc-600">{right}</div>
+        <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
+          <div className="text-sm font-semibold tracking-tight text-foreground">{title}</div>
+          <div className="text-sm text-muted-foreground">{right}</div>
         </div>
       )}
-      <div className="p-4">{children}</div>
-    </div>
+      <div className="p-5 flex-1">{children}</div>
+    </MagicCard>
   );
 }

@@ -60,21 +60,21 @@ export function AssetOperationsPanel() {
         <button
           onClick={runRefresh}
           disabled={refreshState.loading}
-          className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-50 disabled:opacity-60"
+          className="rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground hover:bg-muted/30 disabled:opacity-60 transition"
         >
           {refreshState.loading ? 'Refreshing…' : 'Run Market Refresh'}
         </button>
         <button
           onClick={runBrief}
           disabled={briefState.loading}
-          className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-900 hover:bg-zinc-50 disabled:opacity-60"
+          className="rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground hover:bg-muted/30 disabled:opacity-60 transition"
         >
           {briefState.loading ? 'Generating…' : 'Generate Daily Brief'}
         </button>
       </div>
 
-      {refreshState.message && <div className="text-xs text-zinc-600">{refreshState.message}</div>}
-      {briefState.message && <div className="text-xs text-zinc-600">{briefState.message}</div>}
+      {refreshState.message && <div className="text-xs text-muted-foreground">{refreshState.message}</div>}
+      {briefState.message && <div className="text-xs text-muted-foreground">{briefState.message}</div>}
     </div>
   );
 }

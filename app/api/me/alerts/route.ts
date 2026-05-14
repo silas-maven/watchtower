@@ -1,6 +1,6 @@
 import { SignalState } from '@prisma/client';
 import { ok } from '@/lib/api';
-import { requireUser } from '@/lib/auth';
+import { getDefaultWatchlist, requireUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { fromCaughtError } from '@/lib/route';
 import { APP_TIMEZONE } from '@/lib/env';
@@ -13,15 +13,14 @@ export async function GET() {
     const user = await requireUser();
 
     const notifications = await prisma.notification.findMany({
-      where: {
-        OR: [{ userId: user.id }, { role: user.role }],
-      },
+      where: { OR: [{ profileId: user.id }, { role: user.role }] },
       orderBy: { createdAt: 'desc' },
       take: 100,
     });
 
-    const watchIds = await prisma.personalWatch.findMany({
-      where: { userId: user.id },
+    const watchlist = await getDefaultWatchlist(user.id);
+    const watchIds = await prisma.userWatchlistItem.findMany({
+      where: { watchlistId: watchlist.id },
       select: { assetId: true },
     });
     const watchedAssetIds = new Set(watchIds.map((w) => w.assetId));

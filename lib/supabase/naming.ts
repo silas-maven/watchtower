@@ -1,4 +1,4 @@
-const PREFIX = process.env.SUPABASE_BUCKET_PREFIX || 'watchtower';
+const PREFIX = process.env.SUPABASE_BUCKET_PREFIX || 'watchtower_spa';
 
 export const STORAGE_BUCKETS = {
   uploads: `${PREFIX}_uploads`,
@@ -8,5 +8,5 @@ export const STORAGE_BUCKETS = {
 
 export function withWatchtowerPrefix(name: string): string {
   const normalized = name.trim().toLowerCase().replace(/[^a-z0-9_]+/g, '_');
-  return normalized.startsWith('watchtower_') ? normalized : `watchtower_${normalized}`;
+  return normalized.startsWith('watchtower_spa_') ? normalized : `watchtower_spa_${normalized}`;
 }

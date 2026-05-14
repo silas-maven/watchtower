@@ -9,9 +9,9 @@ export const runtime = 'nodejs';
 export async function GET() {
   try {
     await requireRole([Role.OWNER, Role.ADMIN]);
-    const users = await prisma.user.findMany({
+    const users = await prisma.profile.findMany({
       where: { role: Role.MEMBER },
-      include: { subscription: true },
+      include: { subscriptionMirror: true },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -20,9 +20,12 @@ export async function GET() {
         id: u.id,
         email: u.email,
         name: u.name,
-        status: u.subscription?.status ?? SubscriptionStatus.ACTIVE,
-        dueAt: u.subscription?.dueAt ?? null,
-        overdueStage: u.subscription?.overdueStage ?? 0,
+        accessState: u.accessState,
+        declaredPortfolioGBP: u.declaredPortfolioGBP,
+        averageInvestmentGBP: u.averageInvestmentGBP,
+        status: u.subscriptionMirror?.status ?? SubscriptionStatus.ACTIVE,
+        dueAt: u.subscriptionMirror?.currentPeriodEnd ?? null,
+        overdueStage: u.subscriptionMirror?.status === 'OVERDUE' ? 1 : 0,
       })),
     });
   } catch (error) {
@@ -33,18 +36,13 @@ export async function GET() {
 export async function PATCH(req: Request) {
   try {
     await requireRole([Role.OWNER, Role.ADMIN]);
-    const body = (await req.json().catch(() => null)) as null | {
-      userId?: string;
-      status?: SubscriptionStatus;
-    };
+    const body = (await req.json().catch(() => null)) as null | { userId?: string; status?: SubscriptionStatus };
     if (!body?.userId || !body.status) return fail('Invalid payload', 400, 'INVALID_PAYLOAD');
 
-    const subscription = await prisma.subscription.findUnique({ where: { userId: body.userId } });
-    if (!subscription) return fail('Subscriber not found', 404, 'NOT_FOUND');
-
-    const updated = await prisma.subscription.update({
-      where: { userId: body.userId },
-      data: { status: body.status },
+    const updated = await prisma.subscriptionMirror.upsert({
+      where: { profileId: body.userId },
+      update: { status: body.status },
+      create: { profileId: body.userId, status: body.status },
     });
 
     return ok({ subscription: updated });

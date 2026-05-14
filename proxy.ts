@@ -1,30 +1,22 @@
-import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
-function isLoginRoute(pathname: string): boolean {
-  return pathname === '/login';
-}
+const isProtectedRoute = createRouteMatcher([
+  '/app(.*)',
+  '/admin(.*)',
+  '/assets(.*)',
+  '/community(.*)',
+  '/summary(.*)',
+  '/owner(.*)',
+  '/proof(.*)',
+]);
 
-export function proxy(request: NextRequest) {
-  const { pathname, search } = request.nextUrl;
-
-  if (isLoginRoute(pathname)) {
-    return NextResponse.next();
-  }
-
-  const sessionToken = request.cookies.get('wt_session')?.value;
-  if (!sessionToken) {
-    const loginUrl = new URL('/login', request.url);
-    if (pathname !== '/') {
-      loginUrl.searchParams.set('next', `${pathname}${search}`);
-    }
-    return NextResponse.redirect(loginUrl);
-  }
-
-  return NextResponse.next();
-}
+export default clerkMiddleware(async (auth, req) => {
+  if (isProtectedRoute(req)) await auth.protect();
+});
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|icon.svg|.*\\..*).*)'],
+  matcher: [
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/(api|trpc)(.*)',
+  ],
 };
-

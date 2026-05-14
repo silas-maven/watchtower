@@ -1,11 +1,5 @@
-import { ok } from '@/lib/api';
-import { clearSessionCookie, destroySession, getSessionToken } from '@/lib/auth';
-
-export const runtime = 'nodejs';
+import { fail } from '@/lib/api';
 
 export async function POST() {
-  const token = await getSessionToken();
-  await destroySession(token);
-  await clearSessionCookie();
-  return ok({ loggedOut: true });
+  return fail('Logout is handled by Clerk UserButton.', 410, 'CLERK_AUTH_REQUIRED');
 }

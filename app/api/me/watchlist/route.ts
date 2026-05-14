@@ -1,5 +1,5 @@
 import { ok } from '@/lib/api';
-import { requireUser } from '@/lib/auth';
+import { getDefaultWatchlist, requireUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { fromCaughtError } from '@/lib/route';
 
@@ -9,8 +9,9 @@ export const preferredRegion = 'fra1';
 export async function GET() {
   try {
     const user = await requireUser();
-    const watches = await prisma.personalWatch.findMany({
-      where: { userId: user.id },
+    const watchlist = await getDefaultWatchlist(user.id);
+    const watches = await prisma.userWatchlistItem.findMany({
+      where: { watchlistId: watchlist.id },
       include: {
         asset: {
           include: {

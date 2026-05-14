@@ -17,7 +17,7 @@ export const runtime = 'nodejs';
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requireRole([Role.OWNER, Role.ADMIN]);
+    const actor = await requireRole([Role.OWNER, Role.ADMIN]);
     const { id } = await params;
 
     const body = await req.json().catch(() => ({}));
@@ -51,6 +51,17 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         },
       });
     }
+
+    await prisma.adminAssetAction.create({
+      data: {
+        assetId: id,
+        actorProfileId: actor.id,
+        action: 'UPDATE_ASSET',
+        metadata: {
+          fields: Object.keys(data),
+        },
+      },
+    });
 
     return ok({ asset: updated });
   } catch (error) {

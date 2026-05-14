@@ -1,70 +1,72 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import { Badge } from '@/components/Badge';
 import { HelpTip } from '@/components/ui/HelpTip';
 import { useToast } from '@/components/ui/ToastProvider';
 
 type Status = 'ACTIVE' | 'OVERDUE' | 'PAUSED' | 'REMOVED';
+type AccessState = 'ACTIVE' | 'PAUSED' | 'REMOVED';
 
 type Subscriber = {
   id: string;
   name: string;
   email: string;
   status: Status;
+  accessState: AccessState;
   dueAt: string | null;
   overdueStage: number;
+  declaredPortfolioGBP: number | null;
+  averageInvestmentGBP: number | null;
 };
 
-type Props = {
-  initialSubscribers: Subscriber[];
-};
+type Props = { initialSubscribers: Subscriber[] };
 
-function tone(status: Status) {
+function tone(status: Status | AccessState) {
   if (status === 'ACTIVE') return 'emerald' as const;
-  if (status === 'OVERDUE') return 'rose' as const;
-  if (status === 'PAUSED') return 'blue' as const;
+  if (status === 'OVERDUE' || status === 'REMOVED') return 'rose' as const;
+  if (status === 'PAUSED') return 'amber' as const;
   return 'zinc' as const;
+}
+
+function fmtGBP(value: number | null) {
+  if (value == null) return '—';
+  return `£${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 }
 
 export function UserManagementPanel({ initialSubscribers }: Props) {
   const [subscribers, setSubscribers] = useState(initialSubscribers);
   const [busyUserId, setBusyUserId] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
   const { pushToast } = useToast();
 
   const counts = useMemo(
     () => ({
-      active: subscribers.filter((s) => s.status === 'ACTIVE').length,
+      active: subscribers.filter((s) => s.accessState === 'ACTIVE').length,
       overdue: subscribers.filter((s) => s.status === 'OVERDUE').length,
-      paused: subscribers.filter((s) => s.status === 'PAUSED').length,
-      removed: subscribers.filter((s) => s.status === 'REMOVED').length,
+      paused: subscribers.filter((s) => s.accessState === 'PAUSED').length,
+      removed: subscribers.filter((s) => s.accessState === 'REMOVED').length,
     }),
     [subscribers],
   );
 
-  async function setStatus(userId: string, status: Status) {
+  async function patchUser(userId: string, body: Record<string, unknown>, optimistic: Partial<Subscriber>, success: string) {
     setBusyUserId(userId);
-    setMessage(null);
     try {
       const res = await fetch(`/api/admin/subscribers/${userId}`, {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify(body),
       });
       const json = await res.json();
       if (!json.ok) {
-        setMessage(json.error?.message ?? 'Failed to update status');
-        pushToast(json.error?.message ?? 'Failed to update status', 'error');
+        pushToast(json.error?.message ?? 'Failed to update subscriber', 'error');
         return;
       }
-
-      setSubscribers((prev) => prev.map((s) => (s.id === userId ? { ...s, status } : s)));
-      setMessage(`Updated subscription to ${status}.`);
-      pushToast(`Updated subscription to ${status}.`, 'success');
+      setSubscribers((prev) => prev.map((s) => (s.id === userId ? { ...s, ...optimistic } : s)));
+      pushToast(success, 'success');
     } catch {
-      setMessage('Failed to update status');
-      pushToast('Failed to update status', 'error');
+      pushToast('Failed to update subscriber', 'error');
     } finally {
       setBusyUserId(null);
     }
@@ -72,35 +74,17 @@ export function UserManagementPanel({ initialSubscribers }: Props) {
 
   async function markPaid(userId: string) {
     setBusyUserId(userId);
-    setMessage(null);
     try {
-      const res = await fetch(`/api/admin/subscribers/${userId}/mark-paid`, {
-        method: 'POST',
-      });
+      const res = await fetch(`/api/admin/subscribers/${userId}/mark-paid`, { method: 'POST' });
       const json = await res.json();
       if (!json.ok) {
-        setMessage(json.error?.message ?? 'Failed to mark paid');
         pushToast(json.error?.message ?? 'Failed to mark paid', 'error');
         return;
       }
-
-      const dueAt = json.data?.subscription?.dueAt ?? null;
-      setSubscribers((prev) =>
-        prev.map((s) =>
-          s.id === userId
-            ? {
-                ...s,
-                status: 'ACTIVE',
-                overdueStage: 0,
-                dueAt: typeof dueAt === 'string' ? dueAt : s.dueAt,
-              }
-            : s,
-        ),
-      );
-      setMessage('Marked paid and reactivated member.');
-      pushToast('Marked paid and reactivated member.', 'success');
+      const dueAt = json.data?.subscription?.currentPeriodEnd ?? null;
+      setSubscribers((prev) => prev.map((s) => (s.id === userId ? { ...s, status: 'ACTIVE', overdueStage: 0, dueAt } : s)));
+      pushToast('Marked paid and cleared open billing alerts.', 'success');
     } catch {
-      setMessage('Failed to mark paid');
       pushToast('Failed to mark paid', 'error');
     } finally {
       setBusyUserId(null);
@@ -108,45 +92,63 @@ export function UserManagementPanel({ initialSubscribers }: Props) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-4">
-        <div className="rounded-xl border border-zinc-200 bg-white p-3"><div className="text-xs text-zinc-600">Active</div><div className="text-2xl font-semibold">{counts.active}</div></div>
-        <div className="rounded-xl border border-zinc-200 bg-white p-3"><div className="text-xs text-zinc-600">Overdue</div><div className="text-2xl font-semibold text-rose-700">{counts.overdue}</div></div>
-        <div className="rounded-xl border border-zinc-200 bg-white p-3"><div className="text-xs text-zinc-600">Paused</div><div className="text-2xl font-semibold">{counts.paused}</div></div>
-        <div className="rounded-xl border border-zinc-200 bg-white p-3"><div className="text-xs text-zinc-600">Removed</div><div className="text-2xl font-semibold">{counts.removed}</div></div>
+        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+          <div className="text-xs font-bold text-emerald-500">Active Access</div>
+          <div className="text-2xl font-black text-foreground">{counts.active}</div>
+        </div>
+        <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-4">
+          <div className="text-xs font-bold text-rose-500">Payment Alerts</div>
+          <div className="text-2xl font-black text-foreground">{counts.overdue}</div>
+        </div>
+        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4">
+          <div className="text-xs font-bold text-amber-500">Paused</div>
+          <div className="text-2xl font-black text-foreground">{counts.paused}</div>
+        </div>
+        <div className="rounded-2xl border border-border bg-muted/20 p-4">
+          <div className="text-xs font-bold text-muted-foreground">Removed</div>
+          <div className="text-2xl font-black text-foreground">{counts.removed}</div>
+        </div>
       </div>
-
-      {message && <div className="text-xs text-zinc-600">{message}</div>}
 
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="border-b border-zinc-200 text-left text-zinc-600">
-              <th className="py-2 pr-3">Member</th>
-              <th className="py-2 pr-3">Status <HelpTip text="ACTIVE, OVERDUE, PAUSED, REMOVED." /></th>
-              <th className="py-2 pr-3">Due Date</th>
-              <th className="py-2 pr-3">Stage <HelpTip text="Overdue escalation stage: D+1, D+3, weekly." /></th>
-              <th className="py-2 pr-3">Actions <HelpTip text="Pause, remove, reactivate, or mark payment received." /></th>
+            <tr className="border-b border-border text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              <th className="py-3 pr-4">Member</th>
+              <th className="py-3 pr-4">Access <HelpTip text="Manual product access controlled by admin. Payment failure does not auto-pause." /></th>
+              <th className="py-3 pr-4">Billing</th>
+              <th className="py-3 pr-4">Portfolio Signal</th>
+              <th className="py-3 pr-4">Actions</th>
             </tr>
           </thead>
           <tbody>
             {subscribers.map((s) => {
               const busy = busyUserId === s.id;
               return (
-                <tr key={s.id} className="border-b border-zinc-100 align-top">
-                  <td className="py-2 pr-3">
-                    <div className="font-semibold">{s.name}</div>
-                    <div className="text-xs text-zinc-600">{s.email}</div>
+                <tr key={s.id} className="border-b border-border/50 align-top hover:bg-muted/20 transition">
+                  <td className="py-3 pr-4">
+                    <div className="font-bold text-foreground">{s.name}</div>
+                    <div className="text-xs text-muted-foreground">{s.email}</div>
                   </td>
-                  <td className="py-2 pr-3"><Badge tone={tone(s.status)}>{s.status}</Badge></td>
-                  <td className="py-2 pr-3">{s.dueAt ? s.dueAt.slice(0, 10) : '—'}</td>
-                  <td className="py-2 pr-3">{s.overdueStage}</td>
-                  <td className="py-2 pr-3">
+                  <td className="py-3 pr-4"><Badge tone={tone(s.accessState)}>{s.accessState}</Badge></td>
+                  <td className="py-3 pr-4">
+                    <Badge tone={tone(s.status)}>{s.status}</Badge>
+                    <div className="mt-1 text-xs text-muted-foreground">Due {s.dueAt ? s.dueAt.slice(0, 10) : '—'} · Stage {s.overdueStage}</div>
+                  </td>
+                  <td className="py-3 pr-4 text-xs text-muted-foreground">
+                    <div>Declared: <span className="font-bold text-foreground">{fmtGBP(s.declaredPortfolioGBP)}</span></div>
+                    <div>Avg investment: <span className="font-bold text-foreground">{fmtGBP(s.averageInvestmentGBP)}</span></div>
+                  </td>
+                  <td className="py-3 pr-4">
                     <div className="flex flex-wrap gap-2">
-                      <button disabled={busy} onClick={() => setStatus(s.id, 'ACTIVE')} className="rounded-md border border-zinc-200 px-2 py-1 text-xs font-semibold hover:bg-zinc-50 disabled:opacity-60">Activate</button>
-                      <button disabled={busy} onClick={() => setStatus(s.id, 'PAUSED')} className="rounded-md border border-zinc-200 px-2 py-1 text-xs font-semibold hover:bg-zinc-50 disabled:opacity-60">Pause</button>
-                      <button disabled={busy} onClick={() => setStatus(s.id, 'REMOVED')} className="rounded-md border border-zinc-200 px-2 py-1 text-xs font-semibold hover:bg-zinc-50 disabled:opacity-60">Remove</button>
-                      <button disabled={busy} onClick={() => markPaid(s.id)} className="rounded-md border border-zinc-200 px-2 py-1 text-xs font-semibold hover:bg-zinc-50 disabled:opacity-60">Mark Paid</button>
+                      <Link href={`/admin/customers/${s.id}`} className="rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1.5 text-xs font-bold text-primary hover:bg-primary/20 transition">Review</Link>
+                      <button disabled={busy} onClick={() => patchUser(s.id, { accessState: 'ACTIVE' }, { accessState: 'ACTIVE' }, 'Access activated.')} className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-bold text-foreground hover:bg-muted/30 disabled:opacity-60 transition">Activate</button>
+                      <button disabled={busy} onClick={() => patchUser(s.id, { accessState: 'PAUSED', reason: 'Manual admin pause' }, { accessState: 'PAUSED' }, 'Access paused.')} className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-bold text-foreground hover:bg-muted/30 disabled:opacity-60 transition">Pause</button>
+                      <button disabled={busy} onClick={() => patchUser(s.id, { accessState: 'REMOVED', reason: 'Manual admin removal' }, { accessState: 'REMOVED' }, 'Access removed.')} className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-bold text-foreground hover:bg-muted/30 disabled:opacity-60 transition">Remove</button>
+                      <button disabled={busy} onClick={() => patchUser(s.id, { status: 'OVERDUE' }, { status: 'OVERDUE', overdueStage: 1 }, 'Billing marked overdue.')} className="rounded-lg border border-rose-500/30 px-2.5 py-1.5 text-xs font-bold text-rose-500 hover:bg-rose-500/10 disabled:opacity-60 transition">Flag Overdue</button>
+                      <button disabled={busy} onClick={() => markPaid(s.id)} className="rounded-lg bg-primary px-2.5 py-1.5 text-xs font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-60 transition">Mark Paid</button>
                     </div>
                   </td>
                 </tr>

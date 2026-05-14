@@ -16,67 +16,65 @@ function shouldSendWeeklyReminder(lastSentAt: Date | null, now = new Date()): bo
 }
 
 export async function runOverdueCheck(now = new Date()) {
-  const subs = await prisma.subscription.findMany({
+  const subs = await prisma.subscriptionMirror.findMany({
     where: {
       status: { in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.OVERDUE] },
-      dueAt: { not: null },
+      currentPeriodEnd: { not: null },
     },
-    include: { user: true },
+    include: { profile: true },
   });
 
   let flagged = 0;
   let notifications = 0;
 
   for (const sub of subs) {
-    const dueAt = sub.dueAt;
+    const dueAt = sub.currentPeriodEnd;
     if (!dueAt) continue;
     const stage = computeOverdueStage(dueAt, now);
 
     if (stage === 0) {
       if (sub.status === SubscriptionStatus.OVERDUE) {
-        await prisma.subscription.update({
-          where: { id: sub.id },
-          data: { status: SubscriptionStatus.ACTIVE, overdueStage: 0 },
-        });
+        await prisma.subscriptionMirror.update({ where: { id: sub.id }, data: { status: SubscriptionStatus.ACTIVE } });
       }
       continue;
     }
 
     flagged += 1;
-    const shouldNotify =
-      stage > sub.overdueStage || (stage >= 3 && shouldSendWeeklyReminder(sub.lastOverdueNotifiedAt, now));
+    const previous = await prisma.billingAlert.findFirst({
+      where: { profileId: sub.profileId, type: 'payment_overdue' },
+      orderBy: { createdAt: 'desc' },
+    });
+    const shouldNotify = !previous || shouldSendWeeklyReminder(previous.createdAt, now);
 
-    await prisma.subscription.update({
+    await prisma.subscriptionMirror.update({
       where: { id: sub.id },
-      data: {
-        status: SubscriptionStatus.OVERDUE,
-        overdueStage: stage,
-      },
+      data: { status: SubscriptionStatus.OVERDUE, lastPaymentFailedAt: sub.lastPaymentFailedAt ?? now },
     });
 
     if (!shouldNotify) continue;
 
     const days = daysBetween(dueAt, now);
-    const title = `Subscription overdue: ${sub.user.email}`;
-    const body = `${sub.user.email} is overdue by ${days} day(s). Stage D+${days}.`;
+    const title = `Payment overdue: ${sub.profile.email}`;
+    const body = `${sub.profile.email} is overdue by ${days} day(s). Admin review required; access is not changed automatically.`;
+
+    await prisma.billingAlert.create({
+      data: {
+        profileId: sub.profileId,
+        type: 'payment_overdue',
+        title,
+        body,
+        metadata: { profileId: sub.profileId, stage, dueAt: dueAt.toISOString() },
+      },
+    });
 
     await prisma.notification.createMany({
-      data: [
-        {
-          role: Role.OWNER,
-          type: 'subscription_overdue',
-          title,
-          body,
-          metadata: { userId: sub.userId, stage, dueAt: dueAt.toISOString() },
-        },
-        {
-          role: Role.ADMIN,
-          type: 'subscription_overdue',
-          title,
-          body,
-          metadata: { userId: sub.userId, stage, dueAt: dueAt.toISOString() },
-        },
-      ],
+      data: [Role.OWNER, Role.ADMIN].map((role) => ({
+        role,
+        type: 'subscription_overdue',
+        title,
+        body,
+        metadata: { profileId: sub.profileId, stage, dueAt: dueAt.toISOString() },
+      })),
     });
 
     await prisma.mockEmailLog.create({
@@ -84,21 +82,12 @@ export async function runOverdueCheck(now = new Date()) {
         toEmail: 'admin@watchtower.demo',
         subject: title,
         body,
-        metadata: { userId: sub.userId, stage },
+        metadata: { profileId: sub.profileId, stage },
       },
-    });
-
-    await prisma.subscription.update({
-      where: { id: sub.id },
-      data: { lastOverdueNotifiedAt: now },
     });
 
     notifications += 1;
   }
 
-  return {
-    scanned: subs.length,
-    flagged,
-    notifications,
-  };
+  return { scanned: subs.length, flagged, notifications };
 }

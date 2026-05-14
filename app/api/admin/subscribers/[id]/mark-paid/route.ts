@@ -8,33 +8,44 @@ export const runtime = 'nodejs';
 
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requireRole([Role.OWNER, Role.ADMIN]);
+    const actor = await requireRole([Role.OWNER, Role.ADMIN]);
     const { id } = await params;
 
-    const subscription = await prisma.subscription.findUnique({ where: { userId: id } });
-    if (!subscription) return fail('Subscriber not found', 404, 'NOT_FOUND');
+    const profile = await prisma.profile.findUnique({ where: { id } });
+    if (!profile) return fail('Subscriber not found', 404, 'NOT_FOUND');
 
     const now = new Date();
     const nextDue = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-    const updated = await prisma.subscription.update({
-      where: { userId: id },
-      data: {
+    const updated = await prisma.subscriptionMirror.upsert({
+      where: { profileId: id },
+      update: {
         status: SubscriptionStatus.ACTIVE,
         lastPaidAt: now,
-        dueAt: nextDue,
-        overdueStage: 0,
-        lastOverdueNotifiedAt: null,
+        currentPeriodEnd: nextDue,
+        lastPaymentFailedAt: null,
       },
+      create: {
+        profileId: id,
+        status: SubscriptionStatus.ACTIVE,
+        lastPaidAt: now,
+        currentPeriodEnd: nextDue,
+      },
+    });
+
+    await prisma.billingAlert.updateMany({
+      where: { profileId: id, status: 'OPEN' },
+      data: { status: 'RESOLVED', resolvedAt: now },
     });
 
     await prisma.notification.create({
       data: {
+        profileId: actor.id,
         role: Role.ADMIN,
         type: 'subscription_mark_paid',
         title: 'Subscriber marked as paid',
-        body: `Subscription for user ${id} was marked paid by admin.`,
-        metadata: { userId: id },
+        body: `${profile.email} was marked paid by admin.`,
+        metadata: { profileId: id },
       },
     });
 
