@@ -18,15 +18,18 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     const list = await ownedList(user.id, id);
     if (!list) return fail('List not found', 404, 'NOT_FOUND');
 
-    const asset = await prisma.asset.findUnique({ where: { id: assetId } });
-    if (!asset || !asset.isActive) return fail('Asset not found', 404, 'NOT_FOUND');
-
-    await prisma.userWatchlistItem.upsert({
-      where: { watchlistId_assetId: { watchlistId: id, assetId } },
-      update: {},
-      create: { watchlistId: id, assetId },
-    });
-    await prisma.usageEvent.create({ data: { profileId: user.id, type: 'WATCHLIST_ADD', metadata: { assetId, watchlistId: id } } }).catch(() => null);
+    // The asset FK enforces validity, so skip the extra existence query and just
+    // upsert. Usage tracking is fire-and-forget so it never adds latency.
+    try {
+      await prisma.userWatchlistItem.upsert({
+        where: { watchlistId_assetId: { watchlistId: id, assetId } },
+        update: {},
+        create: { watchlistId: id, assetId },
+      });
+    } catch {
+      return fail('Asset not found', 404, 'NOT_FOUND');
+    }
+    void prisma.usageEvent.create({ data: { profileId: user.id, type: 'WATCHLIST_ADD', metadata: { assetId, watchlistId: id } } }).catch(() => null);
 
     return ok({ watched: true });
   } catch (error) {

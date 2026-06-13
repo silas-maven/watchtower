@@ -23,10 +23,10 @@ export function MarketingNav({ signedIn }: { signedIn: boolean }) {
           <Link href="/app" className="rounded-full bg-foreground px-4 py-2 text-sm font-bold text-background transition hover:opacity-90">Open app</Link>
         ) : (
           <>
-            <SignInButton mode="modal">
+            <SignInButton mode="modal" forceRedirectUrl="/app" signUpForceRedirectUrl="/app">
               <button className="hidden rounded-full border border-border bg-muted/40 px-4 py-2 text-sm font-semibold text-foreground backdrop-blur transition hover:bg-muted sm:inline-flex">Member sign in</button>
             </SignInButton>
-            <SignUpButton mode="modal">
+            <SignUpButton mode="modal" forceRedirectUrl="/app" signInForceRedirectUrl="/app">
               <button className="rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition hover:brightness-110">Join the academy</button>
             </SignUpButton>
           </>

@@ -112,43 +112,57 @@ export function UserManagementPanel({ initialSubscribers }: Props) {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto rounded-2xl border border-border">
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="border-b border-border text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
-              <th className="py-3 pr-4">Member</th>
-              <th className="py-3 pr-4">Access <HelpTip text="Manual product access controlled by admin. Payment failure does not auto-pause." /></th>
-              <th className="py-3 pr-4">Billing</th>
-              <th className="py-3 pr-4">Portfolio Signal</th>
-              <th className="py-3 pr-4">Actions</th>
+            <tr className="border-b border-border bg-muted/20 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              <th className="px-4 py-3">Member</th>
+              <th className="px-4 py-3">Access <HelpTip text="Manual product access controlled by admin. Payment failure does not auto-pause." /></th>
+              <th className="px-4 py-3">Billing</th>
+              <th className="px-4 py-3 text-right">Declared</th>
+              <th className="px-4 py-3 text-right">Avg invest</th>
+              <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {subscribers.map((s) => {
               const busy = busyUserId === s.id;
               return (
-                <tr key={s.id} className="border-b border-border/50 align-top hover:bg-muted/20 transition">
-                  <td className="py-3 pr-4">
-                    <div className="font-bold text-foreground">{s.name}</div>
+                <tr key={s.id} className="border-b border-border/50 last:border-0 hover:bg-muted/20 transition">
+                  <td className="px-4 py-3">
+                    <div className="font-semibold text-foreground">{s.name}</div>
                     <div className="text-xs text-muted-foreground">{s.email}</div>
                   </td>
-                  <td className="py-3 pr-4"><Badge tone={tone(s.accessState)}>{s.accessState}</Badge></td>
-                  <td className="py-3 pr-4">
+                  <td className="px-4 py-3"><Badge tone={tone(s.accessState)}>{s.accessState}</Badge></td>
+                  <td className="px-4 py-3">
                     <Badge tone={tone(s.status)}>{s.status}</Badge>
-                    <div className="mt-1 text-xs text-muted-foreground">Due {s.dueAt ? s.dueAt.slice(0, 10) : '—'} · Stage {s.overdueStage}</div>
+                    {(s.status === 'OVERDUE' || s.dueAt) && (
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {s.dueAt ? `Due ${s.dueAt.slice(0, 10)}` : 'No due date'}{s.status === 'OVERDUE' ? ` · Stage ${s.overdueStage}` : ''}
+                      </div>
+                    )}
                   </td>
-                  <td className="py-3 pr-4 text-xs text-muted-foreground">
-                    <div>Declared: <span className="font-bold text-foreground">{fmtGBP(s.declaredPortfolioGBP)}</span></div>
-                    <div>Avg investment: <span className="font-bold text-foreground">{fmtGBP(s.averageInvestmentGBP)}</span></div>
-                  </td>
-                  <td className="py-3 pr-4">
-                    <div className="flex flex-wrap gap-2">
-                      <Link href={`/admin/customers/${s.id}`} className="rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1.5 text-xs font-bold text-primary hover:bg-primary/20 transition">Review</Link>
-                      <button disabled={busy} onClick={() => patchUser(s.id, { accessState: 'ACTIVE' }, { accessState: 'ACTIVE' }, 'Access activated.')} className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-bold text-foreground hover:bg-muted/30 disabled:opacity-60 transition">Activate</button>
-                      <button disabled={busy} onClick={() => patchUser(s.id, { accessState: 'PAUSED', reason: 'Manual admin pause' }, { accessState: 'PAUSED' }, 'Access paused.')} className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-bold text-foreground hover:bg-muted/30 disabled:opacity-60 transition">Pause</button>
-                      <button disabled={busy} onClick={() => patchUser(s.id, { accessState: 'REMOVED', reason: 'Manual admin removal' }, { accessState: 'REMOVED' }, 'Access removed.')} className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-bold text-foreground hover:bg-muted/30 disabled:opacity-60 transition">Remove</button>
-                      <button disabled={busy} onClick={() => patchUser(s.id, { status: 'OVERDUE' }, { status: 'OVERDUE', overdueStage: 1 }, 'Billing marked overdue.')} className="rounded-lg border border-rose-500/30 px-2.5 py-1.5 text-xs font-bold text-rose-500 hover:bg-rose-500/10 disabled:opacity-60 transition">Flag Overdue</button>
-                      <button disabled={busy} onClick={() => markPaid(s.id)} className="rounded-lg bg-primary px-2.5 py-1.5 text-xs font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-60 transition">Mark Paid</button>
+                  <td className="px-4 py-3 text-right font-mono text-foreground">{fmtGBP(s.declaredPortfolioGBP)}</td>
+                  <td className="px-4 py-3 text-right font-mono text-foreground">{fmtGBP(s.averageInvestmentGBP)}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-1.5">
+                      {/* Contextual access controls: only show transitions that make sense */}
+                      {s.accessState !== 'ACTIVE' && (
+                        <button disabled={busy} onClick={() => patchUser(s.id, { accessState: 'ACTIVE' }, { accessState: 'ACTIVE' }, 'Access activated.')} className="rounded-lg border border-emerald-500/30 px-2.5 py-1.5 text-xs font-semibold text-emerald-500 hover:bg-emerald-500/10 disabled:opacity-60 transition">Activate</button>
+                      )}
+                      {s.accessState === 'ACTIVE' && (
+                        <button disabled={busy} onClick={() => patchUser(s.id, { accessState: 'PAUSED', reason: 'Manual admin pause' }, { accessState: 'PAUSED' }, 'Access paused.')} className="rounded-lg border border-amber-500/30 px-2.5 py-1.5 text-xs font-semibold text-amber-500 hover:bg-amber-500/10 disabled:opacity-60 transition">Pause</button>
+                      )}
+                      {s.accessState !== 'REMOVED' && (
+                        <button disabled={busy} onClick={() => patchUser(s.id, { accessState: 'REMOVED', reason: 'Manual admin removal' }, { accessState: 'REMOVED' }, 'Access removed.')} className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted/40 disabled:opacity-60 transition">Remove</button>
+                      )}
+                      {/* Billing action: Mark Paid when overdue, else Flag Overdue */}
+                      {s.status === 'OVERDUE' ? (
+                        <button disabled={busy} onClick={() => markPaid(s.id)} className="rounded-lg bg-primary px-2.5 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60 transition">Mark paid</button>
+                      ) : (
+                        <button disabled={busy} onClick={() => patchUser(s.id, { status: 'OVERDUE' }, { status: 'OVERDUE', overdueStage: 1 }, 'Billing marked overdue.')} className="rounded-lg border border-rose-500/30 px-2.5 py-1.5 text-xs font-semibold text-rose-500 hover:bg-rose-500/10 disabled:opacity-60 transition">Flag overdue</button>
+                      )}
+                      <Link href={`/admin/customers/${s.id}`} className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted/40 transition">Review</Link>
                     </div>
                   </td>
                 </tr>

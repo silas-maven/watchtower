@@ -1,12 +1,20 @@
 import Link from 'next/link';
 import { requirePageUser } from '@/lib/server/pageAuth';
 import { BlurFade } from '@/components/ui/blur-fade';
-import { Calculator, CheckSquare, History, ArrowLeft, ArrowRight, Wallet } from 'lucide-react';
+import { Calculator, CheckSquare, History, ArrowLeft, ArrowRight, Wallet, Briefcase } from 'lucide-react';
 
 export default async function PortfolioToolsPage() {
   await requirePageUser('/app/portfolio-tools');
 
   const tools = [
+    {
+      href: '/app/portfolio-tools/live-portfolio',
+      icon: Briefcase,
+      iconBg: 'bg-emerald-500/10',
+      iconColor: 'text-emerald-500',
+      title: 'Live Portfolio',
+      description: 'Your real holdings, valued against live prices. Track invested cost, current value, profit and return across your own positions, separate from the academy list.',
+    },
     {
       href: '/app/portfolio-tools/virtual-portfolio',
       icon: Wallet,

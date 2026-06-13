@@ -42,6 +42,38 @@ export function normaliseCurrency(code: string | null | undefined): string | nul
   return trimmed.toUpperCase();
 }
 
+export type ChartPoint = { date: string; close: number };
+
+const RANGE_DAYS: Record<string, number> = { '1mo': 30, '3mo': 92, '6mo': 183, '1y': 366 };
+
+/**
+ * Historical daily closes for a symbol over the given range. Used for the asset
+ * detail chart. Returns an empty array if Yahoo has no series for the symbol.
+ */
+export async function fetchYahooChart(symbol: string, range: keyof typeof RANGE_DAYS = '3mo'): Promise<ChartPoint[]> {
+  const sym = symbol.trim().toUpperCase();
+  if (!sym) return [];
+  const days = RANGE_DAYS[range] ?? 92;
+  const period1 = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+  try {
+    const yf = getClient();
+    const result = await yf.chart(sym, { period1, interval: '1d' });
+    const quotes = (result?.quotes ?? []) as Array<{ date?: Date | string; close?: number | null }>;
+    const points: ChartPoint[] = [];
+    for (const q of quotes) {
+      const close = num(q.close);
+      const date = asDate(q.date);
+      if (close != null && close > 0 && date) {
+        points.push({ date: date.toISOString().slice(0, 10), close });
+      }
+    }
+    return points;
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Batch quote fetch. Returns a map keyed by the requested symbol; symbols Yahoo
  * does not recognise are simply absent. Throws only when the whole request fails.

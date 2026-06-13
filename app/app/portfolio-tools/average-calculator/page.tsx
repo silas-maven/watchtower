@@ -6,6 +6,9 @@ import { Card } from '@/components/Card';
 import { BlurFade } from '@/components/ui/blur-fade';
 import { Calculator, ArrowLeft, TrendingDown } from 'lucide-react';
 
+const CURRENCIES = ['GBP', 'USD', 'EUR', 'CAD'] as const;
+const SYMBOLS: Record<string, string> = { GBP: '£', USD: '$', EUR: '€', CAD: 'C$' };
+
 function fmt(n: number, isCurrency = true) {
   if (isNaN(n) || !isFinite(n)) return '—';
   return isCurrency
@@ -18,9 +21,16 @@ export default function AveragePriceCalculator() {
   const [currentPrice, setCurrentPrice] = useState<string>('100');
   const [drop1, setDrop1] = useState<string>('10');
   const [drop2, setDrop2] = useState<string>('20');
+  const [currency, setCurrency] = useState<string>('GBP');
+  const sym = SYMBOLS[currency] ?? '';
 
   useEffect(() => {
     fetch('/api/me/track', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ type: 'AVERAGE_PLAN_CREATE', path: '/app/portfolio-tools/average-calculator' }) }).catch(() => null);
+    // Default the planner currency to the member's base currency.
+    fetch('/api/me/profile', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((j) => { if (j.ok && j.data?.baseCurrency) setCurrency(j.data.baseCurrency); })
+      .catch(() => null);
   }, []);
   
   // Tranche splits based on typical spreadsheet logic (e.g. 33%, 33%, 34%)
@@ -80,10 +90,20 @@ export default function AveragePriceCalculator() {
             <Card title="Input Parameters">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Total Budget (£)</label>
-                  <input 
-                    type="number" 
-                    value={budget} 
+                  <label className="block text-sm font-medium text-foreground mb-1">Currency</label>
+                  <select
+                    value={currency}
+                    onChange={(e) => setCurrency(e.target.value)}
+                    className="w-full rounded-xl border border-border bg-background px-4 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
+                  >
+                    {CURRENCIES.map((c) => <option key={c} value={c}>{SYMBOLS[c]} {c}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Total Budget ({sym})</label>
+                  <input
+                    type="number"
+                    value={budget}
                     onChange={(e) => setBudget(e.target.value)}
                     className="w-full rounded-xl border border-border bg-background px-4 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
                   />
@@ -138,24 +158,24 @@ export default function AveragePriceCalculator() {
                   <tbody className="divide-y divide-border bg-card">
                     <tr className="hover:bg-muted/20 transition">
                       <td className="px-4 py-4"><span className="font-bold">#1 (Initial)</span></td>
-                      <td className="px-4 py-4">£{fmt(numBudget * split1)} <span className="text-xs text-muted-foreground ml-1">({split1 * 100}%)</span></td>
-                      <td className="px-4 py-4 font-mono">£{fmt(price1)}</td>
+                      <td className="px-4 py-4">{sym}{fmt(numBudget * split1)} <span className="text-xs text-muted-foreground ml-1">({split1 * 100}%)</span></td>
+                      <td className="px-4 py-4 font-mono">{sym}{fmt(price1)}</td>
                       <td className="px-4 py-4 font-mono text-right">{fmt(shares1, false)}</td>
-                      <td className="px-4 py-4 font-mono font-bold text-primary text-right">£{fmt(avg1)}</td>
+                      <td className="px-4 py-4 font-mono font-bold text-primary text-right">{sym}{fmt(avg1)}</td>
                     </tr>
                     <tr className="hover:bg-muted/20 transition">
                       <td className="px-4 py-4"><span className="font-bold">#2 (-{numDrop1}%)</span></td>
-                      <td className="px-4 py-4">£{fmt(numBudget * split2)} <span className="text-xs text-muted-foreground ml-1">({split2 * 100}%)</span></td>
-                      <td className="px-4 py-4 font-mono">£{fmt(price2)}</td>
+                      <td className="px-4 py-4">{sym}{fmt(numBudget * split2)} <span className="text-xs text-muted-foreground ml-1">({split2 * 100}%)</span></td>
+                      <td className="px-4 py-4 font-mono">{sym}{fmt(price2)}</td>
                       <td className="px-4 py-4 font-mono text-right">{fmt(shares2, false)}</td>
-                      <td className="px-4 py-4 font-mono font-bold text-primary text-right flex items-center justify-end gap-1"><TrendingDown className="h-3 w-3" /> £{fmt(avg2)}</td>
+                      <td className="px-4 py-4 font-mono font-bold text-primary text-right flex items-center justify-end gap-1"><TrendingDown className="h-3 w-3" /> {sym}{fmt(avg2)}</td>
                     </tr>
                     <tr className="hover:bg-muted/20 transition">
                       <td className="px-4 py-4"><span className="font-bold">#3 (-{numDrop2}%)</span></td>
-                      <td className="px-4 py-4">£{fmt(numBudget * split3)} <span className="text-xs text-muted-foreground ml-1">({split3 * 100}%)</span></td>
-                      <td className="px-4 py-4 font-mono">£{fmt(price3)}</td>
+                      <td className="px-4 py-4">{sym}{fmt(numBudget * split3)} <span className="text-xs text-muted-foreground ml-1">({split3 * 100}%)</span></td>
+                      <td className="px-4 py-4 font-mono">{sym}{fmt(price3)}</td>
                       <td className="px-4 py-4 font-mono text-right">{fmt(shares3, false)}</td>
-                      <td className="px-4 py-4 font-mono font-bold text-primary text-right flex items-center justify-end gap-1"><TrendingDown className="h-3 w-3" /> £{fmt(avg3)}</td>
+                      <td className="px-4 py-4 font-mono font-bold text-primary text-right flex items-center justify-end gap-1"><TrendingDown className="h-3 w-3" /> {sym}{fmt(avg3)}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -166,7 +186,7 @@ export default function AveragePriceCalculator() {
                   <div className="text-xs text-emerald-500/70 mt-1">If all three tranches are executed.</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-bold text-emerald-500">£{fmt(avg3)}</div>
+                  <div className="text-2xl font-bold text-emerald-500">{sym}{fmt(avg3)}</div>
                   <div className="text-sm font-mono text-emerald-500/80 mt-0.5">{fmt(cumShares3, false)} total shares</div>
                 </div>
               </div>

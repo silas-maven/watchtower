@@ -2,6 +2,7 @@ import { PortfolioKind } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { fetchFxRates } from '@/lib/market/fx';
 import { computePortfolioSummary, localToGbp, type PortfolioSummary } from '@/lib/portfolio';
+import { getDisplayContext } from '@/lib/server/displayCurrency';
 
 const DEFAULT_VIRTUAL_SIZE_GBP = 5000;
 
@@ -30,6 +31,8 @@ export type VirtualPortfolioView = {
   targetHoldingsCount: number | null;
   holdings: VirtualHolding[];
   summary: PortfolioSummary;
+  displayCurrency: string;
+  gbpRate: number;
 };
 
 export async function getOrCreateVirtualPortfolio(profileId: string) {
@@ -53,7 +56,7 @@ export async function getOrCreateVirtualPortfolio(profileId: string) {
 
 export async function getVirtualPortfolioView(profileId: string): Promise<VirtualPortfolioView> {
   const portfolio = await getOrCreateVirtualPortfolio(profileId);
-  const [holdings, fx] = await Promise.all([
+  const [holdings, fx, display] = await Promise.all([
     prisma.userHolding.findMany({
       where: { profileId, portfolioId: portfolio.id },
       include: {
@@ -64,6 +67,7 @@ export async function getVirtualPortfolioView(profileId: string): Promise<Virtua
       orderBy: { createdAt: 'asc' },
     }),
     fetchFxRates(),
+    getDisplayContext(profileId),
   ]);
 
   const rows: VirtualHolding[] = holdings.map((h) => {
@@ -110,5 +114,7 @@ export async function getVirtualPortfolioView(profileId: string): Promise<Virtua
     targetHoldingsCount: portfolio.targetHoldingsCount,
     holdings: rows,
     summary,
+    displayCurrency: display.currency,
+    gbpRate: display.gbpRate,
   };
 }

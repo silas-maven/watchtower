@@ -15,21 +15,26 @@ export type AssetWithLatest = {
   isManualSignal: boolean;
   currentPrice: number | null;
   dailyChangePct: number | null;
-  series30d: { day: number; price: number }[];
 };
 
-function buildSeries(points: { currentPrice: number | null }[]): { day: number; price: number }[] {
-  return points
-    .map((p, idx) => ({ day: idx + 1, price: p.currentPrice ?? 0 }))
-    .filter((p) => p.price > 0);
-}
-
 export async function getAssetsForDashboard(): Promise<AssetWithLatest[]> {
+  // Only the latest snapshot is needed; pull the minimum columns rather than the
+  // last 30 rows per asset (which was building an unused sparkline).
   const assets = await prisma.asset.findMany({
     where: { isActive: true },
-    include: {
-      rule: true,
-      snapshots: { orderBy: { capturedAt: 'desc' }, take: 30 },
+    select: {
+      id: true,
+      symbol: true,
+      name: true,
+      reason: true,
+      assetType: true,
+      currency: true,
+      rule: { select: { targetEntry: true, targetExit: true, signalOverride: true } },
+      snapshots: {
+        orderBy: { capturedAt: 'desc' },
+        take: 1,
+        select: { currentPrice: true, dailyChangePct: true, dailyLow: true, dailyHigh: true },
+      },
     },
     orderBy: { symbol: 'asc' },
   });
@@ -56,35 +61,6 @@ export async function getAssetsForDashboard(): Promise<AssetWithLatest[]> {
       isManualSignal: asset.rule?.signalOverride != null,
       currentPrice: latest?.currentPrice ?? null,
       dailyChangePct: latest?.dailyChangePct ?? null,
-      series30d: buildSeries([...asset.snapshots].reverse()),
     };
-  });
-}
-
-export async function getPortfolioSummary() {
-  const assets = await prisma.asset.findMany({ where: { isActive: true } });
-
-  const portfolioSize = 5000;
-  const invested = assets.reduce((acc, a) => acc + (a.currentCostGBP ?? 0), 0);
-  const value = assets.reduce((acc, a) => acc + (a.currentValueGBP ?? 0), 0);
-  const cash = portfolioSize - invested;
-  const retPct = portfolioSize ? ((value - invested) / portfolioSize) * 100 : 0;
-
-  return {
-    portfolioSize,
-    invested,
-    value,
-    cash,
-    retPct,
-  };
-}
-
-export async function getAssetById(id: string) {
-  return prisma.asset.findUnique({
-    where: { id },
-    include: {
-      rule: true,
-      snapshots: { orderBy: { capturedAt: 'desc' }, take: 30 },
-    },
   });
 }

@@ -17,6 +17,17 @@ Deployed at watchtower-virid.vercel.app (Next.js 16 + Prisma + Supabase `watchto
 - **Marketing pages (Phase 6):** rebuilt landing (`app/page.tsx`) + new `app/pricing` to advanced standard. WebGL hero (`components/marketing/HeroCanvas.tsx`: gold wireframe market terrain, three + @react-three/fiber) loaded `ssr:false` behind content (LCP-safe), reduced-motion fallback via `useSyncExternalStore`, tab-hidden pause, DPR cap 2. GSAP ScrollTrigger reveals (`Reveal.tsx`). Shared `MarketingNav`/`MarketingFooter` (not-financial-advice disclaimer). One `TopNav` line so `/pricing` bypasses the app shell. Copy: UK English, no em/en dashes, no banned words, no return promises.
 - **NOTE on subagents:** the two background subagents originally spawned for news + marketing were orphaned at a session-context boundary (did not survive) and produced nothing; both phases were rebuilt directly in the main session.
 
+## Feedback round (2026-06-13, post-review) — all 8 items addressed
+- **Sign-in routing:** modal sign-in/up now carry `forceRedirectUrl="/app"` (was leaving users on the landing page).
+- **Mock data purged:** deleted dead `lib/mock.ts`; non-admin dashboard now values real holdings (`lib/server/livePortfolio.ts`) or shows an empty state, not a hardcoded £5,000 (removed `getPortfolioSummary`).
+- **Live data on asset pages:** archived 5 dead/broken tickers (CWBR/GNUS/HZD/TOOP/CPE — CPE was the "0 MXN" stale Mexican listing); Asset Library reskinned dark with 14 live assets; asset detail rebuilt with a real Yahoo historical chart (`fetchYahooChart`, `/api/assets/[id]/history`, range selector) replacing the empty sparse one.
+- **Live Portfolio:** new real-holdings view + API (`/app/portfolio-tools/live-portfolio`, `/api/me/portfolio/live`), the missing blotter "Live Portfolio" tab.
+- **Performance:** `getAssetsForDashboard` cut from 30 snapshots/asset to 1 with a projected select (was building an unrendered sparkline); asset-detail API trimmed to 1 snapshot; watchlist-add de-duplicated + usage tracking made fire-and-forget. (Some of the observed lag was `next dev` per-route compile, gone in build.)
+- **News rail:** `MarketPulseRail` — news + X moved to a collapsible sticky right rail on the Command Centre (collapse persists to localStorage); Portfolio Tools tidied into a card row.
+- **Members table:** split mislabeled "Portfolio Signal" into aligned Declared/Avg columns; actions made contextual (3-4 relevant buttons, not 6 always-on).
+- **Base currency (app-wide):** `Profile.baseCurrency` (migration `20260613040000_profile_base_currency`), `lib/money.ts` + `lib/server/displayCurrency.ts`, Account setting (`BaseCurrencySelect` + `/api/me/profile`), Average Planner currency dropdown (defaults to base), and GBP→base conversion on the dashboard cards, Live Portfolio and Virtual Portfolio displays.
+- Blotter tab mapping (answer to owner): Virtual Portfolio / Average Planner / Trade Journal (Closed Positions) / Due Diligence all present; Live Portfolio was the gap, now built.
+
 ## Verification (2026-06-13, full)
 - `npm run typecheck`: clean. `npm run lint`: 0 errors (7 pre-existing warnings). `npm run test`: 26/26 pass. `npm run build`: success, all routes compile.
 - Live-DB verified: market refresh (14/19 real quotes), member brief, daily brief + weekly digest via OpenRouter gpt-oss-120b (dash-clean), member intelligence, news aggregator.

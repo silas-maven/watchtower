@@ -46,7 +46,7 @@ function JoinButton({ signedIn, label }: { signedIn: boolean; label: string }) {
     );
   }
   return (
-    <SignUpButton mode="modal">
+    <SignUpButton mode="modal" forceRedirectUrl="/app" signInForceRedirectUrl="/app">
       <button className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground transition hover:brightness-110">
         {label} <ArrowRight className="h-4 w-4" />
       </button>

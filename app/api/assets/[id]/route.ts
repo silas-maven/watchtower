@@ -18,7 +18,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       where: { id },
       include: {
         rule: true,
-        snapshots: { orderBy: { capturedAt: 'desc' }, take: 30 },
+        snapshots: { orderBy: { capturedAt: 'desc' }, take: 1 },
       },
     });
 

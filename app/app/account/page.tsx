@@ -1,6 +1,7 @@
 import { Card } from '@/components/Card';
 import { Badge } from '@/components/Badge';
 import { BillingPanel } from '@/components/BillingPanel';
+import { BaseCurrencySelect } from '@/components/BaseCurrencySelect';
 import { BlurFade } from '@/components/ui/blur-fade';
 import { requirePageUser } from '@/lib/server/pageAuth';
 import { prisma } from '@/lib/prisma';
@@ -10,9 +11,10 @@ export const dynamic = 'force-dynamic';
 export default async function AccountPage() {
   const user = await requirePageUser('/app/account');
 
-  const [customer, mirror] = await Promise.all([
+  const [customer, mirror, profile] = await Promise.all([
     prisma.stripeCustomer.findUnique({ where: { profileId: user.id } }).catch(() => null),
     prisma.subscriptionMirror.findUnique({ where: { profileId: user.id } }).catch(() => null),
+    prisma.profile.findUnique({ where: { id: user.id }, select: { baseCurrency: true } }).catch(() => null),
   ]);
 
   return (
@@ -47,6 +49,12 @@ export default async function AccountPage() {
               <div className="mt-1"><Badge tone={user.accessState === 'ACTIVE' ? 'emerald' : 'amber'}>{user.accessState}</Badge></div>
             </div>
           </div>
+        </Card>
+      </BlurFade>
+
+      <BlurFade delay={0.12}>
+        <Card title="Preferences">
+          <BaseCurrencySelect initial={profile?.baseCurrency ?? 'GBP'} />
         </Card>
       </BlurFade>
 
