@@ -4,6 +4,7 @@ import { fromCaughtError } from '@/lib/route';
 import { assertCronSecret } from '@/lib/security';
 
 export const runtime = 'nodejs';
+export const maxDuration = 300;
 
 async function run() {
   try {

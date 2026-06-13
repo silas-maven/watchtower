@@ -1,8 +1,7 @@
-import OpenAI from 'openai';
 import { Role } from '@prisma/client';
 import { z } from 'zod';
 import { fail, ok } from '@/lib/api';
-import { OPENAI_MODEL, optionalEnv } from '@/lib/env';
+import { callJsonModel, hasLlmProvider } from '@/lib/ai/llm';
 import { requireRole } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { fromCaughtError } from '@/lib/route';
@@ -10,6 +9,7 @@ import { fromCaughtError } from '@/lib/route';
 const Schema = z.object({ assetId: z.string() });
 
 export const runtime = 'nodejs';
+export const maxDuration = 180;
 
 function fallbackInsight(symbol: string, state: string) {
   return {
@@ -40,54 +40,24 @@ export async function POST(req: Request) {
     const latest = asset.snapshots[0];
     const fallback = fallbackInsight(asset.symbol, latest?.signalState ?? 'NONE');
 
-    const apiKey = optionalEnv('OPENAI_API_KEY');
-    if (!apiKey) {
+    if (!hasLlmProvider()) {
       return ok({ assetId: asset.id, ...fallback });
     }
 
     try {
-      const client = new OpenAI({ apiKey });
-      const response = await client.responses.create({
-        model: OPENAI_MODEL,
-        input: [
-          {
-            role: 'system',
-            content:
-              'You are a concise financial analyst. Return strict JSON with summary (string), bullets (string array max 4), confidence (0-100 number).',
-          },
-          {
-            role: 'user',
-            content: JSON.stringify({
-              symbol: asset.symbol,
-              name: asset.name,
-              signalState: latest?.signalState ?? 'NONE',
-              currentPrice: latest?.currentPrice,
-              dailyChangePct: latest?.dailyChangePct,
-              targetEntry: asset.rule?.targetEntry,
-              targetExit: asset.rule?.targetExit,
-            }),
-          },
-        ],
-        text: {
-          format: {
-            type: 'json_schema',
-            name: 'asset_insight',
-            schema: {
-              type: 'object',
-              properties: {
-                summary: { type: 'string' },
-                bullets: { type: 'array', items: { type: 'string' } },
-                confidence: { type: 'number' },
-              },
-              required: ['summary', 'bullets', 'confidence'],
-              additionalProperties: false,
-            },
-            strict: true,
-          },
-        },
-      });
+      const { text, model } = await callJsonModel(
+        'You are a concise financial analyst. Return a strict JSON object with summary (string), bullets (string array, max 4), confidence (number 0-100). Use UK English. Do not predict prices.',
+        JSON.stringify({
+          symbol: asset.symbol,
+          name: asset.name,
+          signalState: latest?.signalState ?? 'NONE',
+          currentPrice: latest?.currentPrice,
+          dailyChangePct: latest?.dailyChangePct,
+          targetEntry: asset.rule?.targetEntry,
+          targetExit: asset.rule?.targetExit,
+        }),
+      );
 
-      const text = response.output_text?.trim();
       if (!text) return ok({ assetId: asset.id, ...fallback });
 
       const parsedOutput = JSON.parse(text) as {
@@ -105,7 +75,7 @@ export async function POST(req: Request) {
         summary: parsedOutput.summary,
         bullets: parsedOutput.bullets.slice(0, 4),
         confidence: Math.max(0, Math.min(100, Math.round(parsedOutput.confidence ?? 60))),
-        model: OPENAI_MODEL,
+        model,
       });
     } catch {
       return ok({ assetId: asset.id, ...fallback });

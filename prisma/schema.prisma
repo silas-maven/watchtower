@@ -87,6 +87,21 @@ enum SignalEventType {
   @@map("watchtower_spa_signal_event_type")
 }
 
+enum SignalOverride {
+  FORCE_BUY
+  FORCE_SELL
+  SUPPRESS
+
+  @@map("watchtower_spa_signal_override")
+}
+
+enum PortfolioKind {
+  REAL
+  VIRTUAL
+
+  @@map("watchtower_spa_portfolio_kind")
+}
+
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -239,13 +254,14 @@ model BillingAlert {
 }
 
 model Asset {
-  id        String    @id @default(cuid())
-  symbol    String    @unique
-  name      String
-  reason    String?
-  assetType AssetType @default(STOCK)
-  currency  String    @default("USD")
-  sourceRow Int?
+  id          String    @id @default(cuid())
+  symbol      String    @unique
+  quoteSymbol String?
+  name        String
+  reason      String?
+  assetType   AssetType @default(STOCK)
+  currency    String    @default("USD")
+  sourceRow   Int?
 
   brokerEntryPrice  Float?
   averageEntryPrice Float?
@@ -263,6 +279,8 @@ model Asset {
   pe        Float?
   dataDelay Float?
   marketCap Float?
+
+  nextEarningsDate DateTime?
 
   closeYest Float?
   tags      Json?
@@ -290,6 +308,12 @@ model AssetRule {
   targetEntry Float?
   targetExit  Float?
   note        String?
+
+  signalOverride  SignalOverride?
+  overrideNote    String?
+  overrideSetAt   DateTime?
+  overrideSetById String?
+
   updatedAt   DateTime @updatedAt
 
   asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
@@ -318,6 +342,7 @@ model AssetSnapshot {
 
   signalState SignalState @default(NONE)
   source      String?
+  fetchError  String?
   raw         Json?
 
   asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
@@ -357,19 +382,27 @@ model PersonalWatch {
 }
 
 model UserPortfolio {
-  id                String   @id @default(cuid())
+  id                String        @id @default(cuid())
   profileId         String
-  name              String   @default("Main Portfolio")
+  name              String        @default("Main Portfolio")
+  kind              PortfolioKind @default(REAL)
   declaredValueGBP  Float?
   investedAmountGBP Float?
   cashAmountGBP     Float?
+
+  budgetPerStockGBP   Float?
+  minEntryGBP         Float?
+  targetHoldingsCount Int?
+
   measuredAt        DateTime @default(now())
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profile  Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  holdings UserHolding[]
 
   @@index([profileId, measuredAt(sort: Desc)])
+  @@index([profileId, kind])
   @@map("watchtower_spa_user_portfolios")
 }
 
@@ -377,6 +410,7 @@ model UserHolding {
   id              String   @id @default(cuid())
   profileId       String
   assetId         String
+  portfolioId     String?
   shares          Float?
   averagePrice    Float?
   investedGBP     Float?
@@ -385,11 +419,13 @@ model UserHolding {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  asset   Asset   @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  profile   Profile        @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  asset     Asset          @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  portfolio UserPortfolio? @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
 
-  @@unique([profileId, assetId])
+  @@unique([profileId, assetId, portfolioId])
   @@index([assetId])
+  @@index([portfolioId])
   @@map("watchtower_spa_user_holdings")
 }
 
@@ -431,9 +467,11 @@ model AveragePlan {
   tradeOneGBP            Float?
   tradeTwoGBP            Float?
   tradeThreeGBP          Float?
+  tradeFourGBP           Float?
   targetPriceOne         Float?
   targetPriceTwo         Float?
   targetPriceThree       Float?
+  targetPriceFour        Float?
   calculatedAveragePrice Float?
   calculatedShares       Float?
   createdAt              DateTime @default(now())
@@ -503,13 +541,52 @@ model DailyBrief {
   newToday    Json
   droppedOff  Json
   insights    Json
-  model       String
-  isFallback  Boolean  @default(false)
-  generatedAt DateTime @default(now())
+  model           String
+  isFallback      Boolean  @default(false)
+  generationError String?
+  generatedAt     DateTime @default(now())
 
   @@unique([briefDate, timezone])
   @@index([briefDate(sort: Desc)])
   @@map("watchtower_spa_daily_briefs")
+}
+
+model WeeklyDigest {
+  id              String   @id @default(cuid())
+  weekStart       DateTime
+  timezone        String
+  summary         String
+  sections        Json
+  model           String
+  isFallback      Boolean  @default(false)
+  generationError String?
+  generatedAt     DateTime @default(now())
+
+  @@unique([weekStart, timezone])
+  @@index([weekStart(sort: Desc)])
+  @@map("watchtower_spa_weekly_digests")
+}
+
+model PlatformSetting {
+  key         String   @id
+  value       Json
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("watchtower_spa_platform_settings")
+}
+
+model JobRun {
+  id         String    @id @default(cuid())
+  job        String
+  status     String
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  stats      Json?
+  error      String?
+
+  @@index([job, startedAt(sort: Desc)])
+  @@map("watchtower_spa_job_runs")
 }
 
 model Notification {

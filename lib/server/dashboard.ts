@@ -1,6 +1,6 @@
 import { SignalState } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { computeSignalState } from '@/lib/signals/engine';
+import { computeSignalState, effectiveSignalState } from '@/lib/signals/engine';
 
 export type AssetWithLatest = {
   id: string;
@@ -12,6 +12,7 @@ export type AssetWithLatest = {
   targetEntry: number | null;
   targetExit: number | null;
   signalState: SignalState;
+  isManualSignal: boolean;
   currentPrice: number | null;
   dailyChangePct: number | null;
   series30d: { day: number; price: number }[];
@@ -35,12 +36,13 @@ export async function getAssetsForDashboard(): Promise<AssetWithLatest[]> {
 
   return assets.map((asset) => {
     const latest = asset.snapshots[0];
-    const state = computeSignalState({
+    const computed = computeSignalState({
       dailyLow: latest?.dailyLow ?? null,
       dailyHigh: latest?.dailyHigh ?? null,
       targetEntry: asset.rule?.targetEntry ?? null,
       targetExit: asset.rule?.targetExit ?? null,
     });
+    const state = effectiveSignalState(computed, asset.rule?.signalOverride);
     return {
       id: asset.id,
       symbol: asset.symbol,
@@ -51,6 +53,7 @@ export async function getAssetsForDashboard(): Promise<AssetWithLatest[]> {
       targetEntry: asset.rule?.targetEntry ?? null,
       targetExit: asset.rule?.targetExit ?? null,
       signalState: state ?? SignalState.NONE,
+      isManualSignal: asset.rule?.signalOverride != null,
       currentPrice: latest?.currentPrice ?? null,
       dailyChangePct: latest?.dailyChangePct ?? null,
       series30d: buildSeries([...asset.snapshots].reverse()),

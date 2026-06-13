@@ -3,6 +3,7 @@ import { computeSignalState } from '@/lib/signals/engine';
 type FxRates = {
   USD: number;
   EUR: number;
+  CAD?: number;
 };
 
 export type SpreadsheetInputs = {
@@ -17,6 +18,7 @@ export type SpreadsheetInputs = {
   dailyHigh: number | null;
   dailyLow: number | null;
   low52: number | null;
+  high52?: number | null;
   targetEntry: number | null;
   targetExit: number | null;
   fx: FxRates;
@@ -25,12 +27,15 @@ export type SpreadsheetInputs = {
 export type SpreadsheetDerived = {
   currentCostGBP: number | null;
   currentValueGBP: number | null;
+  profitGBP: number | null;
   weightPct: number | null;
   returnPct: number | null;
   dailyChange: number | null;
   dailyChangePct: number | null;
   rangeVsYClosePct: number | null;
   priceVsYearLowPct: number | null;
+  // The blotter shows the string "YEAR HIGH" when price equals the 52w high.
+  priceVsYearHighPct: number | 'YEAR HIGH' | null;
   signalState: 'NONE' | 'BUY' | 'SELL' | 'BOTH';
   tradeAlertText: string;
 };
@@ -93,6 +98,7 @@ function toGbp(value: number | null, currency: string, fx: FxRates): number | nu
   if (ccy === 'GBX') return value / 100;
   if (ccy === 'USD') return value / fx.USD;
   if (ccy === 'EUR') return value / fx.EUR;
+  if (ccy === 'CAD' && fx.CAD) return value / fx.CAD;
   return value;
 }
 
@@ -132,6 +138,16 @@ export function computeSpreadsheetDerived(input: SpreadsheetInputs): Spreadsheet
   const priceVsYearLowPct =
     input.currentPrice != null && input.low52 ? pct(input.currentPrice / input.low52 - 1) : null;
 
+  // Spreadsheet: if E/AC-1 == 0% show "YEAR HIGH", else the percentage.
+  let priceVsYearHighPct: number | 'YEAR HIGH' | null = null;
+  if (input.currentPrice != null && input.high52) {
+    const ratio = input.currentPrice / input.high52 - 1;
+    priceVsYearHighPct = ratio === 0 ? 'YEAR HIGH' : pct(ratio);
+  }
+
+  const profitGBP =
+    currentValueGBP != null && currentCostGBP != null ? currentValueGBP - currentCostGBP : null;
+
   const signalState = computeSignalState({
     dailyLow: input.dailyLow,
     dailyHigh: input.dailyHigh,
@@ -147,12 +163,14 @@ export function computeSpreadsheetDerived(input: SpreadsheetInputs): Spreadsheet
   return {
     currentCostGBP: asNumber(currentCostGBP),
     currentValueGBP: asNumber(currentValueGBP),
+    profitGBP: asNumber(profitGBP),
     weightPct: asNumber(weightPct),
     returnPct: asNumber(returnPct),
     dailyChange: asNumber(dailyChange),
     dailyChangePct: asNumber(dailyChangePct),
     rangeVsYClosePct: asNumber(rangeVsYClosePct),
     priceVsYearLowPct: asNumber(priceVsYearLowPct),
+    priceVsYearHighPct: typeof priceVsYearHighPct === 'number' ? asNumber(priceVsYearHighPct) : priceVsYearHighPct,
     signalState,
     tradeAlertText,
   };

@@ -1,35 +1,30 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Plus, Star, Trash2, Pencil, Check, X } from 'lucide-react';
 import { Card } from '@/components/Card';
 import { Badge } from '@/components/Badge';
-import { HelpTip } from '@/components/ui/HelpTip';
 import { useToast } from '@/components/ui/ToastProvider';
 
 type AssetRow = {
   id: string;
   symbol: string;
   name: string;
-  reason: string | null;
   assetType: string;
   currency: string;
   targetEntry: number | null;
   targetExit: number | null;
-  watched: boolean;
   latestSnapshot: {
-    capturedAt?: string;
     currentPrice: number | null;
     dailyChangePct: number | null;
     dailyHigh?: number | null;
     dailyLow?: number | null;
-    low52?: number | null;
-    high52?: number | null;
-    beta?: number | null;
-    volumeAvg?: number | null;
     signalState: 'NONE' | 'BUY' | 'SELL' | 'BOTH';
   } | null;
 };
+
+type Watchlist = { id: string; name: string; isDefault: boolean; assetIds: string[] };
 
 function fmt(n: number) {
   return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -42,148 +37,264 @@ function toneForSignal(state: string) {
   return 'zinc' as const;
 }
 
-export default function CommunityPage() {
+export default function WatchlistsPage() {
   const [assets, setAssets] = useState<AssetRow[]>([]);
+  const [lists, setLists] = useState<Watchlist[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyAssetId, setBusyAssetId] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [search, setSearch] = useState('');
   const { pushToast } = useToast();
 
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch('/api/assets', { cache: 'no-store' });
-        const json = (await res.json()) as { ok: boolean; data?: { assets: AssetRow[] }; error?: { message?: string } };
-        if (!json.ok) {
-          if (!cancelled) setError(json.error?.message ?? 'Unable to load community watchlist');
-          return;
-        }
-        if (!cancelled) setAssets(json.data?.assets ?? []);
-      } catch {
-        if (!cancelled) setError('Unable to load community watchlist');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const myWatchlist = useMemo(() => assets.filter((a) => a.watched), [assets]);
-  const activeSignals = useMemo(
-    () => assets.filter((a) => a.latestSnapshot?.signalState && a.latestSnapshot.signalState !== 'NONE'),
-    [assets],
-  );
-
-  async function toggleWatch(asset: AssetRow) {
-    setBusyAssetId(asset.id);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const method = asset.watched ? 'DELETE' : 'POST';
-      const res = await fetch(`/api/me/watchlist/${asset.id}`, { method });
-      const json = (await res.json()) as { ok: boolean };
-      if (!json.ok) {
-        pushToast('Could not update watchlist selection.', 'error');
+      const [assetsRes, listsRes] = await Promise.all([
+        fetch('/api/assets', { cache: 'no-store' }),
+        fetch('/api/me/watchlists', { cache: 'no-store' }),
+      ]);
+      const assetsJson = await assetsRes.json();
+      const listsJson = await listsRes.json();
+      if (!assetsJson.ok || !listsJson.ok) {
+        setError(assetsJson.error?.message ?? listsJson.error?.message ?? 'Unable to load watchlists');
         return;
       }
-
-      setAssets((prev) => prev.map((a) => (a.id === asset.id ? { ...a, watched: !a.watched } : a)));
-      pushToast(asset.watched ? `Removed ${asset.symbol} from My Watchlist.` : `Added ${asset.symbol} to My Watchlist.`, 'success');
+      setAssets(assetsJson.data?.assets ?? []);
+      const loaded: Watchlist[] = listsJson.data?.watchlists ?? [];
+      setLists(loaded);
+      setActiveId((prev) => prev ?? loaded.find((l) => l.isDefault)?.id ?? loaded[0]?.id ?? null);
     } catch {
-      pushToast('Could not update watchlist selection.', 'error');
+      setError('Unable to load watchlists');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const activeList = useMemo(() => lists.find((l) => l.id === activeId) ?? null, [lists, activeId]);
+  const activeAssetIds = useMemo(() => new Set(activeList?.assetIds ?? []), [activeList]);
+
+  const listAssets = useMemo(() => assets.filter((a) => activeAssetIds.has(a.id)), [assets, activeAssetIds]);
+  const filteredMaster = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return assets;
+    return assets.filter((a) => a.symbol.toLowerCase().includes(q) || a.name.toLowerCase().includes(q));
+  }, [assets, search]);
+
+  async function toggleItem(asset: AssetRow) {
+    if (!activeList) return;
+    setBusyAssetId(asset.id);
+    const inList = activeAssetIds.has(asset.id);
+    try {
+      const res = await fetch(`/api/me/watchlists/${activeList.id}/items/${asset.id}`, { method: inList ? 'DELETE' : 'POST' });
+      const json = await res.json();
+      if (!json.ok) {
+        pushToast(json.error?.message ?? 'Could not update list', 'error');
+        return;
+      }
+      setLists((prev) =>
+        prev.map((l) =>
+          l.id === activeList.id
+            ? { ...l, assetIds: inList ? l.assetIds.filter((x) => x !== asset.id) : [...l.assetIds, asset.id] }
+            : l,
+        ),
+      );
+    } catch {
+      pushToast('Could not update list', 'error');
     } finally {
       setBusyAssetId(null);
     }
   }
 
+  async function createList() {
+    const name = window.prompt('Name your new list');
+    if (!name?.trim()) return;
+    try {
+      const res = await fetch('/api/me/watchlists', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name: name.trim() }),
+      });
+      const json = await res.json();
+      if (!json.ok) {
+        pushToast(json.error?.message ?? 'Could not create list', 'error');
+        return;
+      }
+      setLists((prev) => [...prev, json.data.watchlist]);
+      setActiveId(json.data.watchlist.id);
+      pushToast(`Created ${json.data.watchlist.name}.`, 'success');
+    } catch {
+      pushToast('Could not create list', 'error');
+    }
+  }
+
+  async function renameList(id: string) {
+    if (!renameValue.trim()) {
+      setRenaming(null);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/me/watchlists/${id}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name: renameValue.trim() }),
+      });
+      const json = await res.json();
+      if (!json.ok) {
+        pushToast(json.error?.message ?? 'Could not rename list', 'error');
+        return;
+      }
+      setLists((prev) => prev.map((l) => (l.id === id ? { ...l, name: renameValue.trim() } : l)));
+      pushToast('List renamed.', 'success');
+    } catch {
+      pushToast('Could not rename list', 'error');
+    } finally {
+      setRenaming(null);
+    }
+  }
+
+  async function deleteList(id: string) {
+    if (lists.length <= 1) {
+      pushToast('Keep at least one list.', 'error');
+      return;
+    }
+    if (!window.confirm('Delete this list? The assets stay on the master watchlist.')) return;
+    try {
+      const res = await fetch(`/api/me/watchlists/${id}`, { method: 'DELETE' });
+      const json = await res.json();
+      if (!json.ok) {
+        pushToast(json.error?.message ?? 'Could not delete list', 'error');
+        return;
+      }
+      const remaining = lists.filter((l) => l.id !== id);
+      setLists(remaining);
+      if (activeId === id) setActiveId(remaining[0]?.id ?? null);
+      pushToast('List deleted.', 'success');
+    } catch {
+      pushToast('Could not delete list', 'error');
+    }
+  }
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">Community Watchlist</h1>
-        <p className="mt-1 text-sm text-zinc-600">
-          This is the member flow: view the full master watchlist, then star assets into your own selected watchlist.
-        </p>
+    <div className="space-y-8 pb-12">
+      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+        <div>
+          <div className="text-xs font-bold uppercase tracking-[0.28em] text-primary">Watchlists</div>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">Master list and your sublists</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+            The academy curates the master watchlist. You cannot change it, but you can build as many personal sublists from it as you like.
+          </p>
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card title="Master Assets">
-          <div className="text-2xl font-semibold">{assets.length}</div>
-          <div className="text-xs text-zinc-500 mt-1">All assets visible to members</div>
-        </Card>
-        <Card title="My Selected Assets">
-          <div className="text-2xl font-semibold">{myWatchlist.length}</div>
-          <div className="text-xs text-zinc-500 mt-1">Starred from the master list</div>
-        </Card>
-        <Card title="Active Signals">
-          <div className="text-2xl font-semibold">{activeSignals.length}</div>
-          <div className="text-xs text-zinc-500 mt-1">BUY / SELL / BOTH currently active</div>
-        </Card>
-      </div>
-
-      {error && (
-        <Card title="Session Required">
-          <div className="text-sm text-zinc-700">
-            {error}. Please <Link className="font-semibold text-blue-700" href="/login">log in</Link> to view member data.
+      {error ? (
+        <Card title="Session required">
+          <div className="text-sm text-muted-foreground">
+            {error}. Please <Link className="font-semibold text-primary" href="/sign-in">sign in</Link> to view your lists.
           </div>
         </Card>
-      )}
-
-      {!error && (
+      ) : (
         <>
-          <Card title="My Watchlist (Selected)">
+          {/* Sublist switcher */}
+          <div className="flex flex-wrap items-center gap-2">
+            {lists.map((l) => (
+              <div
+                key={l.id}
+                className={`group flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition ${
+                  activeId === l.id ? 'border-primary bg-primary/10 text-foreground' : 'border-border text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {renaming === l.id ? (
+                  <span className="flex items-center gap-1">
+                    <input
+                      autoFocus
+                      value={renameValue}
+                      onChange={(e) => setRenameValue(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && renameList(l.id)}
+                      className="w-28 rounded border border-border bg-background px-2 py-0.5 text-sm text-foreground focus:outline-none"
+                    />
+                    <button onClick={() => renameList(l.id)} className="text-emerald-500"><Check className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => setRenaming(null)} className="text-muted-foreground"><X className="h-3.5 w-3.5" /></button>
+                  </span>
+                ) : (
+                  <>
+                    <button onClick={() => setActiveId(l.id)} className="font-semibold">{l.name}</button>
+                    <span className="text-xs text-muted-foreground">{l.assetIds.length}</span>
+                    {l.isDefault && <span className="text-[10px] uppercase tracking-wide text-primary">default</span>}
+                    <button
+                      onClick={() => { setRenaming(l.id); setRenameValue(l.name); }}
+                      className="opacity-0 transition group-hover:opacity-100"
+                      title="Rename"
+                    >
+                      <Pencil className="h-3 w-3 text-muted-foreground" />
+                    </button>
+                    {lists.length > 1 && (
+                      <button onClick={() => deleteList(l.id)} className="opacity-0 transition group-hover:opacity-100" title="Delete">
+                        <Trash2 className="h-3 w-3 text-rose-500" />
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            ))}
+            <button
+              onClick={createList}
+              className="flex items-center gap-1 rounded-full border border-dashed border-border px-3 py-1.5 text-sm text-muted-foreground transition hover:text-foreground"
+            >
+              <Plus className="h-3.5 w-3.5" /> New list
+            </button>
+          </div>
+
+          {/* Active sublist */}
+          <Card title={activeList ? `${activeList.name} (${listAssets.length})` : 'Your list'}>
             {loading ? (
-              <div className="text-sm text-zinc-600">Loading selected assets…</div>
-            ) : myWatchlist.length === 0 ? (
-              <div className="text-sm text-zinc-600">No assets selected yet. Use the star action in Master Watchlist below.</div>
+              <div className="text-sm text-muted-foreground">Loading…</div>
+            ) : listAssets.length === 0 ? (
+              <div className="text-sm text-muted-foreground">This list is empty. Add assets from the master watchlist below.</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                   <thead>
-                    <tr className="border-b border-zinc-200 text-left text-zinc-600">
+                    <tr className="border-b border-border text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
                       <th className="py-2 pr-3">Asset</th>
-                      <th className="py-2 pr-3">Signal <HelpTip text="BUY/SELL/BOTH/NONE based on target levels and day range." /></th>
+                      <th className="py-2 pr-3">Signal</th>
                       <th className="py-2 pr-3">Price</th>
-                      <th className="py-2 pr-3">Day Range <HelpTip text="Intraday low to high range." /></th>
-                      <th className="py-2 pr-3">Targets <HelpTip text="Configured entry and exit trigger levels." /></th>
-                      <th className="py-2 pr-3">52w</th>
-                      <th className="py-2 pr-3">Open</th>
+                      <th className="py-2 pr-3">Targets</th>
+                      <th className="py-2 pr-3"></th>
                     </tr>
                   </thead>
                   <tbody>
-                    {myWatchlist.map((asset) => {
+                    {listAssets.map((asset) => {
                       const signal = asset.latestSnapshot?.signalState ?? 'NONE';
                       return (
-                        <tr key={`my-${asset.id}`} className="border-b border-zinc-100 align-top">
+                        <tr key={`my-${asset.id}`} className="border-b border-border/50 align-top">
                           <td className="py-2 pr-3">
-                            <div className="font-semibold">{asset.symbol}</div>
-                            <div className="text-xs text-zinc-600">{asset.name}</div>
+                            <Link href={`/assets/${asset.id}`} className="font-semibold text-foreground hover:text-primary">{asset.symbol}</Link>
+                            <div className="text-xs text-muted-foreground">{asset.name}</div>
                           </td>
-                          <td className="py-2 pr-3">
-                            <Badge tone={toneForSignal(signal)}>{signal}</Badge>
-                          </td>
-                          <td className="py-2 pr-3">
+                          <td className="py-2 pr-3"><Badge tone={toneForSignal(signal)}>{signal}</Badge></td>
+                          <td className="py-2 pr-3 font-mono">
                             {asset.latestSnapshot?.currentPrice == null ? '—' : `${fmt(asset.latestSnapshot.currentPrice)} ${asset.currency}`}
-                            <div className="text-xs text-zinc-600 mt-1">
-                              {asset.latestSnapshot?.dailyChangePct == null
-                                ? 'No change data'
-                                : `${asset.latestSnapshot.dailyChangePct >= 0 ? '+' : ''}${fmt(asset.latestSnapshot.dailyChangePct)}%`}
+                            <div className={`text-xs ${asset.latestSnapshot?.dailyChangePct == null ? 'text-muted-foreground' : asset.latestSnapshot.dailyChangePct >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                              {asset.latestSnapshot?.dailyChangePct == null ? '—' : `${asset.latestSnapshot.dailyChangePct >= 0 ? '+' : ''}${fmt(asset.latestSnapshot.dailyChangePct)}%`}
                             </div>
                           </td>
-                          <td className="py-2 pr-3 text-xs text-zinc-700">
-                            {asset.latestSnapshot?.dailyLow ?? '—'} - {asset.latestSnapshot?.dailyHigh ?? '—'}
-                          </td>
-                          <td className="py-2 pr-3 text-xs text-zinc-700">
-                            Entry {asset.targetEntry ?? '—'} · Exit {asset.targetExit ?? '—'}
-                          </td>
-                          <td className="py-2 pr-3 text-xs text-zinc-700">
-                            {asset.latestSnapshot?.low52 ?? '—'} / {asset.latestSnapshot?.high52 ?? '—'}
-                          </td>
+                          <td className="py-2 pr-3 text-xs text-muted-foreground">Entry {asset.targetEntry ?? '—'} · Exit {asset.targetExit ?? '—'}</td>
                           <td className="py-2 pr-3">
-                            <Link href={`/assets/${asset.id}`} className="text-sm font-semibold text-blue-700">Open</Link>
+                            <button
+                              onClick={() => toggleItem(asset)}
+                              disabled={busyAssetId === asset.id}
+                              className="rounded-lg border border-border px-2 py-1 text-xs font-semibold text-muted-foreground transition hover:bg-muted/40 disabled:opacity-60"
+                            >
+                              Remove
+                            </button>
                           </td>
                         </tr>
                       );
@@ -194,52 +305,57 @@ export default function CommunityPage() {
             )}
           </Card>
 
-          <Card title="Master Watchlist (All Assets)">
+          {/* Master list */}
+          <Card
+            title="Master watchlist"
+            right={
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search symbol or name"
+                className="w-56 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+              />
+            }
+          >
             {loading ? (
-              <div className="text-sm text-zinc-600">Loading master watchlist…</div>
+              <div className="text-sm text-muted-foreground">Loading master watchlist…</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                   <thead>
-                    <tr className="border-b border-zinc-200 text-left text-zinc-600">
+                    <tr className="border-b border-border text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
                       <th className="py-2 pr-3">Asset</th>
                       <th className="py-2 pr-3">Signal</th>
                       <th className="py-2 pr-3">Price</th>
                       <th className="py-2 pr-3">Change</th>
-                      <th className="py-2 pr-3">Targets</th>
-                      <th className="py-2 pr-3">Action</th>
+                      <th className="py-2 pr-3">{activeList ? `In ${activeList.name}` : 'Add'}</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {assets.map((asset) => {
+                    {filteredMaster.map((asset) => {
                       const signal = asset.latestSnapshot?.signalState ?? 'NONE';
+                      const inList = activeAssetIds.has(asset.id);
                       return (
-                        <tr key={asset.id} className="border-b border-zinc-100 align-top">
+                        <tr key={asset.id} className="border-b border-border/50 align-top">
                           <td className="py-2 pr-3">
-                            <div className="font-semibold">{asset.symbol}</div>
-                            <div className="text-xs text-zinc-600">{asset.name}</div>
+                            <Link href={`/assets/${asset.id}`} className="font-semibold text-foreground hover:text-primary">{asset.symbol}</Link>
+                            <div className="text-xs text-muted-foreground">{asset.name}</div>
                           </td>
-                          <td className="py-2 pr-3">
-                            <Badge tone={toneForSignal(signal)}>{signal}</Badge>
-                          </td>
-                          <td className="py-2 pr-3">
-                            {asset.latestSnapshot?.currentPrice == null ? '—' : `${fmt(asset.latestSnapshot.currentPrice)} ${asset.currency}`}
-                          </td>
-                          <td className="py-2 pr-3">
-                            {asset.latestSnapshot?.dailyChangePct == null
-                              ? '—'
-                              : `${asset.latestSnapshot.dailyChangePct >= 0 ? '+' : ''}${fmt(asset.latestSnapshot.dailyChangePct)}%`}
-                          </td>
-                          <td className="py-2 pr-3 text-xs text-zinc-700">
-                            Entry {asset.targetEntry ?? '—'} · Exit {asset.targetExit ?? '—'}
+                          <td className="py-2 pr-3"><Badge tone={toneForSignal(signal)}>{signal}</Badge></td>
+                          <td className="py-2 pr-3 font-mono">{asset.latestSnapshot?.currentPrice == null ? '—' : `${fmt(asset.latestSnapshot.currentPrice)} ${asset.currency}`}</td>
+                          <td className={`py-2 pr-3 font-mono ${asset.latestSnapshot?.dailyChangePct == null ? 'text-muted-foreground' : asset.latestSnapshot.dailyChangePct >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                            {asset.latestSnapshot?.dailyChangePct == null ? '—' : `${asset.latestSnapshot.dailyChangePct >= 0 ? '+' : ''}${fmt(asset.latestSnapshot.dailyChangePct)}%`}
                           </td>
                           <td className="py-2 pr-3">
                             <button
-                              onClick={() => toggleWatch(asset)}
-                              disabled={busyAssetId === asset.id}
-                              className="rounded-lg border border-zinc-200 px-2 py-1 text-xs font-semibold text-zinc-800 hover:bg-zinc-50 disabled:opacity-60"
+                              onClick={() => toggleItem(asset)}
+                              disabled={busyAssetId === asset.id || !activeList}
+                              className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-semibold transition disabled:opacity-60 ${
+                                inList ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:bg-muted/40'
+                              }`}
                             >
-                              {asset.watched ? 'Unstar' : 'Star'}
+                              <Star className={`h-3 w-3 ${inList ? 'fill-primary' : ''}`} />
+                              {inList ? 'Added' : 'Add'}
                             </button>
                           </td>
                         </tr>

@@ -1,26 +1,60 @@
-import { SignalState } from '@prisma/client';
+import { Prisma, SignalState } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { fetchEquityQuote } from '@/lib/market/equities';
 import { fetchCryptoQuote } from '@/lib/market/crypto';
 import { fetchFxRates, toGbp } from '@/lib/market/fx';
-import { computeSignalState, eventTypeForTransition } from '@/lib/signals/engine';
+import { toQuoteSymbol } from '@/lib/market/symbols';
+import { fetchYahooQuotes, type YahooQuote } from '@/lib/market/yahoo';
+import { computeSignalState, effectiveSignalState, eventTypeForTransition } from '@/lib/signals/engine';
 import { computeSpreadsheetDerived } from '@/lib/formulas';
+import { isMarketOpenForAsset } from '@/lib/time';
+import { dispatchSignalAlerts, type SignalAlert } from '@/lib/alerts/dispatch';
 
 export type RefreshMarketResult = {
   processed: number;
+  refreshed: number;
   updated: number;
   skipped: number;
+  failed: number;
   eventsCreated: number;
+  jobRunId: string;
 };
 
-async function fetchQuoteForAsset(symbol: string, assetType: string) {
-  if (assetType === 'CRYPTO') {
-    return fetchCryptoQuote(symbol);
+const DEFAULT_PORTFOLIO_SIZE_GBP = 5000;
+
+// If an asset has not been snapshotted in this long, refresh it even with its
+// market closed so closing values and 52-week context stay current.
+const STALE_SAFETY_MS = 18 * 60 * 60 * 1000;
+
+async function portfolioSizeGbp(): Promise<number> {
+  try {
+    const setting = await prisma.platformSetting.findUnique({ where: { key: 'portfolio_size_gbp' } });
+    const value = Number(setting?.value);
+    if (Number.isFinite(value) && value > 0) return value;
+  } catch {
+    // settings are optional; fall through
   }
-  return fetchEquityQuote(symbol);
+  return DEFAULT_PORTFOLIO_SIZE_GBP;
 }
 
-export async function refreshMarketData(): Promise<RefreshMarketResult> {
+export async function refreshMarketData(options: { force?: boolean } = {}): Promise<RefreshMarketResult> {
+  const jobRun = await prisma.jobRun.create({ data: { job: 'refresh-market', status: 'running' } });
+  try {
+    const result = await runRefresh(options.force === true, jobRun.id);
+    await prisma.jobRun.update({
+      where: { id: jobRun.id },
+      data: { status: 'success', finishedAt: new Date(), stats: result as unknown as Prisma.InputJsonValue },
+    });
+    return result;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    await prisma.jobRun
+      .update({ where: { id: jobRun.id }, data: { status: 'error', finishedAt: new Date(), error: message } })
+      .catch(() => undefined);
+    throw error;
+  }
+}
+
+async function runRefresh(force: boolean, jobRunId: string): Promise<RefreshMarketResult> {
   const assets = await prisma.asset.findMany({
     where: { isActive: true },
     include: {
@@ -29,19 +63,71 @@ export async function refreshMarketData(): Promise<RefreshMarketResult> {
     },
   });
 
-  const fx = await fetchFxRates();
-  let updated = 0;
-  let skipped = 0;
-  let eventsCreated = 0;
+  const now = Date.now();
+  const due = assets.filter((asset) => {
+    if (force) return true;
+    if (isMarketOpenForAsset(asset.assetType, asset.currency)) return true;
+    const last = asset.snapshots[0]?.capturedAt.getTime() ?? 0;
+    return now - last > STALE_SAFETY_MS;
+  });
 
-  for (const asset of assets) {
+  const result: RefreshMarketResult = {
+    processed: assets.length,
+    refreshed: 0,
+    updated: 0,
+    skipped: assets.length - due.length,
+    failed: 0,
+    eventsCreated: 0,
+    jobRunId,
+  };
+  if (due.length === 0) return result;
+
+  const [fx, portfolioSize] = await Promise.all([fetchFxRates(), portfolioSizeGbp()]);
+  const newAlerts: SignalAlert[] = [];
+
+  const symbolByAssetId = new Map(due.map((asset) => [asset.id, toQuoteSymbol(asset)]));
+  let quotes = new Map<string, YahooQuote>();
+  let batchError: string | null = null;
+  try {
+    quotes = await fetchYahooQuotes([...symbolByAssetId.values()]);
+  } catch (error) {
+    batchError = error instanceof Error ? error.message : String(error);
+  }
+
+  for (const asset of due) {
     const previous = asset.snapshots[0];
-    const quote = await fetchQuoteForAsset(asset.symbol, asset.assetType);
+    const quoteSymbol = symbolByAssetId.get(asset.id) ?? asset.symbol;
+    let quote: YahooQuote | null = quotes.get(quoteSymbol) ?? null;
+    let fetchError: string | null = null;
 
-    if (!quote && !previous) {
-      skipped += 1;
-      continue;
+    if (!quote && asset.assetType === 'CRYPTO') {
+      const cg = await fetchCryptoQuote(asset.symbol);
+      if (cg) quote = { ...cg, quoteCurrency: 'USD', nextEarningsDate: null };
     }
+
+    // A currency clash between a validly-stored currency and the quote means the
+    // bare symbol resolved to a different listing on Yahoo. Reject the quote and
+    // surface the fix (set asset.quoteSymbol) instead of ingesting wrong prices.
+    const storedCurrency = (asset.currency ?? '').toUpperCase();
+    const storedCurrencyValid = /^[A-Z]{3}$/.test(storedCurrency);
+    if (
+      quote?.quoteCurrency &&
+      storedCurrencyValid &&
+      quote.quoteCurrency !== storedCurrency &&
+      !asset.quoteSymbol
+    ) {
+      fetchError = `Currency mismatch for ${quoteSymbol}: stored ${storedCurrency}, quote ${quote.quoteCurrency}. Set an explicit quote symbol.`;
+      quote = null;
+    }
+
+    if (!quote && !fetchError) {
+      fetchError = batchError ?? `No quote for ${quoteSymbol}`;
+    }
+    if (!quote) result.failed += 1;
+
+    // Otherwise Yahoo is authoritative for the trading currency; the spreadsheet
+    // import left some assets with #N/A placeholders.
+    const currency = quote?.quoteCurrency && quote.quoteCurrency !== asset.currency ? quote.quoteCurrency : asset.currency;
 
     const merged = {
       currentPrice: quote?.currentPrice ?? previous?.currentPrice ?? null,
@@ -60,18 +146,19 @@ export async function refreshMarketData(): Promise<RefreshMarketResult> {
       source: quote?.source ?? 'fallback-previous',
     };
 
-    const signalState = computeSignalState({
+    const computed = computeSignalState({
       dailyLow: merged.dailyLow,
       dailyHigh: merged.dailyHigh,
       targetEntry: asset.rule?.targetEntry ?? null,
       targetExit: asset.rule?.targetExit ?? null,
     });
+    const signalState = effectiveSignalState(computed, asset.rule?.signalOverride);
 
     const parity = computeSpreadsheetDerived({
       symbol: asset.symbol,
       name: asset.name,
-      currency: asset.currency,
-      portfolioSize: 5000,
+      currency,
+      portfolioSize,
       shares: asset.shares,
       entryPrice: asset.brokerEntryPrice,
       currentPrice: merged.currentPrice,
@@ -103,7 +190,10 @@ export async function refreshMarketData(): Promise<RefreshMarketResult> {
         dataDelay: merged.dataDelay,
         signalState,
         source: merged.source,
+        fetchError,
         raw: {
+          quoteSymbol,
+          jobRunId,
           formulaParity: {
             currentCostGBP: parity.currentCostGBP,
             currentValueGBP: parity.currentValueGBP,
@@ -117,29 +207,36 @@ export async function refreshMarketData(): Promise<RefreshMarketResult> {
       },
     });
 
-    const fromState = previous?.signalState ?? SignalState.NONE;
-    const eventType = eventTypeForTransition(fromState, created.signalState);
-    if (eventType) {
-      await prisma.signalEvent.create({
-        data: {
-          assetId: asset.id,
-          eventType,
-          fromState,
-          toState: created.signalState,
-          metadata: {
-            symbol: asset.symbol,
-            price: created.currentPrice,
-            targetEntry: asset.rule?.targetEntry,
-            targetExit: asset.rule?.targetExit,
+    // Price-driven transitions are suspended while an owner override pins the
+    // state; the admin override route emits its own SignalEvent instead.
+    if (!asset.rule?.signalOverride) {
+      const fromState = previous?.signalState ?? SignalState.NONE;
+      const eventType = eventTypeForTransition(fromState, created.signalState);
+      if (eventType) {
+        await prisma.signalEvent.create({
+          data: {
+            assetId: asset.id,
+            eventType,
+            fromState,
+            toState: created.signalState,
+            metadata: {
+              symbol: asset.symbol,
+              price: created.currentPrice,
+              targetEntry: asset.rule?.targetEntry,
+              targetExit: asset.rule?.targetExit,
+            },
           },
-        },
-      });
-      eventsCreated += 1;
+        });
+        result.eventsCreated += 1;
+        if (created.signalState !== SignalState.NONE) {
+          newAlerts.push({ assetId: asset.id, symbol: asset.symbol, toState: created.signalState, price: created.currentPrice });
+        }
+      }
     }
 
     const price = created.currentPrice;
     const shares = asset.shares;
-    const fallbackCurrentValueGBP = price != null && shares != null ? toGbp(price * shares, asset.currency, fx) : null;
+    const fallbackCurrentValueGBP = price != null && shares != null ? toGbp(price * shares, currency, fx) : null;
     const currentCostGBP = parity.currentCostGBP ?? asset.currentCostGBP;
     const currentValueGBP = parity.currentValueGBP ?? fallbackCurrentValueGBP;
     const returnPct =
@@ -149,6 +246,7 @@ export async function refreshMarketData(): Promise<RefreshMarketResult> {
     await prisma.asset.update({
       where: { id: asset.id },
       data: {
+        currency,
         closeYest: merged.closeYest,
         beta: merged.beta,
         low52: merged.low52,
@@ -157,6 +255,7 @@ export async function refreshMarketData(): Promise<RefreshMarketResult> {
         pe: merged.pe,
         dataDelay: merged.dataDelay,
         marketCap: merged.marketCap,
+        nextEarningsDate: quote?.nextEarningsDate ?? asset.nextEarningsDate,
         currentCostGBP,
         currentValueGBP,
         weightPct: parity.weightPct ?? asset.weightPct,
@@ -164,13 +263,12 @@ export async function refreshMarketData(): Promise<RefreshMarketResult> {
       },
     });
 
-    updated += 1;
+    result.refreshed += 1;
+    if (quote) result.updated += 1;
   }
 
-  return {
-    processed: assets.length,
-    updated,
-    skipped,
-    eventsCreated,
-  };
+  // Inert unless alert delivery is explicitly enabled (off by default).
+  await dispatchSignalAlerts(newAlerts).catch((error) => console.error('[refreshMarket] alert dispatch failed:', error));
+
+  return result;
 }

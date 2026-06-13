@@ -52,7 +52,7 @@ export function TopNav({ children, initialUser }: { children: React.ReactNode; i
   const pathname = usePathname();
   const { isSignedIn } = useUser();
   const isAuthPage = pathname.startsWith('/sign-in') || pathname.startsWith('/sign-up') || pathname.startsWith('/login');
-  const isMarketingPage = pathname === '/';
+  const isMarketingPage = pathname === '/' || pathname === '/pricing';
 
   if (isAuthPage || isMarketingPage) return <>{children}</>;
 

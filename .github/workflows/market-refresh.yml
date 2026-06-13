@@ -1,0 +1,36 @@
+# Frequent market refresh: GitHub Actions is the free scheduler because Vercel
+# crons on this plan only run daily. Hits the CRON_SECRET-guarded endpoint.
+# Repo secret required: CRON_SECRET (same value as the Vercel env var).
+# Optional repo variable: CRON_BASE_URL (defaults to the production deployment).
+name: market-refresh
+
+on:
+  schedule:
+    # Weekdays, every 10 minutes across LSE + US sessions (07:00-21:30 UTC).
+    - cron: '*/10 7-21 * * 1-5'
+    # Weekends, every 2 hours for crypto.
+    - cron: '0 */2 * * 6,0'
+  workflow_dispatch: {}
+
+concurrency:
+  group: market-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Trigger refresh endpoint
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          BASE_URL: ${{ vars.CRON_BASE_URL != '' && vars.CRON_BASE_URL || 'https://watchtower-virid.vercel.app' }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET repo secret is not set" >&2
+            exit 1
+          fi
+          curl -fsS -m 120 -X POST "$BASE_URL/api/cron/refresh-market" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -o /dev/null -w "refresh status: %{http_code}\n"

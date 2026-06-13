@@ -1,7 +1,8 @@
-import OpenAI from 'openai';
-import { APP_TIMEZONE, OPENAI_MODEL, optionalEnv } from '@/lib/env';
+import { APP_TIMEZONE } from '@/lib/env';
 import { prisma } from '@/lib/prisma';
+import { callJsonModel, hasLlmProvider } from '@/lib/ai/llm';
 import { getDailySignalSummary } from '@/lib/server/signals';
+import { getSetting } from '@/lib/server/settings';
 import { startOfDayInTimeZone } from '@/lib/time';
 
 export type DailyBriefPayload = {
@@ -13,6 +14,7 @@ export type DailyBriefPayload = {
   insights: string[];
   model: string;
   isFallback: boolean;
+  generationError: string | null;
 };
 
 export function buildFallbackBrief(input: {
@@ -68,10 +70,11 @@ export function buildFallbackBrief(input: {
     insights: insights.slice(0, 6),
     model: 'deterministic-fallback',
     isFallback: true,
+    generationError: null,
   };
 }
 
-function parseModelOutput(text: string, fallback: DailyBriefPayload): DailyBriefPayload {
+function parseModelOutput(text: string, model: string, fallback: DailyBriefPayload): DailyBriefPayload {
   try {
     const parsed = JSON.parse(text) as Partial<DailyBriefPayload>;
     if (!parsed.summary || !Array.isArray(parsed.insights)) return fallback;
@@ -82,65 +85,45 @@ function parseModelOutput(text: string, fallback: DailyBriefPayload): DailyBrief
       newToday: Array.isArray(parsed.newToday) ? parsed.newToday : fallback.newToday,
       droppedOff: Array.isArray(parsed.droppedOff) ? parsed.droppedOff : fallback.droppedOff,
       insights: parsed.insights,
-      model: OPENAI_MODEL,
+      model,
       isFallback: false,
+      generationError: null,
     };
   } catch {
     return fallback;
   }
 }
 
+const DAILY_BRIEF_SYSTEM =
+  'You are a financial watchlist analyst. Return a strict JSON object with keys: summary (string), buy (string[]), sell (string[]), newToday (string[]), droppedOff (string[]), insights (string[]). Insights must cover market breadth, top movers, and asset-class observations when the data is provided. Use UK English. Do not give trading advice or predict prices.';
+
 export async function generateDailyBrief(forDate = new Date()): Promise<DailyBriefPayload> {
   const signal = await getDailySignalSummary(forDate.toISOString().slice(0, 10));
   const fallback = buildFallbackBrief(signal);
 
-  const apiKey = optionalEnv('OPENAI_API_KEY');
-  if (!apiKey) {
-    return fallback;
+  const enabled = await getSetting('ai_briefs_enabled');
+  if (!enabled) {
+    return { ...fallback, generationError: 'AI briefs disabled by admin setting.' };
+  }
+
+  if (!hasLlmProvider()) {
+    const message = 'No AI provider configured (set OPENROUTER_API_KEY or OPENAI_API_KEY); using deterministic fallback.';
+    console.error(`[dailyBrief] ${message}`);
+    return { ...fallback, generationError: message };
   }
 
   try {
-    const client = new OpenAI({ apiKey });
-    const response = await client.responses.create({
-      model: OPENAI_MODEL,
-      input: [
-        {
-          role: 'system',
-          content:
-            'You are a financial watchlist analyst. Return strict JSON with keys: summary, buy, sell, newToday, droppedOff, insights. Insights must include market breadth, top movers, and asset-class observations when data is provided.',
-        },
-        {
-          role: 'user',
-          content: JSON.stringify(signal),
-        },
-      ],
-      text: {
-        format: {
-          type: 'json_schema',
-          name: 'daily_brief',
-          schema: {
-            type: 'object',
-            properties: {
-              summary: { type: 'string' },
-              buy: { type: 'array', items: { type: 'string' } },
-              sell: { type: 'array', items: { type: 'string' } },
-              newToday: { type: 'array', items: { type: 'string' } },
-              droppedOff: { type: 'array', items: { type: 'string' } },
-              insights: { type: 'array', items: { type: 'string' } },
-            },
-            required: ['summary', 'insights'],
-            additionalProperties: false,
-          },
-          strict: true,
-        },
-      },
-    });
-
-    const text = response.output_text?.trim();
-    if (!text) return fallback;
-    return parseModelOutput(text, fallback);
-  } catch {
-    return fallback;
+    const { text, model } = await callJsonModel(DAILY_BRIEF_SYSTEM, JSON.stringify(signal));
+    if (!text) {
+      const message = 'The model returned an empty response; using deterministic fallback.';
+      console.error(`[dailyBrief] ${message}`);
+      return { ...fallback, generationError: message };
+    }
+    return parseModelOutput(text, model, fallback);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[dailyBrief] AI generation failed:', message);
+    return { ...fallback, generationError: message };
   }
 }
 
@@ -164,6 +147,7 @@ export async function persistDailyBrief(forDate = new Date()): Promise<DailyBrie
       insights: payload.insights,
       model: payload.model,
       isFallback: payload.isFallback,
+      generationError: payload.generationError,
       generatedAt: new Date(),
     },
     create: {
@@ -177,6 +161,7 @@ export async function persistDailyBrief(forDate = new Date()): Promise<DailyBrie
       insights: payload.insights,
       model: payload.model,
       isFallback: payload.isFallback,
+      generationError: payload.generationError,
     },
   });
 

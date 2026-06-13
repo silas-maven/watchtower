@@ -1,19 +1,27 @@
 import Link from 'next/link';
 import { requirePageUser } from '@/lib/server/pageAuth';
 import { BlurFade } from '@/components/ui/blur-fade';
-import { Calculator, CheckSquare, History, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Calculator, CheckSquare, History, ArrowLeft, ArrowRight, Wallet } from 'lucide-react';
 
 export default async function PortfolioToolsPage() {
   await requirePageUser('/app/portfolio-tools');
 
   const tools = [
     {
+      href: '/app/portfolio-tools/virtual-portfolio',
+      icon: Wallet,
+      iconBg: 'bg-amber-500/10',
+      iconColor: 'text-amber-500',
+      title: 'Virtual Portfolio',
+      description: 'Paper-trade the master watchlist. Add positions with live prices, set your portfolio size and per-stock budget, and watch invested value, return, cash, liquidation value and profit update in real time.',
+    },
+    {
       href: '/app/portfolio-tools/average-calculator',
       icon: Calculator,
       iconBg: 'bg-primary/10',
       iconColor: 'text-primary',
       title: 'Average Planner',
-      description: 'Split your budget into deterministic entry tranches. Models staged buys from the workbook — initial position, second buy, third buy — and calculates your resulting average entry price.',
+      description: 'Split your budget into deterministic entry tranches. Models staged buys from the workbook, initial position, second buy, third buy, and calculates your resulting average entry price.',
     },
     {
       href: '/app/portfolio-tools/due-diligence',

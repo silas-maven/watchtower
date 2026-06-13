@@ -11,6 +11,7 @@ const CreateSchema = z.object({
   reason: z.string().optional().nullable(),
   assetType: z.nativeEnum(AssetType),
   currency: z.string().min(2).max(8),
+  quoteSymbol: z.string().max(24).optional().nullable(),
   targetEntry: z.number().nullable().optional(),
   targetExit: z.number().nullable().optional(),
   currentPrice: z.number().nullable().optional(),
@@ -60,6 +61,7 @@ export async function POST(req: Request) {
         reason: input.reason?.trim() || null,
         assetType: input.assetType,
         currency: input.currency.trim().toUpperCase(),
+        quoteSymbol: input.quoteSymbol?.trim().toUpperCase() || null,
         isActive: true,
         rule: {
           create: {

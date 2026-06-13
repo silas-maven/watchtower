@@ -3,11 +3,13 @@ import { Card } from '@/components/Card';
 import { Badge } from '@/components/Badge';
 import { requirePageUser } from '@/lib/server/pageAuth';
 import { getAssetsForDashboard, getPortfolioSummary } from '@/lib/server/dashboard';
-import { getDailySignalSummary } from '@/lib/server/signals';
 import { prisma } from '@/lib/prisma';
 import { BorderBeam } from '@/components/ui/border-beam';
 import { BlurFade } from '@/components/ui/blur-fade';
-import { Calculator, CheckSquare, History, TrendingDown, TrendingUp } from 'lucide-react';
+import { Calculator, CheckSquare, History, TrendingDown } from 'lucide-react';
+import { NewsFeedCard } from '@/components/news/NewsFeedCard';
+import { XTimelineCard } from '@/components/news/XTimelineCard';
+import { getSetting } from '@/lib/server/settings';
 import { trackEvent } from '@/lib/server/trackEvent';
 
 export const dynamic = 'force-dynamic';
@@ -30,12 +32,12 @@ export default async function MemberDashboard() {
   // Need to get User to find watches, as PersonalWatch uses userId
   const user = await prisma.user.findUnique({ where: { email: profile.email } });
 
-  const [summary, rows, daily, holdings, watches] = await Promise.all([
+  const [summary, rows, holdings, watches, xHandle] = await Promise.all([
     getPortfolioSummary().catch(() => ({ portfolioSize: 0, invested: 0, value: 0, cash: 0, retPct: 0 })),
     getAssetsForDashboard().catch(() => []),
-    getDailySignalSummary().catch(() => ({ buy: [], sell: [], market: { advancers: 0, decliners: 0, activeSignals: 0 } })),
     prisma.userHolding.findMany({ where: { profileId: profile.id } }),
     user ? prisma.personalWatch.findMany({ where: { userId: user.id } }) : Promise.resolve([]),
+    getSetting('news_x_handle').catch(() => 'MarketWatch'),
   ]);
 
   trackEvent(profile.id, 'PAGE_VIEW', undefined, '/app');
@@ -161,6 +163,16 @@ export default async function MemberDashboard() {
                 </div>
               </Link>
             </div>
+          </div>
+        </div>
+      </BlurFade>
+
+      <BlurFade delay={0.4}>
+        <div>
+          <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-muted-foreground">Market Pulse</h3>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <NewsFeedCard />
+            <XTimelineCard handle={xHandle || 'MarketWatch'} />
           </div>
         </div>
       </BlurFade>

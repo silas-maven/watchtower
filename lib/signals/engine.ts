@@ -1,4 +1,4 @@
-import { SignalEventType, SignalState } from '@prisma/client';
+import { SignalEventType, SignalOverride, SignalState } from '@prisma/client';
 
 export type SignalInput = {
   dailyLow: number | null;
@@ -44,4 +44,20 @@ export function isBuyLike(state: SignalState): boolean {
 
 export function isSellLike(state: SignalState): boolean {
   return state === SignalState.SELL || state === SignalState.BOTH;
+}
+
+/**
+ * An owner-set manual override pins the signal regardless of price calculation.
+ * Price-driven transitions must not fire while an override is active; the admin
+ * route that changes the override is responsible for emitting the SignalEvent.
+ */
+export function effectiveSignalState(computed: SignalState, override: SignalOverride | null | undefined): SignalState {
+  if (override === SignalOverride.FORCE_BUY) return SignalState.BUY;
+  if (override === SignalOverride.FORCE_SELL) return SignalState.SELL;
+  if (override === SignalOverride.SUPPRESS) return SignalState.NONE;
+  return computed;
+}
+
+export function isManualState(override: SignalOverride | null | undefined): boolean {
+  return override != null;
 }

@@ -15,6 +15,7 @@ describe('computeSpreadsheetDerived', () => {
       dailyHigh: 125,
       dailyLow: 105,
       low52: 80,
+      high52: 160,
       targetEntry: 115,
       targetExit: 122,
       fx: { USD: 1.25, EUR: 1.15 },
@@ -22,8 +23,10 @@ describe('computeSpreadsheetDerived', () => {
 
     expect(result.currentCostGBP).toBeCloseTo(800, 4);
     expect(result.currentValueGBP).toBeCloseTo(960, 4);
+    expect(result.profitGBP).toBeCloseTo(160, 4);
     expect(result.weightPct).toBeCloseTo(16, 4);
     expect(result.returnPct).toBeCloseTo(20, 4);
+    expect(result.priceVsYearHighPct).toBeCloseTo(-25, 3); // 120/160 - 1
     expect(result.dailyChange).toBeCloseTo(10, 4);
     expect(result.dailyChangePct).toBeCloseTo(9.090909, 3);
     expect(result.rangeVsYClosePct).toBeCloseTo(18.181818, 3);

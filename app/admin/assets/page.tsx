@@ -6,7 +6,7 @@ import { AssetCatalogManager } from '@/components/AssetCatalogManager';
 import { HelpTip } from '@/components/ui/HelpTip';
 import { prisma } from '@/lib/prisma';
 import { requirePageRole } from '@/lib/server/pageAuth';
-import { computeSignalState } from '@/lib/signals/engine';
+import { computeSignalState, effectiveSignalState } from '@/lib/signals/engine';
 import { getFormulaParityProof } from '@/lib/server/formulaParity';
 import { BlurFade } from '@/components/ui/blur-fade';
 
@@ -90,6 +90,12 @@ export default async function AdminPage() {
         <AssetCatalogManager
           initialAssets={assets.map((asset) => {
             const snapshot = asset.snapshots[0];
+            const computed = computeSignalState({
+              dailyLow: snapshot?.dailyLow ?? null,
+              dailyHigh: snapshot?.dailyHigh ?? null,
+              targetEntry: asset.rule?.targetEntry ?? null,
+              targetExit: asset.rule?.targetExit ?? null,
+            });
             return {
               id: asset.id,
               symbol: asset.symbol,
@@ -97,18 +103,17 @@ export default async function AdminPage() {
               reason: asset.reason,
               assetType: asset.assetType,
               currency: asset.currency,
+              quoteSymbol: asset.quoteSymbol ?? null,
               isActive: asset.isActive,
               targetEntry: asset.rule?.targetEntry ?? null,
               targetExit: asset.rule?.targetExit ?? null,
-              signalState: computeSignalState({
-                dailyLow: snapshot?.dailyLow ?? null,
-                dailyHigh: snapshot?.dailyHigh ?? null,
-                targetEntry: asset.rule?.targetEntry ?? null,
-                targetExit: asset.rule?.targetExit ?? null,
-              }),
+              signalState: effectiveSignalState(computed, asset.rule?.signalOverride),
+              override: asset.rule?.signalOverride ?? 'AUTO',
               currentPrice: snapshot?.currentPrice ?? null,
               dailyLow: snapshot?.dailyLow ?? null,
               dailyHigh: snapshot?.dailyHigh ?? null,
+              source: snapshot?.source ?? null,
+              fetchError: snapshot?.fetchError ?? null,
             };
           })}
         />

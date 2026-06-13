@@ -4,7 +4,6 @@ const REQUIRED_IN_PROD = [
   'CRON_SECRET',
   'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY',
   'CLERK_SECRET_KEY',
-  'OPENAI_API_KEY',
 ] as const;
 
 export function env(name: string, fallback?: string): string {
@@ -19,6 +18,7 @@ export function optionalEnv(name: string): string | undefined {
 }
 
 export const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-5-nano-2025-08-07';
+export const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'openai/gpt-oss-120b:free';
 export const APP_TIMEZONE = process.env.APP_TIMEZONE || 'Europe/London';
 
 export function assertRuntimeEnv() {

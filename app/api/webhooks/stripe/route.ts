@@ -1,4 +1,4 @@
-import { SubscriptionStatus } from '@prisma/client';
+import { Role, SubscriptionStatus } from '@prisma/client';
 import { fail, ok } from '@/lib/api';
 import { optionalEnv } from '@/lib/env';
 import { prisma } from '@/lib/prisma';
@@ -19,6 +19,25 @@ async function profileIdFromCustomer(customerId: string | null | undefined) {
   return row?.profileId ?? null;
 }
 
+// checkout.session.completed is the first reliable moment we can bind a Stripe
+// customer to a profile, because the session carries our metadata. Ensure the
+// StripeCustomer link exists so later subscription/invoice events resolve.
+async function profileIdFromMetadata(profileId: string | undefined, customerId: string | null) {
+  if (!profileId) return null;
+  const profile = await prisma.profile.findUnique({ where: { id: profileId } });
+  if (!profile) return null;
+  if (customerId) {
+    await prisma.stripeCustomer
+      .upsert({
+        where: { profileId },
+        update: { stripeCustomerId: customerId },
+        create: { profileId, stripeCustomerId: customerId },
+      })
+      .catch(() => undefined);
+  }
+  return profileId;
+}
+
 export async function POST(req: Request) {
   const stripe = getStripe();
   const webhookSecret = optionalEnv('STRIPE_WEBHOOK_SECRET');
@@ -37,9 +56,22 @@ export async function POST(req: Request) {
 
   if (await prisma.paymentEvent.findUnique({ where: { stripeEventId: event.id } })) return ok({ received: true, duplicate: true });
 
-  const object = event.data.object as { id?: string; customer?: string; subscription?: string; amount_paid?: number; amount_due?: number; currency?: string; status?: string; lines?: { data?: Array<{ period?: { end?: number } }> } };
+  const object = event.data.object as {
+    id?: string;
+    customer?: string;
+    subscription?: string;
+    amount_paid?: number;
+    amount_due?: number;
+    amount_total?: number;
+    currency?: string;
+    status?: string;
+    mode?: string;
+    current_period_end?: number;
+    metadata?: { profileId?: string; product?: string };
+    lines?: { data?: Array<{ period?: { end?: number } }> };
+  };
   const customerId = typeof object.customer === 'string' ? object.customer : null;
-  const profileId = await profileIdFromCustomer(customerId);
+  const profileId = (await profileIdFromCustomer(customerId)) ?? (await profileIdFromMetadata(object.metadata?.profileId, customerId));
 
   await prisma.paymentEvent.create({
     data: {
@@ -72,8 +104,27 @@ export async function POST(req: Request) {
     });
   }
 
+  if (profileId && event.type === 'checkout.session.completed') {
+    // One-time eCourse purchase: surface it to admins (the membership path is
+    // handled by the subscription events below). Subscriptions also land here,
+    // but we only need to confirm the customer link, already done above.
+    if (object.mode === 'payment' || object.metadata?.product === 'ecourse') {
+      await prisma.notification.create({
+        data: {
+          profileId,
+          role: Role.ADMIN,
+          type: 'ecourse_purchase',
+          title: 'eCourse purchased',
+          body: 'A member completed checkout for the SPArtan Investing eCourse.',
+          metadata: { customerId, sessionId: object.id, amount: object.amount_total ?? null },
+        },
+      }).catch(() => undefined);
+    }
+  }
+
   if (profileId && (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.created' || event.type === 'customer.subscription.deleted')) {
-    const periodEnd = object.lines?.data?.[0]?.period?.end;
+    // For subscription events the object is the subscription itself.
+    const periodEnd = object.current_period_end ?? object.lines?.data?.[0]?.period?.end;
     await prisma.subscriptionMirror.upsert({
       where: { profileId },
       update: {

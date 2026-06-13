@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { computeSignalState } from '@/lib/signals/engine';
+import { SignalOverride, SignalState } from '@prisma/client';
+import { computeSignalState, effectiveSignalState } from '@/lib/signals/engine';
 
 describe('computeSignalState', () => {
   it('returns BUY when entry target is inside day range', () => {
@@ -44,5 +45,22 @@ describe('computeSignalState', () => {
         targetExit: null,
       }),
     ).toBe('BUY');
+  });
+});
+
+describe('effectiveSignalState', () => {
+  it('returns the computed state when no override is set', () => {
+    expect(effectiveSignalState(SignalState.BUY, null)).toBe(SignalState.BUY);
+    expect(effectiveSignalState(SignalState.NONE, undefined)).toBe(SignalState.NONE);
+  });
+
+  it('forces BUY/SELL regardless of the calculation', () => {
+    expect(effectiveSignalState(SignalState.NONE, SignalOverride.FORCE_BUY)).toBe(SignalState.BUY);
+    expect(effectiveSignalState(SignalState.BUY, SignalOverride.FORCE_SELL)).toBe(SignalState.SELL);
+  });
+
+  it('suppresses a calculated signal to NONE', () => {
+    expect(effectiveSignalState(SignalState.BUY, SignalOverride.SUPPRESS)).toBe(SignalState.NONE);
+    expect(effectiveSignalState(SignalState.BOTH, SignalOverride.SUPPRESS)).toBe(SignalState.NONE);
   });
 });
