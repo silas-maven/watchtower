@@ -33,6 +33,12 @@ function fmtGBP(value: number) {
   return `£${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 }
 
+function fmtDateTime(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso.slice(0, 16).replace('T', ' ');
+  return d.toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
 function accessTone(state: string) {
   if (state === 'ACTIVE') return 'emerald' as const;
   if (state === 'PAUSED') return 'amber' as const;
@@ -165,9 +171,12 @@ export function MembersHub({ intelligence, subscribers, billingAlerts, auditActi
           ) : (
             billingAlerts.map((notice) => (
               <div key={notice.id} className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-4">
-                <div className="font-bold text-foreground">{notice.title}</div>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="font-bold text-foreground">{notice.title}</div>
+                  <div className="shrink-0 whitespace-nowrap text-xs text-muted-foreground">{fmtDateTime(notice.createdAt)}</div>
+                </div>
                 <div className="mt-1 text-sm text-muted-foreground">{notice.body}</div>
-                <div className="mt-2 text-xs text-muted-foreground">{notice.email ?? 'Unknown'} · {notice.createdAt.slice(0, 16).replace('T', ' ')}</div>
+                <div className="mt-2 text-xs text-muted-foreground">{notice.email ?? 'Unknown'}</div>
               </div>
             ))
           )}
@@ -190,7 +199,7 @@ export function MembersHub({ intelligence, subscribers, billingAlerts, auditActi
                     <Badge tone={accessTone(action.toState)}>{action.toState}</Badge>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {action.reason ?? 'No reason given'} · by {action.actorName ?? 'System'} · {action.createdAt.slice(0, 16).replace('T', ' ')}
+                    {action.reason ?? 'No reason given'} · by {action.actorName ?? 'System'} · {fmtDateTime(action.createdAt)}
                   </div>
                 </div>
               </div>

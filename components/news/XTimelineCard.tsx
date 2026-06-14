@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTheme } from 'next-themes';
 import { ExternalLink } from 'lucide-react';
 
 declare global {
@@ -29,33 +30,48 @@ function ensureWidgetScript(onReady: () => void) {
 
 export function XTimelineCard({ handle = 'MarketWatch' }: { handle?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [loaded, setLoaded] = useState(false);
+  const { resolvedTheme } = useTheme();
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !resolvedTheme) return;
     let cancelled = false;
+
+    // The widget bakes data-theme in at load time, so a light/dark switch needs
+    // a fresh anchor. Rebuild the embed whenever the resolved theme changes.
+    container.innerHTML = '';
+    const anchor = document.createElement('a');
+    anchor.className = 'twitter-timeline';
+    anchor.setAttribute('data-theme', resolvedTheme === 'light' ? 'light' : 'dark');
+    anchor.setAttribute('data-dnt', 'true');
+    anchor.setAttribute('data-chrome', 'noheader nofooter transparent');
+    anchor.setAttribute('data-height', '440');
+    anchor.href = `https://twitter.com/${handle}`;
+    anchor.textContent = `Posts by @${handle}`;
+    container.appendChild(anchor);
 
     ensureWidgetScript(() => {
       if (cancelled) return;
-      window.twttr?.widgets?.load(containerRef.current ?? undefined);
+      window.twttr?.widgets?.load(container);
     });
 
     // If the embed has not rendered an iframe within 5s, show the fallback.
+    // Setting the boolean here (only inside this async callback) also clears a
+    // prior failure when a theme-driven rebuild succeeds.
     const timer = setTimeout(() => {
       if (cancelled) return;
-      const hasIframe = !!containerRef.current?.querySelector('iframe');
-      if (hasIframe) setLoaded(true);
-      else setFailed(true);
+      setFailed(!container.querySelector('iframe'));
     }, 5000);
 
     return () => {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [handle]);
+  }, [handle, resolvedTheme]);
 
   return (
-    <div className="flex h-full flex-col rounded-2xl border border-border bg-card">
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card">
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
         <span className="text-sm font-semibold text-foreground">On X</span>
         <a href={`https://twitter.com/${handle}`} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-primary hover:underline">
@@ -63,8 +79,10 @@ export function XTimelineCard({ handle = 'MarketWatch' }: { handle?: string }) {
         </a>
       </div>
 
-      <div className="relative max-h-[28rem] flex-1 overflow-y-auto px-2 py-2">
-        {failed && !loaded && (
+      {/* The Twitter iframe (data-height=440) owns its own scroll, so the card
+          itself does not scroll — this avoids the double scrollbar. */}
+      <div className="px-2 py-2">
+        {failed && (
           <div className="flex flex-col items-start gap-2 p-3 text-sm text-muted-foreground">
             <span>The X timeline could not load here.</span>
             <a
@@ -77,11 +95,7 @@ export function XTimelineCard({ handle = 'MarketWatch' }: { handle?: string }) {
             </a>
           </div>
         )}
-        <div ref={containerRef} aria-hidden={failed && !loaded}>
-          <a className="twitter-timeline" data-theme="dark" data-dnt="true" data-chrome="noheader nofooter transparent" data-height="440" href={`https://twitter.com/${handle}`}>
-            Posts by @{handle}
-          </a>
-        </div>
+        <div ref={containerRef} className={failed ? 'hidden' : ''} />
       </div>
     </div>
   );

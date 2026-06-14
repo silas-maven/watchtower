@@ -2,9 +2,11 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/Badge';
 import { HelpTip } from '@/components/ui/HelpTip';
 import { useToast } from '@/components/ui/ToastProvider';
+import { RowActionsMenu, type RowAction } from '@/components/ui/RowActionsMenu';
 
 type Status = 'ACTIVE' | 'OVERDUE' | 'PAUSED' | 'REMOVED';
 type AccessState = 'ACTIVE' | 'PAUSED' | 'REMOVED';
@@ -35,10 +37,17 @@ function fmtGBP(value: number | null) {
   return `£${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 }
 
+function fmtDate(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso.slice(0, 10);
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 export function UserManagementPanel({ initialSubscribers }: Props) {
   const [subscribers, setSubscribers] = useState(initialSubscribers);
   const [busyUserId, setBusyUserId] = useState<string | null>(null);
   const { pushToast } = useToast();
+  const router = useRouter();
 
   const counts = useMemo(
     () => ({
@@ -127,6 +136,17 @@ export function UserManagementPanel({ initialSubscribers }: Props) {
           <tbody>
             {subscribers.map((s) => {
               const busy = busyUserId === s.id;
+              const menuActions: RowAction[] = [
+                s.accessState !== 'ACTIVE'
+                  ? { label: 'Activate access', tone: 'success', onClick: () => patchUser(s.id, { accessState: 'ACTIVE' }, { accessState: 'ACTIVE' }, 'Access activated.') }
+                  : { label: 'Pause access', onClick: () => patchUser(s.id, { accessState: 'PAUSED', reason: 'Manual admin pause' }, { accessState: 'PAUSED' }, 'Access paused.') },
+                ...(s.accessState !== 'REMOVED'
+                  ? [{ label: 'Remove access', tone: 'danger' as const, onClick: () => patchUser(s.id, { accessState: 'REMOVED', reason: 'Manual admin removal' }, { accessState: 'REMOVED' }, 'Access removed.') }]
+                  : []),
+                s.status === 'OVERDUE'
+                  ? { label: 'Review member', onClick: () => router.push(`/admin/customers/${s.id}`) }
+                  : { label: 'Flag overdue', tone: 'danger', onClick: () => patchUser(s.id, { status: 'OVERDUE' }, { status: 'OVERDUE', overdueStage: 1 }, 'Billing marked overdue.') },
+              ];
               return (
                 <tr key={s.id} className="border-b border-border/50 last:border-0 hover:bg-muted/20 transition">
                   <td className="px-4 py-3">
@@ -135,34 +155,43 @@ export function UserManagementPanel({ initialSubscribers }: Props) {
                   </td>
                   <td className="px-4 py-3"><Badge tone={tone(s.accessState)}>{s.accessState}</Badge></td>
                   <td className="px-4 py-3">
-                    <Badge tone={tone(s.status)}>{s.status}</Badge>
-                    {(s.status === 'OVERDUE' || s.dueAt) && (
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        {s.dueAt ? `Due ${s.dueAt.slice(0, 10)}` : 'No due date'}{s.status === 'OVERDUE' ? ` · Stage ${s.overdueStage}` : ''}
-                      </div>
-                    )}
+                    <div className="flex flex-col items-start gap-1">
+                      <Badge tone={tone(s.status)}>{s.status}</Badge>
+                      {(s.status === 'OVERDUE' || s.dueAt) && (
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <span className="whitespace-nowrap">{s.dueAt ? `Due ${fmtDate(s.dueAt)}` : 'No due date'}</span>
+                          {s.status === 'OVERDUE' && s.overdueStage > 0 && (
+                            <span className="rounded bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-rose-500">
+                              Stage {s.overdueStage}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-right font-mono text-foreground">{fmtGBP(s.declaredPortfolioGBP)}</td>
                   <td className="px-4 py-3 text-right font-mono text-foreground">{fmtGBP(s.averageInvestmentGBP)}</td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-1.5">
-                      {/* Contextual access controls: only show transitions that make sense */}
-                      {s.accessState !== 'ACTIVE' && (
-                        <button disabled={busy} onClick={() => patchUser(s.id, { accessState: 'ACTIVE' }, { accessState: 'ACTIVE' }, 'Access activated.')} className="rounded-lg border border-emerald-500/30 px-2.5 py-1.5 text-xs font-semibold text-emerald-500 hover:bg-emerald-500/10 disabled:opacity-60 transition">Activate</button>
-                      )}
-                      {s.accessState === 'ACTIVE' && (
-                        <button disabled={busy} onClick={() => patchUser(s.id, { accessState: 'PAUSED', reason: 'Manual admin pause' }, { accessState: 'PAUSED' }, 'Access paused.')} className="rounded-lg border border-amber-500/30 px-2.5 py-1.5 text-xs font-semibold text-amber-500 hover:bg-amber-500/10 disabled:opacity-60 transition">Pause</button>
-                      )}
-                      {s.accessState !== 'REMOVED' && (
-                        <button disabled={busy} onClick={() => patchUser(s.id, { accessState: 'REMOVED', reason: 'Manual admin removal' }, { accessState: 'REMOVED' }, 'Access removed.')} className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted/40 disabled:opacity-60 transition">Remove</button>
-                      )}
-                      {/* Billing action: Mark Paid when overdue, else Flag Overdue */}
+                    {/* One primary action inline, everything else in a tidy "⋯" menu,
+                        so every row aligns to [primary][menu] instead of a 4-button rainbow. */}
+                    <div className="flex items-center justify-end gap-2">
                       {s.status === 'OVERDUE' ? (
-                        <button disabled={busy} onClick={() => markPaid(s.id)} className="rounded-lg bg-primary px-2.5 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60 transition">Mark paid</button>
+                        <button
+                          disabled={busy}
+                          onClick={() => markPaid(s.id)}
+                          className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition hover:brightness-110 disabled:opacity-60 whitespace-nowrap"
+                        >
+                          Mark paid
+                        </button>
                       ) : (
-                        <button disabled={busy} onClick={() => patchUser(s.id, { status: 'OVERDUE' }, { status: 'OVERDUE', overdueStage: 1 }, 'Billing marked overdue.')} className="rounded-lg border border-rose-500/30 px-2.5 py-1.5 text-xs font-semibold text-rose-500 hover:bg-rose-500/10 disabled:opacity-60 transition">Flag overdue</button>
+                        <Link
+                          href={`/admin/customers/${s.id}`}
+                          className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-muted/40 whitespace-nowrap"
+                        >
+                          Review
+                        </Link>
                       )}
-                      <Link href={`/admin/customers/${s.id}`} className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted/40 transition">Review</Link>
+                      <RowActionsMenu disabled={busy} actions={menuActions} />
                     </div>
                   </td>
                 </tr>
