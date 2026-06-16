@@ -1,199 +1,339 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ArrowLeft, Plus, Trash2, Search, X, Star } from 'lucide-react';
 import { Card } from '@/components/Card';
-import { BlurFade } from '@/components/ui/blur-fade';
-import { Calculator, ArrowLeft, TrendingDown } from 'lucide-react';
+import { Badge } from '@/components/Badge';
+import { useToast } from '@/components/ui/ToastProvider';
+import { computeAveragingPlan, type FxRates } from '@/lib/portfolio';
+import { impliedDropPct } from '@/lib/spartan';
 
-const CURRENCIES = ['GBP', 'USD', 'EUR', 'CAD'] as const;
-const SYMBOLS: Record<string, string> = { GBP: '£', USD: '$', EUR: '€', CAD: 'C$' };
+type Asset = {
+  id: string;
+  symbol: string;
+  name: string;
+  currency: string;
+  watched?: boolean;
+  latestSnapshot: { currentPrice: number | null } | null;
+};
+type PlanTranche = { price: number; budgetGBP: number | null; executed: boolean };
+type SavedPlan = { id: string; basePrice: number | null; targetSellPrice: number | null; tranches: PlanTranche[] };
+type Tranche = { price: string; executed: boolean };
 
-function fmt(n: number, isCurrency = true) {
-  if (isNaN(n) || !isFinite(n)) return '—';
-  return isCurrency
-    ? n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    : n.toLocaleString(undefined, { maximumFractionDigits: 4 });
-}
+const SYMBOLS: Record<string, string> = { GBP: '£', USD: '$', EUR: '€', CAD: 'C$', GBX: 'p' };
+const sym = (c: string) => SYMBOLS[c] ?? `${c} `;
+const gbp = (n: number) => `£${n.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+const local = (n: number | null, c: string) => (n == null ? '—' : `${sym(c)}${n.toLocaleString(undefined, { maximumFractionDigits: 2 })}`);
 
-export default function AveragePriceCalculator() {
-  const [budget, setBudget] = useState<string>('1500');
-  const [currentPrice, setCurrentPrice] = useState<string>('100');
-  const [drop1, setDrop1] = useState<string>('10');
-  const [drop2, setDrop2] = useState<string>('20');
-  const [currency, setCurrency] = useState<string>('GBP');
-  const sym = SYMBOLS[currency] ?? '';
+export default function AveragePlannerPage() {
+  const { pushToast } = useToast();
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [fx, setFx] = useState<FxRates>({ USD: 1.27, EUR: 1.17, CAD: 1.84 });
+  const [query, setQuery] = useState('');
+  const [assetId, setAssetId] = useState('');
+  const [budget, setBudget] = useState('1500');
+  const [targetSell, setTargetSell] = useState('');
+  const [tranches, setTranches] = useState<Tranche[]>([{ price: '', executed: false }]);
+  const [planId, setPlanId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [addingWl, setAddingWl] = useState(false);
+
+  const loadAssets = useCallback(async () => {
+    try {
+      const res = await fetch('/api/assets', { cache: 'no-store' });
+      const j = await res.json();
+      if (j.ok) setAssets(j.data.assets ?? []);
+    } catch {
+      /* non-fatal */
+    }
+  }, []);
 
   useEffect(() => {
-    fetch('/api/me/track', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ type: 'AVERAGE_PLAN_CREATE', path: '/app/portfolio-tools/average-calculator' }) }).catch(() => null);
-    // Default the planner currency to the member's base currency.
-    fetch('/api/me/profile', { cache: 'no-store' })
+    loadAssets();
+    fetch('/api/market/fx')
       .then((r) => r.json())
-      .then((j) => { if (j.ok && j.data?.baseCurrency) setCurrency(j.data.baseCurrency); })
-      .catch(() => null);
+      .then((j) => {
+        if (j.ok && j.data.fx) setFx(j.data.fx);
+      })
+      .catch(() => {});
+  }, [loadAssets]);
+
+  const asset = useMemo(() => assets.find((a) => a.id === assetId) ?? null, [assets, assetId]);
+  const currency = asset?.currency ?? 'USD';
+  const currentPrice = asset?.latestSnapshot?.currentPrice ?? null;
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const list = q ? assets.filter((a) => a.symbol.toLowerCase().includes(q) || a.name.toLowerCase().includes(q)) : assets;
+    return list.slice(0, 8);
+  }, [assets, query]);
+
+  const pickAsset = useCallback(async (a: Asset) => {
+    setAssetId(a.id);
+    setQuery('');
+    const px = a.latestSnapshot?.currentPrice;
+    try {
+      const res = await fetch(`/api/me/average-plans?assetId=${a.id}`, { cache: 'no-store' });
+      const j = await res.json();
+      const plan: SavedPlan | undefined = j.ok ? j.data.plans?.[0] : undefined;
+      if (plan) {
+        setPlanId(plan.id);
+        const total = plan.tranches.reduce((s, t) => s + (t.budgetGBP ?? 0), 0);
+        setBudget(total > 0 ? String(total) : '1500');
+        setTargetSell(plan.targetSellPrice != null ? String(plan.targetSellPrice) : '');
+        setTranches(plan.tranches.length ? plan.tranches.map((t) => ({ price: String(t.price), executed: t.executed })) : [{ price: px != null ? String(px) : '', executed: false }]);
+        return;
+      }
+    } catch {
+      /* fall through to a fresh plan */
+    }
+    setPlanId(null);
+    setTargetSell('');
+    setTranches([{ price: px != null ? String(px) : '', executed: false }]);
   }, []);
-  
-  // Tranche splits based on typical spreadsheet logic (e.g. 33%, 33%, 34%)
-  const split1 = 0.33;
-  const split2 = 0.33;
-  const split3 = 0.34;
 
-  const numBudget = parseFloat(budget) || 0;
-  const numPrice = parseFloat(currentPrice) || 0;
-  const numDrop1 = parseFloat(drop1) || 0;
-  const numDrop2 = parseFloat(drop2) || 0;
+  const validIdx = tranches.map((t, i) => ({ t, i })).filter((x) => Number(x.t.price) > 0);
+  const totalBudget = Number(budget) || 0;
+  const n = validIdx.length;
+  const basePrice = Number(validIdx[0]?.t.price) || null;
 
-  // Prices
-  const price1 = numPrice;
-  const price2 = numPrice * (1 - numDrop1 / 100);
-  const price3 = numPrice * (1 - numDrop2 / 100);
+  // Equal budget split across priced tranches (last absorbs the rounding remainder).
+  const allocations = useMemo(() => {
+    if (n === 0 || totalBudget <= 0) return [] as number[];
+    const each = Math.floor((totalBudget / n) * 100) / 100;
+    const arr = Array(n).fill(each);
+    arr[n - 1] = Math.round((totalBudget - each * (n - 1)) * 100) / 100;
+    return arr;
+  }, [n, totalBudget]);
 
-  // Shares bought per tranche
-  const shares1 = (numBudget * split1) / price1;
-  const shares2 = (numBudget * split2) / price2;
-  const shares3 = (numBudget * split3) / price3;
+  const preview = useMemo(() => {
+    if (n === 0 || totalBudget <= 0) return null;
+    return computeAveragingPlan(validIdx.map((x, k) => ({ budgetGBP: allocations[k], targetPrice: Number(x.t.price) })), currency, fx);
+  }, [validIdx, allocations, currency, fx, n, totalBudget]);
 
-  // Cumulative tracking
-  const cumShares1 = shares1;
-  const cumCost1 = numBudget * split1;
-  const avg1 = cumShares1 > 0 ? cumCost1 / cumShares1 : 0;
+  const executed = useMemo(() => {
+    const ex = validIdx.map((x, k) => ({ ...x, k })).filter((x) => x.t.executed);
+    if (ex.length === 0) return null;
+    return computeAveragingPlan(ex.map((x) => ({ budgetGBP: allocations[x.k], targetPrice: Number(x.t.price) })), currency, fx);
+  }, [validIdx, allocations, currency, fx]);
 
-  const cumShares2 = shares1 + shares2;
-  const cumCost2 = cumCost1 + (numBudget * split2);
-  const avg2 = cumShares2 > 0 ? cumCost2 / cumShares2 : 0;
+  async function addToWatchlist() {
+    if (!asset) return;
+    setAddingWl(true);
+    try {
+      const res = await fetch(`/api/me/watchlist/${asset.id}`, { method: 'POST' });
+      const j = await res.json();
+      if (j.ok) {
+        await loadAssets();
+        pushToast('Added to your watchlist.', 'success');
+      } else {
+        pushToast(j.error?.message ?? 'Could not add to watchlist', 'error');
+      }
+    } finally {
+      setAddingWl(false);
+    }
+  }
 
-  const cumShares3 = shares1 + shares2 + shares3;
-  const cumCost3 = cumCost2 + (numBudget * split3);
-  const avg3 = cumShares3 > 0 ? cumCost3 / cumShares3 : 0;
+  async function savePlan() {
+    if (!asset || n === 0 || totalBudget <= 0) {
+      pushToast('Pick a stock, set a budget and at least one tranche price.', 'error');
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch('/api/me/average-plans', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          assetId: asset.id,
+          currency,
+          basePrice,
+          targetSellPrice: targetSell ? Number(targetSell) : null,
+          tranches: validIdx.map((x, k) => ({ price: Number(x.t.price), budgetGBP: allocations[k], executed: x.t.executed })),
+        }),
+      });
+      const j = await res.json();
+      if (!j.ok) {
+        pushToast(j.error?.message ?? 'Could not save plan', 'error');
+        return;
+      }
+      setPlanId(j.data.plan?.id ?? null);
+      pushToast(planId ? 'Averaging plan updated.' : 'Averaging plan saved.', 'success');
+    } catch {
+      pushToast('Could not save plan', 'error');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
-    <div className="space-y-8 pb-12 max-w-5xl mx-auto">
-      <BlurFade delay={0.1}>
-        <div className="mb-4">
-          <Link href="/app" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition">
-            <ArrowLeft className="h-4 w-4" /> Back to Dashboard
-          </Link>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-primary/10 p-3"><Calculator className="h-6 w-6 text-primary" /></div>
+    <div className="space-y-8 pb-12">
+      <div>
+        <Link href="/app/portfolio-tools" className="inline-flex items-center gap-2 text-sm text-muted-foreground transition hover:text-foreground">
+          <ArrowLeft className="h-4 w-4" /> Portfolio Tools
+        </Link>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">Average Planner</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+          Stage a budget across price tranches to plan your average entry, the SPA way. Prices are in the stock&rsquo;s currency; your budget is in £.
+        </p>
+      </div>
+
+      {/* Plan summary: stock selector + target sell */}
+      <Card title="Plan summary">
+        <div className="grid gap-6 lg:grid-cols-2">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">Average Planner</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Digitized Virtual Average Price Calculator from the spreadsheet.</p>
-          </div>
-        </div>
-      </BlurFade>
-
-      <BlurFade delay={0.2}>
-        <div className="grid gap-6 md:grid-cols-12">
-          {/* Inputs */}
-          <div className="md:col-span-4 space-y-4">
-            <Card title="Input Parameters">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Currency</label>
-                  <select
-                    value={currency}
-                    onChange={(e) => setCurrency(e.target.value)}
-                    className="w-full rounded-xl border border-border bg-background px-4 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
-                  >
-                    {CURRENCIES.map((c) => <option key={c} value={c}>{SYMBOLS[c]} {c}</option>)}
-                  </select>
+            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Stock</label>
+            {asset ? (
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2 rounded-xl border border-primary bg-primary/10 px-3 py-2 text-sm">
+                  <span className="font-semibold text-foreground">{asset.symbol}</span>
+                  <span className="text-muted-foreground">{asset.name}</span>
+                  <button onClick={() => { setAssetId(''); setPlanId(null); }} aria-label="Clear" className="text-muted-foreground hover:text-foreground"><X className="h-3.5 w-3.5" /></button>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Total Budget ({sym})</label>
-                  <input
-                    type="number"
-                    value={budget}
-                    onChange={(e) => setBudget(e.target.value)}
-                    className="w-full rounded-xl border border-border bg-background px-4 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Current/Target Entry Price</label>
-                  <input 
-                    type="number" 
-                    value={currentPrice} 
-                    onChange={(e) => setCurrentPrice(e.target.value)}
-                    className="w-full rounded-xl border border-border bg-background px-4 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">Tranche 2 Drop %</label>
-                    <input 
-                      type="number" 
-                      value={drop1} 
-                      onChange={(e) => setDrop1(e.target.value)}
-                      className="w-full rounded-xl border border-border bg-background px-4 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">Tranche 3 Drop %</label>
-                    <input 
-                      type="number" 
-                      value={drop2} 
-                      onChange={(e) => setDrop2(e.target.value)}
-                      className="w-full rounded-xl border border-border bg-background px-4 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
-                    />
-                  </div>
-                </div>
+                {asset.watched ? (
+                  <Badge tone="emerald">On watchlist</Badge>
+                ) : (
+                  <button onClick={addToWatchlist} disabled={addingWl} className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2.5 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/10 disabled:opacity-60">
+                    <Star className="h-3 w-3" /> Add to Watchlist
+                  </button>
+                )}
               </div>
-            </Card>
+            ) : (
+              <div className="relative mt-2">
+                <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2">
+                  <Search className="h-4 w-4 text-muted-foreground" />
+                  <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by symbol or name" className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none" />
+                </div>
+                {(query || filtered.length > 0) && (
+                  <div className="mt-1 max-h-60 overflow-y-auto rounded-lg border border-border bg-card">
+                    {filtered.length === 0 ? (
+                      <div className="px-3 py-2 text-sm text-muted-foreground">No matches.</div>
+                    ) : (
+                      filtered.map((a) => (
+                        <button key={a.id} onClick={() => pickAsset(a)} className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm transition hover:bg-muted/40">
+                          <span><span className="font-semibold text-foreground">{a.symbol}</span> <span className="text-muted-foreground">{a.name}</span></span>
+                          <span className="font-mono text-xs text-muted-foreground">{local(a.latestSnapshot?.currentPrice ?? null, a.currency)}</span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            {asset && (
+              <div className="mt-3 text-sm">
+                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Current price</span>
+                <div className="mt-1 font-mono text-lg font-bold text-foreground">{local(currentPrice, currency)} <span className="text-xs font-normal text-muted-foreground">{currency}</span></div>
+              </div>
+            )}
           </div>
 
-          {/* Results */}
-          <div className="md:col-span-8 space-y-4">
-            <Card title="Execution Plan">
-              <div className="rounded-xl border border-border overflow-hidden">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-muted/50 text-muted-foreground border-b border-border">
-                    <tr>
-                      <th className="px-4 py-3 font-semibold">Tranche</th>
-                      <th className="px-4 py-3 font-semibold">Allocation</th>
-                      <th className="px-4 py-3 font-semibold">Entry Price</th>
-                      <th className="px-4 py-3 font-semibold text-right">Shares</th>
-                      <th className="px-4 py-3 font-semibold text-right text-primary">New Avg Price</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border bg-card">
-                    <tr className="hover:bg-muted/20 transition">
-                      <td className="px-4 py-4"><span className="font-bold">#1 (Initial)</span></td>
-                      <td className="px-4 py-4">{sym}{fmt(numBudget * split1)} <span className="text-xs text-muted-foreground ml-1">({split1 * 100}%)</span></td>
-                      <td className="px-4 py-4 font-mono">{sym}{fmt(price1)}</td>
-                      <td className="px-4 py-4 font-mono text-right">{fmt(shares1, false)}</td>
-                      <td className="px-4 py-4 font-mono font-bold text-primary text-right">{sym}{fmt(avg1)}</td>
-                    </tr>
-                    <tr className="hover:bg-muted/20 transition">
-                      <td className="px-4 py-4"><span className="font-bold">#2 (-{numDrop1}%)</span></td>
-                      <td className="px-4 py-4">{sym}{fmt(numBudget * split2)} <span className="text-xs text-muted-foreground ml-1">({split2 * 100}%)</span></td>
-                      <td className="px-4 py-4 font-mono">{sym}{fmt(price2)}</td>
-                      <td className="px-4 py-4 font-mono text-right">{fmt(shares2, false)}</td>
-                      <td className="px-4 py-4 font-mono font-bold text-primary text-right flex items-center justify-end gap-1"><TrendingDown className="h-3 w-3" /> {sym}{fmt(avg2)}</td>
-                    </tr>
-                    <tr className="hover:bg-muted/20 transition">
-                      <td className="px-4 py-4"><span className="font-bold">#3 (-{numDrop2}%)</span></td>
-                      <td className="px-4 py-4">{sym}{fmt(numBudget * split3)} <span className="text-xs text-muted-foreground ml-1">({split3 * 100}%)</span></td>
-                      <td className="px-4 py-4 font-mono">{sym}{fmt(price3)}</td>
-                      <td className="px-4 py-4 font-mono text-right">{fmt(shares3, false)}</td>
-                      <td className="px-4 py-4 font-mono font-bold text-primary text-right flex items-center justify-end gap-1"><TrendingDown className="h-3 w-3" /> {sym}{fmt(avg3)}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div className="mt-4 flex items-center justify-between rounded-xl bg-emerald-500/10 p-4 border border-emerald-500/20">
-                <div>
-                  <div className="text-sm font-semibold text-emerald-500 uppercase tracking-wider">Final Position</div>
-                  <div className="text-xs text-emerald-500/70 mt-1">If all three tranches are executed.</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-emerald-500">{sym}{fmt(avg3)}</div>
-                  <div className="text-sm font-mono text-emerald-500/80 mt-0.5">{fmt(cumShares3, false)} total shares</div>
-                </div>
-              </div>
-            </Card>
+          <div>
+            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Target price to sell ({currency})</label>
+            <input value={targetSell} onChange={(e) => setTargetSell(e.target.value)} inputMode="decimal" placeholder={`e.g. ${currentPrice != null ? (currentPrice * 1.5).toFixed(2) : '150.00'}`} className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none" />
+            <p className="mt-2 text-xs text-muted-foreground">Feeds the Sell Target on the matching holding when Spartan Strategy is on.</p>
           </div>
         </div>
-      </BlurFade>
+      </Card>
+
+      {/* Input parameters: budget + tranches */}
+      <Card title="Input parameters">
+        <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
+          <div>
+            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Total budget (£)</label>
+            <input value={budget} onChange={(e) => setBudget(e.target.value)} inputMode="decimal" className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none" />
+            <p className="mt-2 text-xs text-muted-foreground">Split evenly across your tranches.</p>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tranches (entry prices, {currency})</label>
+              <span className="text-xs text-muted-foreground">Drop % vs Trade 1</span>
+            </div>
+            <div className="mt-2 space-y-2">
+              {tranches.map((t, i) => {
+                const drop = i === 0 ? null : impliedDropPct(basePrice, Number(t.price) || null);
+                return (
+                  <div key={i} className="flex flex-wrap items-center gap-2">
+                    <span className="w-16 shrink-0 text-xs font-semibold text-muted-foreground">{i === 0 ? 'Trade 1' : `Trade ${i + 1}`}</span>
+                    <input value={t.price} onChange={(e) => setTranches((p) => p.map((x, idx) => (idx === i ? { ...x, price: e.target.value } : x)))} inputMode="decimal" placeholder="price" className="w-28 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none" />
+                    <span className="w-16 text-right font-mono text-xs text-muted-foreground">{drop == null ? (i === 0 ? 'base' : '—') : `-${drop.toFixed(1)}%`}</span>
+                    <label className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <input type="checkbox" checked={t.executed} onChange={() => setTranches((p) => p.map((x, idx) => (idx === i ? { ...x, executed: !x.executed } : x)))} className="accent-primary" /> Executed
+                    </label>
+                    {tranches.length > 1 && (
+                      <button onClick={() => setTranches((p) => p.filter((_, idx) => idx !== i))} aria-label="Remove tranche" className="text-rose-500 transition hover:text-rose-400"><Trash2 className="h-3.5 w-3.5" /></button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <button onClick={() => setTranches((p) => [...p, { price: '', executed: false }])} className="mt-3 inline-flex items-center gap-1 rounded-lg border border-dashed border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:text-foreground">
+              <Plus className="h-3.5 w-3.5" /> Add tranche
+            </button>
+          </div>
+        </div>
+      </Card>
+
+      {/* Execution plan */}
+      <Card title="Execution plan">
+        {preview == null ? (
+          <div className="text-sm text-muted-foreground">Pick a stock, set a budget and tranche prices to see the plan.</div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                    <th className="py-2 pr-3">Trade</th>
+                    <th className="py-2 pr-3">Allocation</th>
+                    <th className="py-2 pr-3">Entry Price</th>
+                    <th className="py-2 pr-3">Shares</th>
+                    <th className="py-2 pr-3">Drop %</th>
+                    <th className="py-2 pr-3">Executed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {preview.rows.map((r, k) => {
+                    const drop = k === 0 ? null : impliedDropPct(basePrice, r.targetPrice);
+                    return (
+                      <tr key={k} className="border-b border-border/50">
+                        <td className="py-2 pr-3 font-semibold text-foreground">{k === 0 ? 'Trade 1' : `Trade ${k + 1}`}</td>
+                        <td className="py-2 pr-3 font-mono">{gbp(r.budgetGBP)}</td>
+                        <td className="py-2 pr-3 font-mono">{local(r.targetPrice, currency)}</td>
+                        <td className="py-2 pr-3 font-mono">{r.shares.toLocaleString(undefined, { maximumFractionDigits: 4 })}</td>
+                        <td className="py-2 pr-3 font-mono text-muted-foreground">{drop == null ? 'base' : `-${drop.toFixed(1)}%`}</td>
+                        <td className="py-2 pr-3">{validIdx[k]?.t.executed ? <Badge tone="emerald">Yes</Badge> : <span className="text-xs text-muted-foreground">No</span>}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4">
+                <div className="text-xs font-bold uppercase tracking-wider text-primary">If all tranches execute</div>
+                <div className="mt-1 font-mono text-2xl font-black text-foreground">{local(preview.averagePrice, currency)}</div>
+                <div className="mt-1 text-xs text-muted-foreground">{preview.totalShares.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares · {gbp(preview.totalCostGBP)}</div>
+              </div>
+              <div className="rounded-2xl border border-border bg-card p-4">
+                <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Actual (executed only)</div>
+                <div className="mt-1 font-mono text-2xl font-black text-foreground">{executed ? local(executed.averagePrice, currency) : '—'}</div>
+                <div className="mt-1 text-xs text-muted-foreground">{executed ? `${executed.totalShares.toLocaleString(undefined, { maximumFractionDigits: 4 })} shares · ${gbp(executed.totalCostGBP)}` : 'No tranches executed yet'}</div>
+              </div>
+            </div>
+          </>
+        )}
+
+        <div className="mt-5 flex items-center justify-end gap-3">
+          {planId && <span className="text-xs text-muted-foreground">Saved plan</span>}
+          <button onClick={savePlan} disabled={saving || !asset || n === 0} className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition hover:brightness-110 disabled:opacity-50">
+            {saving ? 'Saving…' : planId ? 'Update plan' : 'Save plan'}
+          </button>
+        </div>
+      </Card>
     </div>
   );
 }

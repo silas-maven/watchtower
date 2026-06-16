@@ -12,6 +12,7 @@ export const preferredRegion = 'fra1';
 const TrancheSchema = z.object({
   price: z.number().positive(),
   budgetGBP: z.number().nonnegative().nullable().optional(),
+  executed: z.boolean().optional(),
 });
 
 const PlanSchema = z.object({
@@ -79,7 +80,7 @@ export async function POST(req: Request) {
           });
       await tx.averagePlanTranche.deleteMany({ where: { planId: saved.id } });
       await tx.averagePlanTranche.createMany({
-        data: tranches.map((t, i) => ({ planId: saved.id, orderIndex: i, price: t.price, budgetGBP: t.budgetGBP ?? null })),
+        data: tranches.map((t, i) => ({ planId: saved.id, orderIndex: i, price: t.price, budgetGBP: t.budgetGBP ?? null, executed: t.executed ?? false })),
       });
       return saved;
     });
