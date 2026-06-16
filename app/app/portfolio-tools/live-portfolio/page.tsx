@@ -2,28 +2,12 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus } from 'lucide-react';
 import { Card } from '@/components/Card';
-import { Badge } from '@/components/Badge';
 import { useToast } from '@/components/ui/ToastProvider';
+import { HoldingsTable, type HoldingRow } from '@/components/portfolio/HoldingsTable';
 
-type Holding = {
-  id: string;
-  assetId: string;
-  symbol: string;
-  name: string;
-  currency: string;
-  shares: number | null;
-  averagePrice: number | null;
-  currentPrice: number | null;
-  costGBP: number | null;
-  valueGBP: number | null;
-  profitGBP: number | null;
-  returnPct: number | null;
-  weightPct: number | null;
-  beta: number | null;
-  signalState: string;
-};
+type Holding = HoldingRow;
 
 type Summary = {
   investedGBP: number;
@@ -43,13 +27,6 @@ const SYMBOLS: Record<string, string> = { GBP: '£', USD: '$', EUR: '€', CAD: 
 function money(gbpAmount: number | null, currency: string, rate: number) {
   if (gbpAmount == null) return '—';
   return `${SYMBOLS[currency] ?? `${currency} `}${(gbpAmount * rate).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
-}
-
-function toneForSignal(state: string) {
-  if (state === 'BUY') return 'emerald' as const;
-  if (state === 'SELL') return 'rose' as const;
-  if (state === 'BOTH') return 'blue' as const;
-  return 'zinc' as const;
 }
 
 export default function LivePortfolioPage() {
@@ -209,47 +186,14 @@ export default function LivePortfolioPage() {
             No holdings yet. Add your real positions above to track live value and return, then set your Portfolio Starting Value (Cash) to see allocation and free cash.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                  <th className="py-2 pr-3">Asset</th>
-                  <th className="py-2 pr-3">Signal</th>
-                  <th className="py-2 pr-3">Shares</th>
-                  <th className="py-2 pr-3">Avg Price</th>
-                  <th className="py-2 pr-3">Current Price</th>
-                  <th className="py-2 pr-3">Cost</th>
-                  <th className="py-2 pr-3">Value</th>
-                  <th className="py-2 pr-3">Weight</th>
-                  <th className="py-2 pr-3">Return</th>
-                  <th className="py-2 pr-3"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {view.holdings.map((h) => (
-                  <tr key={h.id} className="border-b border-border/50">
-                    <td className="py-2 pr-3">
-                      <Link href={`/assets/${h.assetId}`} className="font-semibold text-foreground hover:text-primary">{h.symbol}</Link>
-                      <div className="text-xs text-muted-foreground">{h.currency}</div>
-                    </td>
-                    <td className="py-2 pr-3"><Badge tone={toneForSignal(h.signalState)}>{h.signalState}</Badge></td>
-                    <td className="py-2 pr-3 font-mono">{h.shares ?? '—'}</td>
-                    <td className="py-2 pr-3 font-mono">{h.averagePrice ?? '—'}</td>
-                    <td className="py-2 pr-3 font-mono">{h.currentPrice ?? '—'}</td>
-                    <td className="py-2 pr-3 font-mono">{fmtMoney(h.costGBP)}</td>
-                    <td className="py-2 pr-3 font-mono">{fmtMoney(h.valueGBP)}</td>
-                    <td className="py-2 pr-3 font-mono text-muted-foreground">{h.weightPct == null ? '—' : `${h.weightPct.toFixed(1)}%`}</td>
-                    <td className={`py-2 pr-3 font-mono ${h.returnPct == null ? 'text-muted-foreground' : h.returnPct >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                      {h.returnPct == null ? '—' : `${h.returnPct >= 0 ? '+' : ''}${h.returnPct.toFixed(1)}%`}
-                    </td>
-                    <td className="py-2 pr-3">
-                      <button onClick={() => removeHolding(h.assetId)} disabled={busy} className="text-rose-500 transition hover:text-rose-400 disabled:opacity-60"><Trash2 className="h-4 w-4" /></button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <HoldingsTable
+            holdings={view.holdings}
+            displayCurrency={cur}
+            gbpRate={rate}
+            onUpdated={(v) => setView(v as View)}
+            onRemove={removeHolding}
+            busy={busy}
+          />
         )}
       </Card>
     </div>

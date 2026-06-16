@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, Plus, Trash2, Search, X, Star } from 'lucide-react';
 import { Card } from '@/components/Card';
 import { Badge } from '@/components/Badge';
@@ -38,6 +38,7 @@ export default function AveragePlannerPage() {
   const [planId, setPlanId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [addingWl, setAddingWl] = useState(false);
+  const didDeepLink = useRef(false);
 
   const loadAssets = useCallback(async () => {
     try {
@@ -92,6 +93,17 @@ export default function AveragePlannerPage() {
     setTargetSell('');
     setTranches([{ price: px != null ? String(px) : '', executed: false }]);
   }, []);
+
+  // Deep-link: /average-calculator?assetId=<id> auto-selects + loads the plan (once).
+  useEffect(() => {
+    if (didDeepLink.current || assets.length === 0) return;
+    didDeepLink.current = true;
+    const id = new URLSearchParams(window.location.search).get('assetId');
+    if (id) {
+      const a = assets.find((x) => x.id === id);
+      if (a) pickAsset(a);
+    }
+  }, [assets, pickAsset]);
 
   const validIdx = tranches.map((t, i) => ({ t, i })).filter((x) => Number(x.t.price) > 0);
   const totalBudget = Number(budget) || 0;
