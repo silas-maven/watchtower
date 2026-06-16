@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { fetchFxRates } from '@/lib/market/fx';
 import { computePortfolioSummary, localToGbp, type PortfolioSummary } from '@/lib/portfolio';
+import { effectiveNextBuy, effectiveSellTarget, toPlanLite } from '@/lib/spartan';
 import { getDisplayContext } from '@/lib/server/displayCurrency';
 
 export type LiveHolding = {
@@ -18,6 +19,11 @@ export type LiveHolding = {
   returnPct: number | null;
   weightPct: number | null;
   beta: number | null;
+  nextBuyPrice: number | null;
+  sellTarget: number | null;
+  spartanEnabled: boolean;
+  averagePlanId: string | null;
+  hasPlan: boolean;
   signalState: string;
 };
 
@@ -41,7 +47,10 @@ export async function getLivePortfolioView(profileId: string): Promise<LivePortf
     prisma.profile.findUnique({ where: { id: profileId }, select: { declaredPortfolioGBP: true } }),
     prisma.userHolding.findMany({
       where: { profileId, portfolioId: null },
-      include: { asset: { include: { snapshots: { orderBy: { capturedAt: 'desc' }, take: 1 } } } },
+      include: {
+        asset: { include: { snapshots: { orderBy: { capturedAt: 'desc' }, take: 1 } } },
+        averagePlan: { include: { tranches: { orderBy: { orderIndex: 'asc' } } } },
+      },
       orderBy: { createdAt: 'asc' },
     }),
     getDisplayContext(profileId),
@@ -51,6 +60,7 @@ export async function getLivePortfolioView(profileId: string): Promise<LivePortf
 
   const rows: LiveHolding[] = holdings.map((h) => {
     const snap = h.asset.snapshots[0];
+    const plan = toPlanLite(h.averagePlan);
     const currency = h.asset.currency;
     const currentPrice = snap?.currentPrice ?? null;
     const shares = h.shares ?? null;
@@ -74,6 +84,11 @@ export async function getLivePortfolioView(profileId: string): Promise<LivePortf
       returnPct,
       weightPct: null,
       beta: snap?.beta ?? h.asset.beta ?? null,
+      nextBuyPrice: effectiveNextBuy(h, plan),
+      sellTarget: effectiveSellTarget(h, plan),
+      spartanEnabled: h.spartanEnabled,
+      averagePlanId: h.averagePlanId,
+      hasPlan: plan != null,
       signalState: snap?.signalState ?? 'NONE',
     };
   });

@@ -2,6 +2,7 @@ import { PortfolioKind } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { fetchFxRates } from '@/lib/market/fx';
 import { computePortfolioSummary, localToGbp, type PortfolioSummary } from '@/lib/portfolio';
+import { effectiveNextBuy, effectiveSellTarget, toPlanLite } from '@/lib/spartan';
 import { getDisplayContext } from '@/lib/server/displayCurrency';
 
 export type VirtualHolding = {
@@ -19,6 +20,11 @@ export type VirtualHolding = {
   returnPct: number | null;
   weightPct: number | null;
   beta: number | null;
+  nextBuyPrice: number | null;
+  sellTarget: number | null;
+  spartanEnabled: boolean;
+  averagePlanId: string | null;
+  hasPlan: boolean;
   signalState: string;
 };
 
@@ -58,9 +64,8 @@ export async function getVirtualPortfolioView(profileId: string): Promise<Virtua
     prisma.userHolding.findMany({
       where: { profileId, portfolioId: portfolio.id },
       include: {
-        asset: {
-          include: { snapshots: { orderBy: { capturedAt: 'desc' }, take: 1 } },
-        },
+        asset: { include: { snapshots: { orderBy: { capturedAt: 'desc' }, take: 1 } } },
+        averagePlan: { include: { tranches: { orderBy: { orderIndex: 'asc' } } } },
       },
       orderBy: { createdAt: 'asc' },
     }),
@@ -70,6 +75,7 @@ export async function getVirtualPortfolioView(profileId: string): Promise<Virtua
 
   const rows: VirtualHolding[] = holdings.map((h) => {
     const snap = h.asset.snapshots[0];
+    const plan = toPlanLite(h.averagePlan);
     const currency = h.asset.currency;
     const currentPrice = snap?.currentPrice ?? null;
     const shares = h.shares ?? null;
@@ -95,6 +101,11 @@ export async function getVirtualPortfolioView(profileId: string): Promise<Virtua
       returnPct,
       weightPct: null,
       beta: snap?.beta ?? h.asset.beta ?? null,
+      nextBuyPrice: effectiveNextBuy(h, plan),
+      sellTarget: effectiveSellTarget(h, plan),
+      spartanEnabled: h.spartanEnabled,
+      averagePlanId: h.averagePlanId,
+      hasPlan: plan != null,
       signalState: snap?.signalState ?? 'NONE',
     };
   });
