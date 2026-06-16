@@ -51,7 +51,7 @@ function NavLink({ href, label, icon: Icon }: NavItem) {
 export function TopNav({ children, initialUser }: { children: React.ReactNode; initialUser: NavUser }) {
   const pathname = usePathname();
   const { isSignedIn } = useUser();
-  const isAuthPage = pathname.startsWith('/sign-in') || pathname.startsWith('/sign-up') || pathname.startsWith('/login');
+  const isAuthPage = pathname.startsWith('/sign-in') || pathname.startsWith('/sign-up');
   const isMarketingPage = pathname === '/' || pathname === '/pricing';
 
   if (isAuthPage || isMarketingPage) return <>{children}</>;

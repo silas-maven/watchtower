@@ -73,7 +73,7 @@ export default async function MemberDashboard() {
           <div className="grid gap-4 md:grid-cols-4">
             <Card title="Invested"><div className="text-2xl font-bold text-foreground">{money(s.investedGBP)}</div><div className="mt-1 text-xs text-muted-foreground">Across {live!.holdings.length} {live!.holdings.length === 1 ? 'holding' : 'holdings'}</div></Card>
             <Card title="Current value"><div className="text-2xl font-bold text-foreground">{money(s.valueGBP)}</div><div className="mt-1 text-xs text-muted-foreground">Live, shown in {cur}</div></Card>
-            <Card title="Profit"><div className={`text-2xl font-bold ${s.profitGBP >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{s.profitGBP >= 0 ? '+' : ''}{money(s.profitGBP)}</div><div className="mt-1 text-xs text-muted-foreground">{live!.declaredSizeGBP != null ? `Declared ${money(live!.declaredSizeGBP)}` : 'Vs invested cost'}</div></Card>
+            <Card title="Profit"><div className={`text-2xl font-bold ${s.profitGBP >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{s.profitGBP >= 0 ? '+' : ''}{money(s.profitGBP)}</div><div className="mt-1 text-xs text-muted-foreground">{live!.declaredSizeGBP != null ? `Starting value ${money(live!.declaredSizeGBP)}` : 'Vs invested cost'}</div></Card>
             <Card title="Return"><div className={`text-2xl font-bold ${s.returnPct >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{s.returnPct >= 0 ? '+' : ''}{fmt(s.returnPct)}%</div><div className="mt-1 text-xs text-muted-foreground"><Link href="/app/portfolio-tools/live-portfolio" className="text-primary hover:underline">Manage holdings</Link></div></Card>
           </div>
         ) : (

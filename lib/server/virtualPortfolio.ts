@@ -4,8 +4,6 @@ import { fetchFxRates } from '@/lib/market/fx';
 import { computePortfolioSummary, localToGbp, type PortfolioSummary } from '@/lib/portfolio';
 import { getDisplayContext } from '@/lib/server/displayCurrency';
 
-const DEFAULT_VIRTUAL_SIZE_GBP = 5000;
-
 export type VirtualHolding = {
   id: string;
   assetId: string;
@@ -19,6 +17,8 @@ export type VirtualHolding = {
   valueGBP: number | null;
   profitGBP: number | null;
   returnPct: number | null;
+  weightPct: number | null;
+  beta: number | null;
   signalState: string;
 };
 
@@ -26,6 +26,7 @@ export type VirtualPortfolioView = {
   id: string;
   name: string;
   sizeGBP: number;
+  declaredValueGBP: number | null;
   budgetPerStockGBP: number | null;
   minEntryGBP: number | null;
   targetHoldingsCount: number | null;
@@ -46,10 +47,7 @@ export async function getOrCreateVirtualPortfolio(profileId: string) {
       profileId,
       kind: PortfolioKind.VIRTUAL,
       name: 'Virtual Portfolio',
-      declaredValueGBP: DEFAULT_VIRTUAL_SIZE_GBP,
-      budgetPerStockGBP: 1000,
-      minEntryGBP: 300,
-      targetHoldingsCount: 5,
+      // Self-input: the member sets their starting value and budgets; no demo defaults.
     },
   });
 }
@@ -95,20 +93,30 @@ export async function getVirtualPortfolioView(profileId: string): Promise<Virtua
       valueGBP,
       profitGBP,
       returnPct,
+      weightPct: null,
+      beta: snap?.beta ?? h.asset.beta ?? null,
       signalState: snap?.signalState ?? 'NONE',
     };
   });
 
-  const sizeGBP = portfolio.declaredValueGBP ?? DEFAULT_VIRTUAL_SIZE_GBP;
+  const invested = rows.reduce((acc, r) => acc + (r.costGBP ?? 0), 0);
+  const sizeGBP = portfolio.declaredValueGBP ?? invested;
   const summary = computePortfolioSummary(
-    rows.map((r) => ({ costGBP: r.costGBP, valueGBP: r.valueGBP, beta: null })),
+    rows.map((r) => ({ costGBP: r.costGBP, valueGBP: r.valueGBP, beta: r.beta })),
     sizeGBP,
   );
+
+  // Weight % uses (holdings value + cash) as the denominator, cash as its own slice.
+  const denom = summary.valueGBP + summary.cashGBP;
+  for (const r of rows) {
+    r.weightPct = r.valueGBP != null && denom > 0 ? (r.valueGBP / denom) * 100 : null;
+  }
 
   return {
     id: portfolio.id,
     name: portfolio.name,
     sizeGBP,
+    declaredValueGBP: portfolio.declaredValueGBP,
     budgetPerStockGBP: portfolio.budgetPerStockGBP,
     minEntryGBP: portfolio.minEntryGBP,
     targetHoldingsCount: portfolio.targetHoldingsCount,

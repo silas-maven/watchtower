@@ -77,15 +77,6 @@ export async function runOverdueCheck(now = new Date()) {
       })),
     });
 
-    await prisma.mockEmailLog.create({
-      data: {
-        toEmail: 'admin@watchtower.demo',
-        subject: title,
-        body,
-        metadata: { profileId: sub.profileId, stage },
-      },
-    });
-
     notifications += 1;
   }
 

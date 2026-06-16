@@ -20,6 +20,8 @@ type Holding = {
   valueGBP: number | null;
   profitGBP: number | null;
   returnPct: number | null;
+  weightPct: number | null;
+  beta: number | null;
   signalState: string;
 };
 
@@ -30,6 +32,7 @@ type Summary = {
   returnPct: number;
   cashGBP: number;
   liquidationValueGBP: number;
+  portfolioBeta: number | null;
 };
 
 type View = { hasData: boolean; declaredSizeGBP: number | null; holdings: Holding[]; summary: Summary; displayCurrency: string; gbpRate: number };
@@ -139,7 +142,7 @@ export default function LivePortfolioPage() {
       const json = await res.json();
       if (json.ok) {
         setView(json.data);
-        pushToast('Declared portfolio size updated.', 'success');
+        pushToast('Portfolio starting value updated.', 'success');
       }
     } finally {
       setBusy(false);
@@ -163,11 +166,12 @@ export default function LivePortfolioPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
         <Stat label="Invested" value={fmtMoney(s?.investedGBP ?? null)} />
         <Stat label="Value" value={fmtMoney(s?.valueGBP ?? null)} />
         <Stat label="Profit" value={fmtMoney(s?.profitGBP ?? null)} tone={s ? (s.profitGBP >= 0 ? 'pos' : 'neg') : undefined} sub={s ? `${s.returnPct >= 0 ? '+' : ''}${s.returnPct.toFixed(1)}%` : undefined} />
-        <Stat label="Declared size" value={view?.declaredSizeGBP != null ? fmtMoney(view.declaredSizeGBP) : '—'} />
+        <Stat label="Portfolio Starting Value (Cash)" value={view?.declaredSizeGBP != null ? fmtMoney(view.declaredSizeGBP) : '—'} />
+        <Stat label="Portfolio beta" value={s?.portfolioBeta != null ? s.portfolioBeta.toFixed(2) : '—'} />
         <Stat label="Cash" value={view?.declaredSizeGBP != null ? fmtMoney(s?.cashGBP ?? null) : '—'} />
       </div>
 
@@ -192,8 +196,8 @@ export default function LivePortfolioPage() {
         title="Holdings"
         right={
           <div className="flex items-center gap-2 text-xs">
-            <span className="text-muted-foreground">Declared £</span>
-            <input value={sizeDraft} onChange={(e) => setSizeDraft(e.target.value)} placeholder="optional" className="w-24 rounded border border-border bg-background px-2 py-1 text-foreground focus:outline-none" inputMode="decimal" />
+            <span className="text-muted-foreground">Starting value</span>
+            <input value={sizeDraft} onChange={(e) => setSizeDraft(e.target.value)} placeholder="set yours" className="w-24 rounded border border-border bg-background px-2 py-1 text-foreground focus:outline-none" inputMode="decimal" />
             <button onClick={saveSize} disabled={busy} className="rounded border border-border px-2 py-1 font-semibold text-foreground hover:bg-muted/40 disabled:opacity-60">Set</button>
           </div>
         }
@@ -201,7 +205,9 @@ export default function LivePortfolioPage() {
         {loading ? (
           <div className="text-sm text-muted-foreground">Loading…</div>
         ) : !view || view.holdings.length === 0 ? (
-          <div className="text-sm text-muted-foreground">No holdings yet. Add your real positions above to track live value and return.</div>
+          <div className="text-sm text-muted-foreground">
+            No holdings yet. Add your real positions above to track live value and return, then set your Portfolio Starting Value (Cash) to see allocation and free cash.
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
@@ -210,10 +216,11 @@ export default function LivePortfolioPage() {
                   <th className="py-2 pr-3">Asset</th>
                   <th className="py-2 pr-3">Signal</th>
                   <th className="py-2 pr-3">Shares</th>
-                  <th className="py-2 pr-3">Avg</th>
-                  <th className="py-2 pr-3">Price</th>
+                  <th className="py-2 pr-3">Avg Price</th>
+                  <th className="py-2 pr-3">Current Price</th>
                   <th className="py-2 pr-3">Cost</th>
                   <th className="py-2 pr-3">Value</th>
+                  <th className="py-2 pr-3">Weight</th>
                   <th className="py-2 pr-3">Return</th>
                   <th className="py-2 pr-3"></th>
                 </tr>
@@ -222,7 +229,7 @@ export default function LivePortfolioPage() {
                 {view.holdings.map((h) => (
                   <tr key={h.id} className="border-b border-border/50">
                     <td className="py-2 pr-3">
-                      <div className="font-semibold text-foreground">{h.symbol}</div>
+                      <Link href={`/assets/${h.assetId}`} className="font-semibold text-foreground hover:text-primary">{h.symbol}</Link>
                       <div className="text-xs text-muted-foreground">{h.currency}</div>
                     </td>
                     <td className="py-2 pr-3"><Badge tone={toneForSignal(h.signalState)}>{h.signalState}</Badge></td>
@@ -231,6 +238,7 @@ export default function LivePortfolioPage() {
                     <td className="py-2 pr-3 font-mono">{h.currentPrice ?? '—'}</td>
                     <td className="py-2 pr-3 font-mono">{fmtMoney(h.costGBP)}</td>
                     <td className="py-2 pr-3 font-mono">{fmtMoney(h.valueGBP)}</td>
+                    <td className="py-2 pr-3 font-mono text-muted-foreground">{h.weightPct == null ? '—' : `${h.weightPct.toFixed(1)}%`}</td>
                     <td className={`py-2 pr-3 font-mono ${h.returnPct == null ? 'text-muted-foreground' : h.returnPct >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                       {h.returnPct == null ? '—' : `${h.returnPct >= 0 ? '+' : ''}${h.returnPct.toFixed(1)}%`}
                     </td>

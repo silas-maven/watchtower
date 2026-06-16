@@ -16,6 +16,8 @@ export type LiveHolding = {
   valueGBP: number | null;
   profitGBP: number | null;
   returnPct: number | null;
+  weightPct: number | null;
+  beta: number | null;
   signalState: string;
 };
 
@@ -70,6 +72,8 @@ export async function getLivePortfolioView(profileId: string): Promise<LivePortf
       valueGBP,
       profitGBP,
       returnPct,
+      weightPct: null,
+      beta: snap?.beta ?? h.asset.beta ?? null,
       signalState: snap?.signalState ?? 'NONE',
     };
   });
@@ -79,9 +83,15 @@ export async function getLivePortfolioView(profileId: string): Promise<LivePortf
   // Portfolio size for return maths: the member's declared size, else their invested cost.
   const sizeGBP = declaredSizeGBP ?? invested;
   const summary = computePortfolioSummary(
-    rows.map((r) => ({ costGBP: r.costGBP, valueGBP: r.valueGBP, beta: null })),
+    rows.map((r) => ({ costGBP: r.costGBP, valueGBP: r.valueGBP, beta: r.beta })),
     sizeGBP,
   );
+
+  // Weight % uses (holdings value + cash) as the denominator, cash as its own slice.
+  const denom = summary.valueGBP + summary.cashGBP;
+  for (const r of rows) {
+    r.weightPct = r.valueGBP != null && denom > 0 ? (r.valueGBP / denom) * 100 : null;
+  }
 
   return {
     hasData: rows.length > 0,
