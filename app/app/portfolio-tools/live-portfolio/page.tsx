@@ -6,6 +6,7 @@ import { ArrowLeft, Plus } from 'lucide-react';
 import { Card } from '@/components/Card';
 import { useToast } from '@/components/ui/ToastProvider';
 import { HoldingsTable, type HoldingRow } from '@/components/portfolio/HoldingsTable';
+import { AllocationDonut } from '@/components/portfolio/AllocationDonut';
 
 type Holding = HoldingRow;
 
@@ -151,6 +152,17 @@ export default function LivePortfolioPage() {
         <Stat label="Portfolio beta" value={s?.portfolioBeta != null ? s.portfolioBeta.toFixed(2) : '—'} />
         <Stat label="Cash" value={view?.declaredSizeGBP != null ? fmtMoney(s?.cashGBP ?? null) : '—'} />
       </div>
+
+      {view && view.holdings.length > 0 && (
+        <Card title="Portfolio allocation">
+          <AllocationDonut
+            items={view.holdings.map((h) => ({ symbol: h.symbol, valueGBP: h.valueGBP ?? 0 }))}
+            cashGBP={view.declaredSizeGBP != null ? s?.cashGBP ?? 0 : 0}
+            displayCurrency={cur}
+            gbpRate={rate}
+          />
+        </Card>
+      )}
 
       <Card title="Add or update a holding">
         <form onSubmit={addHolding} className="grid gap-3 md:grid-cols-4">

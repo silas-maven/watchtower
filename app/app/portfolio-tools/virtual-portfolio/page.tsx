@@ -6,6 +6,7 @@ import { ArrowLeft, Plus } from 'lucide-react';
 import { Card } from '@/components/Card';
 import { useToast } from '@/components/ui/ToastProvider';
 import { HoldingsTable, type HoldingRow } from '@/components/portfolio/HoldingsTable';
+import { AllocationDonut } from '@/components/portfolio/AllocationDonut';
 
 type Holding = HoldingRow;
 
@@ -174,6 +175,17 @@ export default function VirtualPortfolioPage() {
         <Stat label="Portfolio beta" value={s?.portfolioBeta != null ? s.portfolioBeta.toFixed(2) : '—'} />
         <Stat label="Cash" value={hasStartingValue ? gbp(s?.cashGBP ?? null) : '—'} />
       </div>
+
+      {view && view.holdings.length > 0 && (
+        <Card title="Portfolio allocation">
+          <AllocationDonut
+            items={view.holdings.map((h) => ({ symbol: h.symbol, valueGBP: h.valueGBP ?? 0 }))}
+            cashGBP={hasStartingValue ? s?.cashGBP ?? 0 : 0}
+            displayCurrency={cur}
+            gbpRate={rate}
+          />
+        </Card>
+      )}
 
       {/* Add position */}
       <Card title="Add or update a position">
