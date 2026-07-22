@@ -10,6 +10,7 @@ export type WatchlistAssetRow = {
   name: string;
   assetType: string;
   currency: string;
+  marketCap: number | null;
   targetEntry: number | null;
   targetExit: number | null;
   latestSnapshot: {
@@ -35,13 +36,14 @@ export async function getWatchlistsPageData(profileId: string): Promise<Watchlis
 
   const [assets, lists] = await Promise.all([
     prisma.asset.findMany({
-      where: { isActive: true },
+      where: { isActive: true, isMacro: false },
       select: {
         id: true,
         symbol: true,
         name: true,
         assetType: true,
         currency: true,
+        marketCap: true,
         rule: { select: { targetEntry: true, targetExit: true, signalOverride: true } },
         snapshots: {
           orderBy: { capturedAt: 'desc' },
@@ -73,6 +75,7 @@ export async function getWatchlistsPageData(profileId: string): Promise<Watchlis
       name: a.name,
       assetType: a.assetType,
       currency: a.currency,
+      marketCap: a.marketCap,
       targetEntry: a.rule?.targetEntry ?? null,
       targetExit: a.rule?.targetExit ?? null,
       latestSnapshot: snap

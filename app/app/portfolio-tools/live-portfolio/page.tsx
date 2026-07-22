@@ -136,7 +136,7 @@ export default function LivePortfolioPage() {
     <div className="space-y-8 pb-12">
       <div>
         <Link href="/app/portfolio-tools" className="inline-flex items-center gap-2 text-sm text-muted-foreground transition hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" /> Portfolio Tools
+          <ArrowLeft className="h-4 w-4" /> Portfolio
         </Link>
         <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">Live Portfolio</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">

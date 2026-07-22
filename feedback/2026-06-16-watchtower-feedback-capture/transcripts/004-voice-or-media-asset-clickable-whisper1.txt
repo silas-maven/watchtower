@@ -1,0 +1,1 @@
+So the Spartan strategy tick box, if they tick it, it should be default ticked and what that means is that the fields will populate from the averaging plan. And if it's unticked, then it means you can just write what you want. It doesn't need to link to an averaging plan.

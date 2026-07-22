@@ -64,6 +64,10 @@ export function isAsxOpen(date = new Date()): boolean {
  */
 export function isMarketOpenForAsset(assetType: string, currency: string | null | undefined, date = new Date()): boolean {
   if (assetType === 'CRYPTO') return true;
+  // FX and commodity futures trade close to round the clock on weekdays.
+  if (assetType === 'FOREX' || assetType === 'COMMODITY') {
+    return isWeekday(clockInTimeZone(date, 'UTC'));
+  }
   const ccy = (currency ?? '').toUpperCase();
   if (ccy === 'GBX' || ccy === 'GBP') return isLseOpen(date);
   if (ccy === 'EUR') return isLseOpen(date);

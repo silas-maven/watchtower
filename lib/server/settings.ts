@@ -5,6 +5,13 @@ import { prisma } from '@/lib/prisma';
  * Every key has a default so reads never throw on a missing row, and callers get
  * a stable shape. Add new keys here so the whole app shares one source of truth.
  */
+// Manually-maintained macro readings for instruments with no free live feed
+// (BOE base rate, UK 10Y gilt, iTraxx 5Y). Admin edits these; a real API can
+// replace each reader in lib/market/macro.ts later without touching callers.
+export type ManualMacroValue = { value: number | null; changePct: number | null; asOf: string | null };
+
+const EMPTY_MACRO: ManualMacroValue = { value: null, changePct: null, asOf: null };
+
 export const SETTING_DEFAULTS = {
   ai_briefs_enabled: true,
   weekly_digest_enabled: true,
@@ -13,6 +20,12 @@ export const SETTING_DEFAULTS = {
   portfolio_size_gbp: 5000,
   news_feed_urls: [] as string[],
   news_x_handle: 'MarketWatch',
+  macro_boe_base_rate: EMPTY_MACRO,
+  macro_uk_10y_gilt: EMPTY_MACRO,
+  macro_itraxx_5y: EMPTY_MACRO,
+  // Auto-fetched BOE rate (from the BoE IADB feed). The admin's manual
+  // macro_boe_base_rate value, when set, overrides this.
+  macro_boe_base_rate_auto: EMPTY_MACRO,
 } as const;
 
 export type SettingKey = keyof typeof SETTING_DEFAULTS;

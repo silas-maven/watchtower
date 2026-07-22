@@ -7,6 +7,8 @@ import { Card } from '@/components/Card';
 import { Badge } from '@/components/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/ToastProvider';
+import { AssetFilterBar } from '@/components/assets/AssetFilterBar';
+import { DEFAULT_ASSET_FILTERS, assetClassLabel, matchesAssetFilters, productLabel, type AssetFilters } from '@/lib/assetClass';
 import type { WatchlistAssetRow, WatchlistRow } from '@/lib/server/watchlists';
 
 function fmt(n: number) {
@@ -35,7 +37,7 @@ export function WatchlistsClient({
   const [busyAssetId, setBusyAssetId] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
-  const [search, setSearch] = useState('');
+  const [filters, setFilters] = useState<AssetFilters>(DEFAULT_ASSET_FILTERS);
 
   // Custom dialog state (replaces window.prompt / window.confirm).
   const [showCreate, setShowCreate] = useState(false);
@@ -49,11 +51,23 @@ export function WatchlistsClient({
   const activeList = useMemo(() => lists.find((l) => l.id === activeId) ?? null, [lists, activeId]);
   const activeAssetIds = useMemo(() => new Set(activeList?.assetIds ?? []), [activeList]);
   const listAssets = useMemo(() => assets.filter((a) => activeAssetIds.has(a.id)), [assets, activeAssetIds]);
-  const filteredMaster = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return assets;
-    return assets.filter((a) => a.symbol.toLowerCase().includes(q) || a.name.toLowerCase().includes(q));
-  }, [assets, search]);
+  const currencies = useMemo(() => [...new Set(assets.map((a) => a.currency.toUpperCase()))].sort(), [assets]);
+  const filteredMaster = useMemo(
+    () =>
+      assets.filter((a) =>
+        matchesAssetFilters(
+          {
+            symbol: a.symbol,
+            name: a.name,
+            currency: a.currency,
+            signalState: a.latestSnapshot?.signalState ?? 'NONE',
+            marketCap: a.marketCap,
+          },
+          filters,
+        ),
+      ),
+    [assets, filters],
+  );
 
   async function toggleItem(asset: WatchlistAssetRow) {
     if (!activeList) return;
@@ -218,6 +232,12 @@ export function WatchlistsClient({
           </div>
         ))}
         <button
+          onClick={() => document.getElementById('master-watchlist')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-sm font-semibold text-muted-foreground transition hover:border-primary hover:text-foreground"
+        >
+          Master Watchlist <span className="text-xs font-normal">{assets.length}</span>
+        </button>
+        <button
           onClick={() => { setNewListName(''); setShowCreate(true); }}
           className="flex items-center gap-1 rounded-full border border-dashed border-border px-3 py-1.5 text-sm text-muted-foreground transition hover:text-foreground"
         >
@@ -277,22 +297,18 @@ export function WatchlistsClient({
       </Card>
 
       {/* Master list */}
-      <Card
-        title="Master watchlist"
-        right={
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search symbol or name"
-            className="w-56 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-          />
-        }
-      >
+      <div id="master-watchlist" className="scroll-mt-20">
+      <Card title="Master watchlist">
+        <div className="mb-4">
+          <AssetFilterBar filters={filters} onChange={setFilters} currencies={currencies} />
+        </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-border text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
                 <th className="py-2 pr-3">Asset</th>
+                <th className="py-2 pr-3">Asset Class</th>
+                <th className="py-2 pr-3">Product</th>
                 <th className="py-2 pr-3">Signal</th>
                 <th className="py-2 pr-3">Price</th>
                 <th className="py-2 pr-3">Change</th>
@@ -309,6 +325,8 @@ export function WatchlistsClient({
                       <Link href={`/assets/${asset.id}`} className="font-semibold text-foreground hover:text-primary">{asset.symbol}</Link>
                       <div className="text-xs text-muted-foreground">{asset.name}</div>
                     </td>
+                    <td className="py-2 pr-3 text-xs text-muted-foreground">{assetClassLabel(asset.assetType)}</td>
+                    <td className="py-2 pr-3 text-xs text-muted-foreground">{productLabel(asset.assetType)}</td>
                     <td className="py-2 pr-3"><Badge tone={toneForSignal(signal)}>{signal}</Badge></td>
                     <td className="py-2 pr-3 font-mono">{asset.latestSnapshot?.currentPrice == null ? '—' : `${fmt(asset.latestSnapshot.currentPrice)} ${asset.currency}`}</td>
                     <td className={`py-2 pr-3 font-mono ${asset.latestSnapshot?.dailyChangePct == null ? 'text-muted-foreground' : asset.latestSnapshot.dailyChangePct >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
@@ -333,6 +351,7 @@ export function WatchlistsClient({
           </table>
         </div>
       </Card>
+      </div>
 
       {/* Create-list dialog */}
       <Modal

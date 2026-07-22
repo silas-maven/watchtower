@@ -13,7 +13,7 @@ export async function GET() {
     const watchlist = await getDefaultWatchlist(user.id);
 
     const assets = await prisma.asset.findMany({
-      where: { isActive: true },
+      where: { isActive: true, isMacro: false },
       include: {
         rule: true,
         snapshots: { orderBy: { capturedAt: 'desc' }, take: 1 },

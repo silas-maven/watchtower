@@ -21,7 +21,7 @@ export async function getAssetsForDashboard(): Promise<AssetWithLatest[]> {
   // Only the latest snapshot is needed; pull the minimum columns rather than the
   // last 30 rows per asset (which was building an unused sparkline).
   const assets = await prisma.asset.findMany({
-    where: { isActive: true },
+    where: { isActive: true, isMacro: false },
     select: {
       id: true,
       symbol: true,

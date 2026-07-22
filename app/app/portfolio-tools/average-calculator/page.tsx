@@ -19,7 +19,7 @@ type Asset = {
 };
 type PlanTranche = { price: number; budgetGBP: number | null; executed: boolean };
 type SavedPlan = { id: string; basePrice: number | null; targetSellPrice: number | null; tranches: PlanTranche[] };
-type Tranche = { price: string; executed: boolean };
+type Tranche = { price: string; budget: string; executed: boolean };
 
 const SYMBOLS: Record<string, string> = { GBP: '£', USD: '$', EUR: '€', CAD: 'C$', GBX: 'p' };
 const sym = (c: string) => SYMBOLS[c] ?? `${c} `;
@@ -34,7 +34,7 @@ export default function AveragePlannerPage() {
   const [assetId, setAssetId] = useState('');
   const [budget, setBudget] = useState('1500');
   const [targetSell, setTargetSell] = useState('');
-  const [tranches, setTranches] = useState<Tranche[]>([{ price: '', executed: false }]);
+  const [tranches, setTranches] = useState<Tranche[]>([{ price: '', budget: '', executed: false }]);
   const [planId, setPlanId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [addingWl, setAddingWl] = useState(false);
@@ -83,7 +83,11 @@ export default function AveragePlannerPage() {
         const total = plan.tranches.reduce((s, t) => s + (t.budgetGBP ?? 0), 0);
         setBudget(total > 0 ? String(total) : '1500');
         setTargetSell(plan.targetSellPrice != null ? String(plan.targetSellPrice) : '');
-        setTranches(plan.tranches.length ? plan.tranches.map((t) => ({ price: String(t.price), executed: t.executed })) : [{ price: px != null ? String(px) : '', executed: false }]);
+        setTranches(
+          plan.tranches.length
+            ? plan.tranches.map((t) => ({ price: String(t.price), budget: t.budgetGBP != null ? String(t.budgetGBP) : '', executed: t.executed }))
+            : [{ price: px != null ? String(px) : '', budget: '', executed: false }],
+        );
         return;
       }
     } catch {
@@ -91,7 +95,7 @@ export default function AveragePlannerPage() {
     }
     setPlanId(null);
     setTargetSell('');
-    setTranches([{ price: px != null ? String(px) : '', executed: false }]);
+    setTranches([{ price: px != null ? String(px) : '', budget: '', executed: false }]);
   }, []);
 
   // Deep-link: /average-calculator?assetId=<id> auto-selects + loads the plan (once).
@@ -110,19 +114,32 @@ export default function AveragePlannerPage() {
   const n = validIdx.length;
   const basePrice = Number(validIdx[0]?.t.price) || null;
 
-  // Equal budget split across priced tranches (last absorbs the rounding remainder).
-  const allocations = useMemo(() => {
-    if (n === 0 || totalBudget <= 0) return [] as number[];
+  // Manual allocation per tranche (client feedback: no forced even split).
+  const allocations = useMemo(() => validIdx.map((x) => Number(x.t.budget) || 0), [validIdx]);
+  const allocatedTotal = useMemo(() => allocations.reduce((s, v) => s + v, 0), [allocations]);
+  const hasAllocations = allocations.some((v) => v > 0);
+
+  // The "Split evenly" button pre-fills equal amounts; each stays editable after.
+  function splitEvenly() {
+    if (n === 0 || totalBudget <= 0) return;
     const each = Math.floor((totalBudget / n) * 100) / 100;
-    const arr = Array(n).fill(each);
-    arr[n - 1] = Math.round((totalBudget - each * (n - 1)) * 100) / 100;
-    return arr;
-  }, [n, totalBudget]);
+    const last = Math.round((totalBudget - each * (n - 1)) * 100) / 100;
+    const priced = new Set(validIdx.map((x) => x.i));
+    let k = 0;
+    setTranches((prev) =>
+      prev.map((t, i) => {
+        if (!priced.has(i)) return t;
+        const amount = k === n - 1 ? last : each;
+        k += 1;
+        return { ...t, budget: String(amount) };
+      }),
+    );
+  }
 
   const preview = useMemo(() => {
-    if (n === 0 || totalBudget <= 0) return null;
+    if (n === 0 || !hasAllocations) return null;
     return computeAveragingPlan(validIdx.map((x, k) => ({ budgetGBP: allocations[k], targetPrice: Number(x.t.price) })), currency, fx);
-  }, [validIdx, allocations, currency, fx, n, totalBudget]);
+  }, [validIdx, allocations, currency, fx, n, hasAllocations]);
 
   const executed = useMemo(() => {
     const ex = validIdx.map((x, k) => ({ ...x, k })).filter((x) => x.t.executed);
@@ -148,8 +165,8 @@ export default function AveragePlannerPage() {
   }
 
   async function savePlan() {
-    if (!asset || n === 0 || totalBudget <= 0) {
-      pushToast('Pick a stock, set a budget and at least one tranche price.', 'error');
+    if (!asset || n === 0 || !hasAllocations) {
+      pushToast('Pick a stock, set at least one tranche price and an allocation.', 'error');
       return;
     }
     setSaving(true);
@@ -183,7 +200,7 @@ export default function AveragePlannerPage() {
     <div className="space-y-8 pb-12">
       <div>
         <Link href="/app/portfolio-tools" className="inline-flex items-center gap-2 text-sm text-muted-foreground transition hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" /> Portfolio Tools
+          <ArrowLeft className="h-4 w-4" /> Portfolio
         </Link>
         <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">Average Planner</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
@@ -255,12 +272,26 @@ export default function AveragePlannerPage() {
           <div>
             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Total budget (£)</label>
             <input value={budget} onChange={(e) => setBudget(e.target.value)} inputMode="decimal" className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none" />
-            <p className="mt-2 text-xs text-muted-foreground">Split evenly across your tranches.</p>
+            <button
+              onClick={splitEvenly}
+              disabled={n === 0 || totalBudget <= 0}
+              className="mt-3 w-full rounded-lg border border-primary/40 px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/10 disabled:opacity-50"
+            >
+              Split evenly
+            </button>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Set each tranche allocation yourself, or use Split evenly to pre-fill equal amounts. You can still edit every tranche after.
+            </p>
+            {hasAllocations && totalBudget > 0 && Math.abs(allocatedTotal - totalBudget) > 0.01 && (
+              <p className="mt-2 text-xs font-semibold text-amber-500">
+                Allocated {gbp(allocatedTotal)} of {gbp(totalBudget)}.
+              </p>
+            )}
           </div>
 
           <div>
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tranches (entry prices, {currency})</label>
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tranches (entry price {currency} + allocation £)</label>
               <span className="text-xs text-muted-foreground">Drop % vs Trade 1</span>
             </div>
             <div className="mt-2 space-y-2">
@@ -270,6 +301,7 @@ export default function AveragePlannerPage() {
                   <div key={i} className="flex flex-wrap items-center gap-2">
                     <span className="w-16 shrink-0 text-xs font-semibold text-muted-foreground">{i === 0 ? 'Trade 1' : `Trade ${i + 1}`}</span>
                     <input value={t.price} onChange={(e) => setTranches((p) => p.map((x, idx) => (idx === i ? { ...x, price: e.target.value } : x)))} inputMode="decimal" placeholder="price" className="w-28 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none" />
+                    <input value={t.budget} onChange={(e) => setTranches((p) => p.map((x, idx) => (idx === i ? { ...x, budget: e.target.value } : x)))} inputMode="decimal" placeholder="£ alloc" className="w-24 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none" />
                     <span className="w-16 text-right font-mono text-xs text-muted-foreground">{drop == null ? (i === 0 ? 'base' : '—') : `-${drop.toFixed(1)}%`}</span>
                     <label className="flex items-center gap-1 text-xs text-muted-foreground">
                       <input type="checkbox" checked={t.executed} onChange={() => setTranches((p) => p.map((x, idx) => (idx === i ? { ...x, executed: !x.executed } : x)))} className="accent-primary" /> Executed
@@ -281,7 +313,7 @@ export default function AveragePlannerPage() {
                 );
               })}
             </div>
-            <button onClick={() => setTranches((p) => [...p, { price: '', executed: false }])} className="mt-3 inline-flex items-center gap-1 rounded-lg border border-dashed border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:text-foreground">
+            <button onClick={() => setTranches((p) => [...p, { price: '', budget: '', executed: false }])} className="mt-3 inline-flex items-center gap-1 rounded-lg border border-dashed border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:text-foreground">
               <Plus className="h-3.5 w-3.5" /> Add tranche
             </button>
           </div>

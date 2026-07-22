@@ -3,6 +3,7 @@ import { Role } from '@prisma/client';
 import { Card } from '@/components/Card';
 import { AssetOperationsPanel } from '@/components/AssetOperationsPanel';
 import { AssetCatalogManager } from '@/components/AssetCatalogManager';
+import { MacroSettingsPanel } from '@/components/MacroSettingsPanel';
 import { HelpTip } from '@/components/ui/HelpTip';
 import { prisma } from '@/lib/prisma';
 import { requirePageRole } from '@/lib/server/pageAuth';
@@ -43,6 +44,10 @@ export default async function AdminPage() {
 
       <Card title="Asset Operations">
         <AssetOperationsPanel />
+      </Card>
+
+      <Card title="Macro Readings (manual)">
+        <MacroSettingsPanel />
       </Card>
 
       <Card

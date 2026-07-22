@@ -3,7 +3,10 @@ import { prisma } from '@/lib/prisma';
 import { fetchCryptoQuote } from '@/lib/market/crypto';
 import { fetchFxRates, toGbp } from '@/lib/market/fx';
 import { toQuoteSymbol } from '@/lib/market/symbols';
-import { fetchYahooQuotes, type YahooQuote } from '@/lib/market/yahoo';
+import { fetchYahooFundamentals, fetchYahooQuotes, type YahooQuote } from '@/lib/market/yahoo';
+import { fetchBoeBaseRate } from '@/lib/market/boe';
+import { fetchSectorPEs } from '@/lib/market/sectorPE';
+import { setSetting } from '@/lib/server/settings';
 import { computeSignalState, effectiveSignalState, eventTypeForTransition } from '@/lib/signals/engine';
 import { computeSpreadsheetDerived } from '@/lib/formulas';
 import { isMarketOpenForAsset } from '@/lib/time';
@@ -102,7 +105,7 @@ async function runRefresh(force: boolean, jobRunId: string): Promise<RefreshMark
 
     if (!quote && asset.assetType === 'CRYPTO') {
       const cg = await fetchCryptoQuote(asset.symbol);
-      if (cg) quote = { ...cg, quoteCurrency: 'USD', nextEarningsDate: null };
+      if (cg) quote = { ...cg, quoteCurrency: 'USD', nextEarningsDate: null, ma50: null, ma200: null, dividendYield: null };
     }
 
     // A currency clash between a validly-stored currency and the quote means the
@@ -255,6 +258,9 @@ async function runRefresh(force: boolean, jobRunId: string): Promise<RefreshMark
         pe: merged.pe,
         dataDelay: merged.dataDelay,
         marketCap: merged.marketCap,
+        ma50: quote?.ma50 ?? asset.ma50,
+        ma200: quote?.ma200 ?? asset.ma200,
+        dividendYield: quote?.dividendYield ?? asset.dividendYield,
         nextEarningsDate: quote?.nextEarningsDate ?? asset.nextEarningsDate,
         currentCostGBP,
         currentValueGBP,
@@ -270,5 +276,67 @@ async function runRefresh(force: boolean, jobRunId: string): Promise<RefreshMark
   // Inert unless alert delivery is explicitly enabled (off by default).
   await dispatchSignalAlerts(newAlerts).catch((error) => console.error('[refreshMarket] alert dispatch failed:', error));
 
+  await refreshFundamentals(due, symbolByAssetId).catch((error) =>
+    console.error('[refreshMarket] fundamentals refresh failed:', error),
+  );
+
+  await refreshBoeBaseRate().catch((error) => console.error('[refreshMarket] BOE rate refresh failed:', error));
+
   return result;
+}
+
+// Auto-updates the BOE base rate tile from the free BoE feed. Stored in the
+// _auto setting; the admin's manual override (if set) still wins in getMacroTiles.
+async function refreshBoeBaseRate(): Promise<void> {
+  const rate = await fetchBoeBaseRate();
+  if (rate == null) return;
+  await setSetting('macro_boe_base_rate_auto', { value: rate.value, changePct: 0, asOf: rate.asOf });
+}
+
+// Balance-sheet ratios move slowly and cost one quoteSummary request per
+// symbol, so refresh at most a few stale equities per run (stale = older than
+// a day). Over successive 10-minute runs the whole list stays current.
+const FUNDAMENTALS_STALE_MS = 24 * 60 * 60 * 1000;
+const FUNDAMENTALS_PER_RUN = 5;
+const FUNDAMENTALS_TYPES = new Set(['STOCK', 'ETF', 'REIT']);
+
+async function refreshFundamentals(
+  assets: Array<{ id: string; assetType: string; isMacro: boolean; fundamentalsAt: Date | null }>,
+  symbolByAssetId: Map<string, string>,
+): Promise<void> {
+  const now = Date.now();
+  const stale = assets
+    .filter((a) => FUNDAMENTALS_TYPES.has(a.assetType) && !a.isMacro)
+    .filter((a) => now - (a.fundamentalsAt?.getTime() ?? 0) > FUNDAMENTALS_STALE_MS)
+    .sort((a, b) => (a.fundamentalsAt?.getTime() ?? 0) - (b.fundamentalsAt?.getTime() ?? 0))
+    .slice(0, FUNDAMENTALS_PER_RUN);
+
+  if (stale.length === 0) return;
+
+  // Sector P/E benchmark: fetched once per run from the SPDR sector ETFs, then
+  // matched to each asset by its Yahoo sector.
+  const sectorPEs = await fetchSectorPEs();
+
+  for (const asset of stale) {
+    const symbol = symbolByAssetId.get(asset.id);
+    if (!symbol) continue;
+    const fundamentals = await fetchYahooFundamentals(symbol);
+    const sectorPE = fundamentals?.sector ? sectorPEs.get(fundamentals.sector) ?? null : null;
+    await prisma.asset.update({
+      where: { id: asset.id },
+      data: {
+        fundamentalsAt: new Date(),
+        ...(fundamentals
+          ? {
+              quickRatio: fundamentals.quickRatio,
+              currentRatio: fundamentals.currentRatio,
+              debtToEquity: fundamentals.debtToEquity,
+              // Only overwrite sectorPE when we resolved one, so a manual admin
+              // value is not wiped by a sector miss.
+              ...(sectorPE != null ? { sectorPE } : {}),
+            }
+          : {}),
+      },
+    });
+  }
 }

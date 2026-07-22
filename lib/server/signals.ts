@@ -18,7 +18,7 @@ export type ActiveSignalRow = {
 
 export async function getActiveSignals(): Promise<ActiveSignalRow[]> {
   const assets = await prisma.asset.findMany({
-    where: { isActive: true },
+    where: { isActive: true, isMacro: false },
     include: {
       rule: true,
       snapshots: { orderBy: { capturedAt: 'desc' }, take: 1 },
@@ -56,7 +56,7 @@ export async function getDailySignalSummary(date?: string) {
   const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
 
   const assets = await prisma.asset.findMany({
-    where: { isActive: true },
+    where: { isActive: true, isMacro: false },
     include: {
       rule: true,
       snapshots: { orderBy: { capturedAt: 'desc' }, take: 1 },

@@ -41,7 +41,7 @@ export async function POST(req: Request) {
 
     if (!quote && parsed.data.assetType === 'CRYPTO') {
       const cg = await fetchCryptoQuote(parsed.data.symbol);
-      if (cg) quote = { ...cg, quoteCurrency: 'USD', nextEarningsDate: null };
+      if (cg) quote = { ...cg, quoteCurrency: 'USD', nextEarningsDate: null, ma50: null, ma200: null, dividendYield: null };
     }
 
     if (!quote || quote.currentPrice == null) {

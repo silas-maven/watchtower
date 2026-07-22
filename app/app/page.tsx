@@ -9,6 +9,10 @@ import { BorderBeam } from '@/components/ui/border-beam';
 import { BlurFade } from '@/components/ui/blur-fade';
 import { Calculator, CheckSquare, History, TrendingDown } from 'lucide-react';
 import { MarketPulseRail } from '@/components/news/MarketPulseRail';
+import { WeatherSnapshotBoard } from '@/components/market/WeatherSnapshotBoard';
+import { getMacroTiles, weatherInputsFromTiles } from '@/lib/market/macro';
+import { SNAPSHOT_ROWS } from '@/lib/market/macroTypes';
+import { classifyWeather } from '@/lib/market/weather';
 import { formatMoney } from '@/lib/money';
 import { getSetting } from '@/lib/server/settings';
 import { trackEvent } from '@/lib/server/trackEvent';
@@ -30,7 +34,7 @@ function toneForState(state: string) {
 export default async function MemberDashboard() {
   const profile = await requirePageUser('/app');
 
-  const [live, rows, watchItems, xHandle] = await Promise.all([
+  const [live, rows, watchItems, xHandle, macroTiles] = await Promise.all([
     getLivePortfolioView(profile.id).catch(() => null),
     getAssetsForDashboard().catch(() => []),
     prisma.userWatchlistItem.findMany({
@@ -38,7 +42,11 @@ export default async function MemberDashboard() {
       select: { assetId: true },
     }).catch(() => []),
     getSetting('news_x_handle').catch(() => 'MarketWatch'),
+    getMacroTiles().catch(() => new Map()),
   ]);
+
+  const weather = classifyWeather(weatherInputsFromTiles(macroTiles));
+  const macroTileRecord = Object.fromEntries(macroTiles);
 
   trackEvent(profile.id, 'PAGE_VIEW', undefined, '/app');
 
@@ -59,13 +67,17 @@ export default async function MemberDashboard() {
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
           <div>
             <div className="text-xs font-bold uppercase tracking-[0.28em] text-primary">Member Workspace</div>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">SPA Command Centre</h1>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
               Monitor your personal watchlist, discover new market opportunities, and access your portfolio toolkit.
             </p>
           </div>
           <Badge tone={profile.accessState === 'ACTIVE' ? 'emerald' : 'amber'}>{profile.accessState}</Badge>
         </div>
+      </BlurFade>
+
+      <BlurFade delay={0.15}>
+        <WeatherSnapshotBoard weather={weather} tiles={macroTileRecord} rows={SNAPSHOT_ROWS} />
       </BlurFade>
 
       <BlurFade delay={0.2}>
@@ -152,7 +164,7 @@ export default async function MemberDashboard() {
 
             {/* Portfolio Tools */}
             <div>
-              <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-muted-foreground">Portfolio Tools</h3>
+              <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-muted-foreground">Portfolio Toolkit</h3>
               <div className="grid gap-4 sm:grid-cols-3">
                 <Link href="/app/portfolio-tools/average-calculator" className="rounded-2xl border border-border bg-card p-5 transition hover:bg-muted/50 hover:shadow-md">
                   <div className="w-fit rounded-xl bg-primary/10 p-3"><Calculator className="h-6 w-6 text-primary" /></div>

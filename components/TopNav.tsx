@@ -2,21 +2,22 @@
 
 import Link from 'next/link';
 import { SignInButton, UserButton, useUser } from '@clerk/nextjs';
-import { Activity, Bell, BriefcaseBusiness, Calculator, ChartCandlestick, Gauge, LayoutDashboard, Settings, ShieldCheck, Sparkles, UsersRound } from 'lucide-react';
+import { Activity, Bell, BriefcaseBusiness, Calculator, ChartCandlestick, Gauge, LayoutDashboard, Megaphone, Settings, ShieldCheck, Sparkles, UsersRound } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import type { SessionUser } from '@/lib/auth';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { TickerStrip } from '@/components/market/TickerStrip';
 
 type NavUser = Pick<SessionUser, 'name' | 'email' | 'role' | 'accessState'> | null;
 
 type NavItem = { href: string; label: string; icon: typeof LayoutDashboard };
 
 const memberItems: NavItem[] = [
-  { href: '/app', label: 'Command Centre', icon: LayoutDashboard },
+  { href: '/app', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/app/daily-checks', label: 'Daily Checks', icon: Activity },
   { href: '/app/watchlists', label: 'Watchlists', icon: Bell },
-  { href: '/app/assets', label: 'Asset Library', icon: ChartCandlestick },
-  { href: '/app/portfolio-tools', label: 'Portfolio Tools', icon: Calculator },
+  { href: '/app/assets', label: 'Asset Centre', icon: ChartCandlestick },
+  { href: '/app/portfolio-tools', label: 'Portfolio', icon: Calculator },
   { href: '/app/account', label: 'Account', icon: Settings },
 ];
 
@@ -27,6 +28,7 @@ const adminItems: NavItem[] = [
   { href: '/admin/analytics', label: 'Analytics', icon: Activity },
   { href: '/admin/ai-briefs', label: 'AI Briefs', icon: Sparkles },
   { href: '/admin/system-jobs', label: 'System Jobs', icon: ShieldCheck },
+  { href: '/admin/releases', label: "What's New", icon: Megaphone },
 ];
 
 function NavLink({ href, label, icon: Icon }: NavItem) {
@@ -96,7 +98,10 @@ export function TopNav({ children, initialUser }: { children: React.ReactNode; i
       <header className="sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur-xl lg:pl-72">
         <div className="flex min-h-14 items-center justify-between gap-3 px-4 lg:px-6">
           <div className="lg:hidden">
-            <Link href="/app" className="font-bold tracking-tight text-foreground">SPA</Link>
+            <Link href="/app" className="flex items-center gap-2">
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-primary text-[10px] font-bold text-primary-foreground">SPA</span>
+              <span className="text-sm font-bold tracking-tight text-foreground">Stock Pickers Academy</span>
+            </Link>
           </div>
           <div className="hidden text-sm font-medium text-muted-foreground lg:block">
             {canAdmin ? 'Admin and member workspaces are separated.' : 'Member workspace'}
@@ -117,6 +122,7 @@ export function TopNav({ children, initialUser }: { children: React.ReactNode; i
           {memberItems.map((item) => <NavLink key={item.href} {...item} />)}
           {canAdmin && adminItems.map((item) => <NavLink key={item.href} {...item} />)}
         </div>
+        {initialUser && <TickerStrip />}
       </header>
 
       <main className="relative px-4 py-6 lg:pl-[19.5rem] lg:pr-6">

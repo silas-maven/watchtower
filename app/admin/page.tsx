@@ -26,6 +26,7 @@ export default async function AdminOverviewPage() {
     { href: '/admin/analytics', title: 'Analytics', body: 'Platform-wide usage intelligence, tool adoption, and user engagement trends.' },
     { href: '/admin/ai-briefs', title: 'AI Briefs', body: 'Generate admin summaries using deterministic market state as source.' },
     { href: '/admin/system-jobs', title: 'System Jobs', body: 'Cron schedules, import history, and background task monitoring.' },
+    { href: '/admin/releases', title: "What's New", body: 'Release notes for shipped updates, tied to your feedback with links to each change.' },
   ];
 
   return (

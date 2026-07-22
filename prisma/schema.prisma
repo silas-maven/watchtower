@@ -62,9 +62,18 @@ enum AssetType {
   COMMODITY
   FOREX
   INDEX
+  REIT
   OTHER
 
   @@map("watchtower_spa_asset_type")
+}
+
+enum AiReportKind {
+  PITCH
+  STRESS_TEST
+  PERSONAL_FINANCE
+
+  @@map("watchtower_spa_ai_report_kind")
 }
 
 enum SignalState {
@@ -148,6 +157,8 @@ model Profile {
   accessActions          AdminAccessAction[]  @relation("AdminAccessTarget")
   performedAccessActions AdminAccessAction[]  @relation("AdminAccessActor")
   assetActions           AdminAssetAction[]   @relation("AdminAssetActor")
+  aiReports              AiReport[]
+  personalFinance        PersonalFinanceInput?
 
   @@index([role, accessState])
   @@index([lastSeenAt(sort: Desc)])
@@ -281,10 +292,23 @@ model Asset {
   dataDelay Float?
   marketCap Float?
 
+  ma50          Float?
+  ma200         Float?
+  dividendYield Float?
+  quickRatio    Float?
+  currentRatio  Float?
+  debtToEquity  Float?
+  // Admin-entered until a sector P/E data source is wired in.
+  sectorPE      Float?
+  fundamentalsAt DateTime?
+
   nextEarningsDate DateTime?
 
   closeYest Float?
   tags      Json?
+  // Macro instruments (indices, FX, commodities) power the ticker strip and
+  // Weather Outside; they are excluded from member watchlist/library tables.
+  isMacro   Boolean  @default(false)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -299,6 +323,7 @@ model Asset {
   dueDiligenceRecords DueDiligenceRecord[]
   closedPositions     ClosedPosition[]
   assetActions        AdminAssetAction[]
+  aiReports           AiReport[]
 
   @@map("watchtower_spa_assets")
 }
@@ -593,6 +618,49 @@ model WeeklyDigest {
   @@unique([weekStart, timezone])
   @@index([weekStart(sort: Desc)])
   @@map("watchtower_spa_weekly_digests")
+}
+
+// Persisted output of the AI tools (pitch generator, portfolio stress test,
+// personal finance analysis). `inputs` captures the deterministic context the
+// model narrated so results stay auditable.
+model AiReport {
+  id        String       @id @default(cuid())
+  kind      AiReportKind
+  profileId String?
+  assetId   String?
+  inputs    Json
+  result    Json
+  model     String?
+  createdAt DateTime     @default(now())
+
+  profile Profile? @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  asset   Asset?   @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, kind, createdAt(sort: Desc)])
+  @@index([assetId, kind, createdAt(sort: Desc)])
+  @@map("watchtower_spa_ai_reports")
+}
+
+// Member-entered inputs for the personal finance (CFO) tool. One row per member.
+model PersonalFinanceInput {
+  id               String   @id @default(cuid())
+  profileId        String   @unique
+  age              Int?
+  monthlyIncome    Float?
+  monthlyExpenses  Float?
+  savings          Float?
+  investments      Float?
+  pension          Float?
+  debts            Json?
+  homeValue        Float?
+  monthlyInvesting Float?
+  goal             String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("watchtower_spa_personal_finance_inputs")
 }
 
 model PlatformSetting {

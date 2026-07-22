@@ -4,6 +4,9 @@ import type { QuoteResult } from '@/lib/market/equities';
 export type YahooQuote = QuoteResult & {
   quoteCurrency: string | null;
   nextEarningsDate: Date | null;
+  ma50: number | null;
+  ma200: number | null;
+  dividendYield: number | null;
 };
 
 let client: InstanceType<typeof YahooFinance> | null = null;
@@ -43,14 +46,32 @@ export function normaliseCurrency(code: string | null | undefined): string | nul
 }
 
 export type ChartPoint = { date: string; close: number };
+export type OhlcPoint = { date: string; open: number; high: number; low: number; close: number };
 
-const RANGE_DAYS: Record<string, number> = { '1mo': 30, '3mo': 92, '6mo': 183, '1y': 366 };
+const RANGE_DAYS: Record<string, number> = { '1mo': 30, '3mo': 92, '6mo': 183, '1y': 366, '2y': 731, '5y': 1827 };
+
+export type ChartInterval = '1d' | '1wk' | '1mo';
+export type ChartRange = keyof typeof RANGE_DAYS;
 
 /**
  * Historical daily closes for a symbol over the given range. Used for the asset
  * detail chart. Returns an empty array if Yahoo has no series for the symbol.
  */
-export async function fetchYahooChart(symbol: string, range: keyof typeof RANGE_DAYS = '3mo'): Promise<ChartPoint[]> {
+export async function fetchYahooChart(symbol: string, range: ChartRange = '3mo'): Promise<ChartPoint[]> {
+  const points = await fetchYahooOhlc(symbol, range, '1d');
+  return points.map(({ date, close }) => ({ date, close }));
+}
+
+/**
+ * Historical OHLC candles for a symbol. Interval drives the indicator timeframe
+ * (Daily/Weekly/Monthly); the range must be long enough for 200-period
+ * indicators, which callers control via the range parameter.
+ */
+export async function fetchYahooOhlc(
+  symbol: string,
+  range: ChartRange = '3mo',
+  interval: ChartInterval = '1d',
+): Promise<OhlcPoint[]> {
   const sym = symbol.trim().toUpperCase();
   if (!sym) return [];
   const days = RANGE_DAYS[range] ?? 92;
@@ -58,19 +79,66 @@ export async function fetchYahooChart(symbol: string, range: keyof typeof RANGE_
 
   try {
     const yf = getClient();
-    const result = await yf.chart(sym, { period1, interval: '1d' });
-    const quotes = (result?.quotes ?? []) as Array<{ date?: Date | string; close?: number | null }>;
-    const points: ChartPoint[] = [];
+    const result = await yf.chart(sym, { period1, interval });
+    const quotes = (result?.quotes ?? []) as Array<{
+      date?: Date | string;
+      open?: number | null;
+      high?: number | null;
+      low?: number | null;
+      close?: number | null;
+    }>;
+    const points: OhlcPoint[] = [];
     for (const q of quotes) {
       const close = num(q.close);
       const date = asDate(q.date);
-      if (close != null && close > 0 && date) {
-        points.push({ date: date.toISOString().slice(0, 10), close });
-      }
+      if (close == null || close <= 0 || !date) continue;
+      // Yahoo occasionally emits null OHL on sparse rows; fall back to close so
+      // candles stay renderable without inventing a range.
+      points.push({
+        date: date.toISOString().slice(0, 10),
+        open: positive(q.open) ?? close,
+        high: positive(q.high) ?? close,
+        low: positive(q.low) ?? close,
+        close,
+      });
     }
     return points;
   } catch {
     return [];
+  }
+}
+
+export type YahooFundamentals = {
+  quickRatio: number | null;
+  currentRatio: number | null;
+  debtToEquity: number | null;
+  sector: string | null;
+};
+
+/**
+ * Balance-sheet ratios plus the sector via quoteSummary (one request per
+ * symbol, so callers should throttle). Yahoo reports debtToEquity as a
+ * percentage; normalise to a plain ratio (e.g. 54.3 -> 0.543) to match how the
+ * academy reads D/E. Sector feeds the sector-P/E benchmark (lib/market/sectorPE).
+ */
+export async function fetchYahooFundamentals(symbol: string): Promise<YahooFundamentals | null> {
+  const sym = symbol.trim().toUpperCase();
+  if (!sym) return null;
+  try {
+    const yf = getClient();
+    const result = await yf.quoteSummary(sym, { modules: ['financialData', 'summaryProfile'] });
+    const data = (result?.financialData ?? null) as Record<string, unknown> | null;
+    const profile = (result?.summaryProfile ?? null) as Record<string, unknown> | null;
+    if (!data && !profile) return null;
+    const rawDe = num(data?.debtToEquity);
+    return {
+      quickRatio: num(data?.quickRatio),
+      currentRatio: num(data?.currentRatio),
+      debtToEquity: rawDe != null ? rawDe / 100 : null,
+      sector: typeof profile?.sector === 'string' ? profile.sector : null,
+    };
+  } catch {
+    return null;
   }
 }
 
@@ -113,6 +181,13 @@ export async function fetchYahooQuotes(symbols: string[]): Promise<Map<string, Y
       source: 'yahoo',
       quoteCurrency: normaliseCurrency(typeof record.currency === 'string' ? record.currency : null),
       nextEarningsDate: asDate(record.earningsTimestamp),
+      ma50: positive(record.fiftyDayAverage),
+      ma200: positive(record.twoHundredDayAverage),
+      // quote() exposes dividendYield as a percentage figure where available;
+      // trailingAnnualDividendYield is a fraction, so scale it to match.
+      dividendYield:
+        num(record.dividendYield) ??
+        (num(record.trailingAnnualDividendYield) != null ? num(record.trailingAnnualDividendYield)! * 100 : null),
     });
   }
 

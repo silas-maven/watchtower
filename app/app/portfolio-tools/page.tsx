@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { requirePageUser } from '@/lib/server/pageAuth';
 import { BlurFade } from '@/components/ui/blur-fade';
-import { Calculator, CheckSquare, History, ArrowLeft, ArrowRight, Wallet, Briefcase } from 'lucide-react';
+import { Calculator, CheckSquare, History, ArrowLeft, ArrowRight, Wallet, Briefcase, ShieldAlert, PiggyBank } from 'lucide-react';
 
 export default async function PortfolioToolsPage() {
   await requirePageUser('/app/portfolio-tools');
@@ -47,6 +47,22 @@ export default async function PortfolioToolsPage() {
       title: 'Trade Journal',
       description: 'Log closed positions, track realized profit & loss, and monitor your all-time win rate. Your personal trophy cabinet for every trade you make.',
     },
+    {
+      href: '/app/portfolio-tools/stress-test',
+      icon: ShieldAlert,
+      iconBg: 'bg-rose-500/10',
+      iconColor: 'text-rose-500',
+      title: 'Portfolio Stress Test',
+      description: 'Run a Monte Carlo simulation over your live or virtual portfolio: probability of meeting your goal, expected range of outcomes, likely maximum drawdown, and where you are overexposed, explained in plain English.',
+    },
+    {
+      href: '/app/portfolio-tools/personal-finance',
+      icon: PiggyBank,
+      iconBg: 'bg-blue-500/10',
+      iconColor: 'text-blue-500',
+      title: 'Personal Finance',
+      description: 'Your CFO-style check-up. Enter income, expenses, savings, debts and goals, then simulate thousands of financial futures to see your emergency runway, biggest risks and the changes that matter most.',
+    },
   ];
 
   return (
@@ -59,7 +75,7 @@ export default async function PortfolioToolsPage() {
         </div>
         <div>
           <div className="text-xs font-bold uppercase tracking-[0.28em] text-primary">SPA Method</div>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">Portfolio Tools</h1>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">Portfolio</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
             Everything from the workbook — averaging calculator, due diligence checklist, and trade journal — reimagined as interactive tools.
           </p>

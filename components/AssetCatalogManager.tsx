@@ -5,7 +5,7 @@ import { Badge } from '@/components/Badge';
 import { HelpTip } from '@/components/ui/HelpTip';
 import { useToast } from '@/components/ui/ToastProvider';
 
-type AssetType = 'STOCK' | 'ETF' | 'CRYPTO' | 'COMMODITY' | 'FOREX' | 'INDEX' | 'OTHER';
+type AssetType = 'STOCK' | 'ETF' | 'CRYPTO' | 'COMMODITY' | 'FOREX' | 'INDEX' | 'REIT' | 'OTHER';
 type Override = 'AUTO' | 'FORCE_BUY' | 'FORCE_SELL' | 'SUPPRESS';
 
 type AdminAsset = {
@@ -310,7 +310,7 @@ export function AssetCatalogManager({ initialAssets }: Props) {
           <input value={newAsset.name} onChange={(e) => setNewAsset((s) => ({ ...s, name: e.target.value }))} placeholder="Name" className={inputClass} />
           <select value={newAsset.assetType} onChange={(e) => setNewAsset((s) => ({ ...s, assetType: e.target.value as AssetType }))} className={inputClass}>
             <option value="STOCK">STOCK</option><option value="ETF">ETF</option><option value="CRYPTO">CRYPTO</option>
-            <option value="COMMODITY">COMMODITY</option><option value="FOREX">FOREX</option><option value="INDEX">INDEX</option><option value="OTHER">OTHER</option>
+            <option value="COMMODITY">COMMODITY</option><option value="FOREX">FOREX</option><option value="INDEX">INDEX</option><option value="REIT">REIT</option><option value="OTHER">OTHER</option>
           </select>
           <input value={newAsset.currency} onChange={(e) => setNewAsset((s) => ({ ...s, currency: e.target.value }))} placeholder="Currency" className={inputClass} />
           <input value={newAsset.quoteSymbol} onChange={(e) => setNewAsset((s) => ({ ...s, quoteSymbol: e.target.value }))} placeholder="Quote symbol override (optional)" className={inputClass} />
