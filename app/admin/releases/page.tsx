@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Role } from '@prisma/client';
-import { Sparkles, ArrowUpRight } from 'lucide-react';
+import { Megaphone, ArrowUpRight } from 'lucide-react';
 import { Badge } from '@/components/Badge';
 import { BlurFade } from '@/components/ui/blur-fade';
 import { requirePageRole } from '@/lib/server/pageAuth';
@@ -24,7 +24,7 @@ export default async function ReleasesPage() {
       <BlurFade delay={0.05}>
         <div>
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.28em] text-primary">
-            <Sparkles className="h-4 w-4" /> What&rsquo;s new
+            <Megaphone className="h-4 w-4" /> What&rsquo;s new
           </div>
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">Release notes</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Copy, Sparkles } from 'lucide-react';
+import { Copy, FileText } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/ToastProvider';
 
@@ -74,7 +74,7 @@ export function GeneratePitchButton({ assetId, symbol, compact = false }: { asse
             : 'inline-flex items-center gap-2 rounded-xl border border-primary/40 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/10'
         }
       >
-        <Sparkles className={compact ? 'h-3 w-3' : 'h-4 w-4'} /> Generate pitch
+        <FileText className={compact ? 'h-3 w-3' : 'h-4 w-4'} /> Generate pitch
       </button>
 
       <Modal

@@ -14,6 +14,25 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    // Banned: the "AI sparkle" icon. It reads as an AI-generated-content marker
+    // and is not wanted anywhere in the product.
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "lucide-react",
+              importNames: ["Sparkles", "Sparkle"],
+              message:
+                "The sparkle icon is banned. Use a neutral icon (e.g. FileText, Newspaper, Megaphone) instead.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;

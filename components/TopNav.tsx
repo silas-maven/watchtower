@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { SignInButton, UserButton, useUser } from '@clerk/nextjs';
-import { Activity, Bell, BriefcaseBusiness, Calculator, ChartCandlestick, Gauge, LayoutDashboard, Megaphone, Settings, ShieldCheck, Sparkles, UsersRound } from 'lucide-react';
+import { Activity, Bell, BriefcaseBusiness, Calculator, ChartCandlestick, Gauge, LayoutDashboard, Megaphone, Newspaper, Settings, ShieldCheck, UsersRound } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import type { SessionUser } from '@/lib/auth';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -26,7 +26,7 @@ const adminItems: NavItem[] = [
   { href: '/admin/assets', label: 'Assets', icon: BriefcaseBusiness },
   { href: '/admin/members', label: 'Members', icon: UsersRound },
   { href: '/admin/analytics', label: 'Analytics', icon: Activity },
-  { href: '/admin/ai-briefs', label: 'AI Briefs', icon: Sparkles },
+  { href: '/admin/ai-briefs', label: 'AI Briefs', icon: Newspaper },
   { href: '/admin/system-jobs', label: 'System Jobs', icon: ShieldCheck },
   { href: '/admin/releases', label: "What's New", icon: Megaphone },
 ];

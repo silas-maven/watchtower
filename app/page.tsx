@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { auth } from '@clerk/nextjs/server';
 import { SignUpButton } from '@clerk/nextjs';
-import { ArrowRight, Activity, ListChecks, LineChart, ShieldCheck, Sparkles, Target, ChevronRight } from 'lucide-react';
+import { ArrowRight, Activity, ListChecks, LineChart, ShieldCheck, Newspaper, Target, ChevronRight } from 'lucide-react';
 
 import { MarketingNav } from '@/components/marketing/MarketingNav';
 import { MarketingFooter } from '@/components/marketing/MarketingFooter';
@@ -19,7 +19,7 @@ const features = [
   { title: 'Deterministic signals', body: 'Buy and sell alerts come from target entry and exit levels set by the academy. The maths is fixed and repeatable, not a black box.', icon: Target },
   { title: 'Your own sublists', body: 'Build as many personal lists as you like from the master watchlist, and get a daily read on just the assets you track.', icon: ListChecks },
   { title: 'Portfolio tools', body: 'A virtual portfolio, an averaging planner, a due diligence checklist and a trade journal, all carried over from the original workbook.', icon: Activity },
-  { title: 'Daily and weekly briefs', body: 'A plain-English summary of what entered a buy zone, what hit exit, and what moved, with a weekly digest for the academy owner.', icon: Sparkles },
+  { title: 'Daily and weekly briefs', body: 'A plain-English summary of what entered a buy zone, what hit exit, and what moved, with a weekly digest for the academy owner.', icon: Newspaper },
   { title: 'Membership you control', body: 'Billing runs through Stripe. A missed payment raises an alert for review. Access is only ever changed by the academy, never automatically.', icon: ShieldCheck },
 ];
 
