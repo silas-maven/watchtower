@@ -5,19 +5,20 @@
 
 type Bar = { x: number; h: number };
 
-// baseline y = 180; bars grow upward. Heights mirror the artwork's rising chart.
+// The candlesticks trace the arrow: each bar's top sits a fixed gap below the
+// arrow line at its x, so tall bars fall under the arrow's peaks and short bars
+// under its dip. baseline y = 150; bars grow upward.
 const BARS: Bar[] = [
-  { x: 18, h: 58 },
-  { x: 46, h: 84 },
-  { x: 74, h: 116 },
-  { x: 102, h: 100 },
-  { x: 130, h: 128 },
-  { x: 158, h: 116 },
-  { x: 186, h: 146 },
-  { x: 214, h: 122 },
+  { x: 24, h: 52 },
+  { x: 56, h: 76 },
+  { x: 88, h: 100 }, // under the arrow's first peak
+  { x: 120, h: 74 }, // under the dip
+  { x: 152, h: 88 },
+  { x: 184, h: 102 },
+  { x: 216, h: 116 }, // under the arrowhead
 ];
-const BAR_W = 16;
-const BASE = 180;
+const BAR_W = 14;
+const BASE = 150;
 
 /**
  * The logo emblem (arrow + bars). `animated` adds the classes the landing
@@ -25,7 +26,7 @@ const BASE = 180;
  */
 export function SpaEmblem({ animated = false, className }: { animated?: boolean; className?: string }) {
   return (
-    <svg viewBox="0 0 248 196" role="img" aria-label="Stock Pickers Academy" className={className}>
+    <svg viewBox="0 0 248 160" role="img" aria-label="Stock Pickers Academy" className={className}>
       <defs>
         <linearGradient id="spaBars" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stopColor="#7a5320" />
@@ -55,11 +56,12 @@ export function SpaEmblem({ animated = false, className }: { animated?: boolean;
         />
       ))}
 
-      {/* Up-trend arrow shaft: up to a peak, a dip, then one clean rise to the head */}
+      {/* Up-trend arrow, floating above the candlesticks and tracing their shape:
+          up to a peak (over bar 3), a dip (over bar 4), then a rise to the head */}
       <path
         className={animated ? 'spa-arrow' : undefined}
         pathLength={1}
-        d="M32 116 L94 62 L126 92 L203 45"
+        d="M28 82 L95 34 L127 60 L210 24"
         fill="none"
         stroke="url(#spaArrow)"
         strokeWidth={12}
@@ -69,7 +71,7 @@ export function SpaEmblem({ animated = false, className }: { animated?: boolean;
       {/* Filled arrowhead at the top-right tip, pointing up and to the right */}
       <path
         className={animated ? 'spa-arrowhead' : undefined}
-        d="M222 34 L206 56 L196 34 Z"
+        d="M232 14 L214 34 L204 13 Z"
         fill="url(#spaArrow)"
         stroke="url(#spaArrow)"
         strokeWidth={4}
