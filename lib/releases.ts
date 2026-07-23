@@ -88,8 +88,8 @@ export const RELEASES: Release[] = [
         heading: 'Brand and admin',
         items: [
           {
-            title: 'Stock Pickers Academy logo mark',
-            body: 'The header and marketing pages now show the academy chart logo in place of the plain SPA text chip.',
+            title: 'Stock Pickers Academy logo, animated on the landing page',
+            body: 'The real academy logo (the green up-trend arrow over the gold-to-green candlestick bars) now appears across the app in place of the plain SPA text chip. On the landing page it animates: the bars rise and the arrow draws itself in.',
             feedback: 'Feedback 9',
             href: '/app',
             linkLabel: 'Open Dashboard',

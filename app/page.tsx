@@ -7,6 +7,7 @@ import { MarketingNav } from '@/components/marketing/MarketingNav';
 import { MarketingFooter } from '@/components/marketing/MarketingFooter';
 import { HeroBackground } from '@/components/marketing/HeroBackground';
 import { Reveal } from '@/components/marketing/Reveal';
+import { SpaLogoLockup } from '@/components/brand/SpaLogoLockup';
 
 export const metadata = {
   title: 'Stock Pickers Academy — the watchlist, rebuilt',
@@ -40,7 +41,9 @@ export default async function LandingPage() {
       {/* Hero */}
       <section className="relative">
         <HeroBackground />
-        <div className="relative z-10 mx-auto max-w-5xl px-5 pb-24 pt-16 text-center lg:pt-28">
+        <div className="relative z-10 mx-auto max-w-5xl px-5 pb-24 pt-16 text-center lg:pt-24">
+          <SpaLogoLockup animated className="mb-8" />
+
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/5 px-4 py-1 text-xs font-bold uppercase tracking-[0.2em] text-primary backdrop-blur">
             <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Private members beta
           </div>

@@ -215,6 +215,66 @@
   animation: mk-shimmer 1.4s ease-in-out infinite;
 }
 
+/* Animated logo lockup (landing hero). Bars rise, arrow draws, wordmark fades.
+   Gated behind reduced-motion so it degrades to the static logo. */
+@keyframes spa-bar-rise {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+@keyframes spa-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes spa-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes spa-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .spa-anim .spa-bar {
+    transform: scaleY(0);
+    transform-box: fill-box;
+    transform-origin: center bottom;
+    animation: spa-bar-rise 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  }
+  .spa-anim .spa-arrow {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: spa-draw 0.9s ease-out 0.6s forwards;
+  }
+  .spa-anim .spa-arrowhead {
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: spa-pop 0.4s ease-out 1.25s forwards;
+  }
+  .spa-anim .spa-word {
+    opacity: 0;
+    animation: spa-fade-up 0.6s ease-out forwards;
+  }
+}
+
 .mk-canvas-host {
   opacity: 0;
   transition: opacity 1.4s ease;
