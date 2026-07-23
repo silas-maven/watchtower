@@ -3,12 +3,13 @@
 import Link from 'next/link';
 import { SignInButton, SignUpButton } from '@clerk/nextjs';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { SpaLogo } from '@/components/brand/SpaLogo';
 
 export function MarketingNav({ signedIn }: { signedIn: boolean }) {
   return (
     <header className="relative z-20 mx-auto flex max-w-7xl items-center justify-between px-5 py-6">
       <Link href="/" className="flex items-center gap-3">
-        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-primary text-sm font-bold text-primary-foreground shadow-md">SPA</div>
+        <SpaLogo className="h-11 w-11 rounded-2xl" />
         <div>
           <div className="font-bold tracking-tight text-foreground">Stock Pickers Academy</div>
           <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Asset intelligence</div>

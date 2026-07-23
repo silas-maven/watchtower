@@ -67,6 +67,7 @@ export async function POST(req: Request) {
     status?: string;
     mode?: string;
     current_period_end?: number;
+    cancel_at_period_end?: boolean;
     metadata?: { profileId?: string; product?: string };
     lines?: { data?: Array<{ period?: { end?: number } }> };
   };
@@ -141,6 +142,29 @@ export async function POST(req: Request) {
         currentPeriodEnd: periodEnd ? new Date(periodEnd * 1000) : null,
       },
     });
+
+    // Subscription ended or was cancelled/left unpaid: flag it for admin review
+    // so access can be removed MANUALLY. Never auto-cut access (academy rule).
+    const endedNow =
+      event.type === 'customer.subscription.deleted' ||
+      object.status === 'canceled' ||
+      object.status === 'unpaid' ||
+      object.cancel_at_period_end === true;
+    if (endedNow) {
+      const cancelsAtEnd = object.cancel_at_period_end === true && event.type !== 'customer.subscription.deleted';
+      await prisma.billingAlert.create({
+        data: {
+          profileId,
+          type: 'subscription_ended',
+          title: cancelsAtEnd ? 'Subscription set to cancel' : 'Subscription ended',
+          body: cancelsAtEnd
+            ? 'Stripe reports this subscription will not renew. Access is unchanged; remove it manually when it lapses.'
+            : 'Stripe reports this subscription has ended. Access was not changed automatically; remove it manually if appropriate.',
+          stripeEventId: event.id,
+          metadata: { customerId, subscriptionId: object.id, stripeStatus: object.status ?? null },
+        },
+      }).catch(() => undefined);
+    }
   }
 
   if (profileId && event.type === 'invoice.payment_succeeded') {

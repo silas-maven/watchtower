@@ -161,6 +161,18 @@
   }
 }
 
+@keyframes mk-shimmer {
+  0% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.75;
+  }
+  100% {
+    opacity: 0.4;
+  }
+}
+
 .mk-rise {
   opacity: 0;
   animation: mk-rise 0.9s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
@@ -197,6 +209,10 @@
 .mk-dash-line {
   stroke-dasharray: 6 6;
   animation: mk-dash 2.6s linear infinite;
+}
+
+.mk-shimmer {
+  animation: mk-shimmer 1.4s ease-in-out infinite;
 }
 
 .mk-canvas-host {

@@ -159,6 +159,7 @@ model Profile {
   assetActions           AdminAssetAction[]   @relation("AdminAssetActor")
   aiReports              AiReport[]
   personalFinance        PersonalFinanceInput?
+  stockRequests          StockRequest[]
 
   @@index([role, accessState])
   @@index([lastSeenAt(sort: Desc)])
@@ -661,6 +662,24 @@ model PersonalFinanceInput {
   profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@map("watchtower_spa_personal_finance_inputs")
+}
+
+// Member-submitted request to add a stock to the academy universe. Reviewed by
+// an admin (status PENDING -> REVIEWED / ADDED / DECLINED).
+model StockRequest {
+  id        String   @id @default(cuid())
+  profileId String
+  symbol    String
+  note      String?
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([profileId])
+  @@map("watchtower_spa_stock_requests")
 }
 
 model PlatformSetting {

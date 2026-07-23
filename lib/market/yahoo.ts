@@ -48,7 +48,8 @@ export function normaliseCurrency(code: string | null | undefined): string | nul
 export type ChartPoint = { date: string; close: number };
 export type OhlcPoint = { date: string; open: number; high: number; low: number; close: number };
 
-const RANGE_DAYS: Record<string, number> = { '1mo': 30, '3mo': 92, '6mo': 183, '1y': 366, '2y': 731, '5y': 1827 };
+// 'max' uses a very early start; Yahoo returns the full available history.
+const RANGE_DAYS: Record<string, number> = { '1mo': 30, '3mo': 92, '6mo': 183, '1y': 366, '2y': 731, '5y': 1827, max: 14610 };
 
 export type ChartInterval = '1d' | '1wk' | '1mo';
 export type ChartRange = keyof typeof RANGE_DAYS;
@@ -121,6 +122,81 @@ export type YahooFundamentals = {
  * percentage; normalise to a plain ratio (e.g. 54.3 -> 0.543) to match how the
  * academy reads D/E. Sector feeds the sector-P/E benchmark (lib/market/sectorPE).
  */
+export type YahooCompanyData = {
+  businessSummary: string | null;
+  industry: string | null;
+  country: string | null;
+  analyst: {
+    targetMean: number | null;
+    targetHigh: number | null;
+    targetLow: number | null;
+    numberOfAnalysts: number | null;
+    recommendationKey: string | null;
+  };
+  health: {
+    profitMargin: number | null;
+    returnOnEquity: number | null;
+    operatingMargin: number | null;
+    revenueGrowth: number | null;
+    earningsGrowth: number | null;
+    freeCashflow: number | null;
+    operatingCashflow: number | null;
+    totalCash: number | null;
+    totalDebt: number | null;
+    ebitda: number | null;
+    debtToEquity: number | null; // plain ratio
+    quickRatio: number | null;
+    currentRatio: number | null;
+  };
+};
+
+/**
+ * Company profile, analyst price targets and the fundamentals the pitch's
+ * Financial Health section needs. One quoteSummary call. Analyst coverage is
+ * reported by numberOfAnalysts (0/null -> no coverage). D/E is normalised from
+ * Yahoo's percentage to a plain ratio, matching the rest of the app.
+ */
+export async function fetchYahooCompanyData(symbol: string): Promise<YahooCompanyData | null> {
+  const sym = symbol.trim().toUpperCase();
+  if (!sym) return null;
+  try {
+    const yf = getClient();
+    const result = await yf.quoteSummary(sym, { modules: ['financialData', 'assetProfile'] });
+    const f = (result?.financialData ?? {}) as Record<string, unknown>;
+    const p = (result?.assetProfile ?? {}) as Record<string, unknown>;
+    const rawDe = num(f.debtToEquity);
+    return {
+      businessSummary: typeof p.longBusinessSummary === 'string' ? p.longBusinessSummary : null,
+      industry: typeof p.industry === 'string' ? p.industry : null,
+      country: typeof p.country === 'string' ? p.country : null,
+      analyst: {
+        targetMean: num(f.targetMeanPrice),
+        targetHigh: num(f.targetHighPrice),
+        targetLow: num(f.targetLowPrice),
+        numberOfAnalysts: num(f.numberOfAnalystOpinions),
+        recommendationKey: typeof f.recommendationKey === 'string' ? f.recommendationKey : null,
+      },
+      health: {
+        profitMargin: num(f.profitMargins),
+        returnOnEquity: num(f.returnOnEquity),
+        operatingMargin: num(f.operatingMargins),
+        revenueGrowth: num(f.revenueGrowth),
+        earningsGrowth: num(f.earningsGrowth),
+        freeCashflow: num(f.freeCashflow),
+        operatingCashflow: num(f.operatingCashflow),
+        totalCash: num(f.totalCash),
+        totalDebt: num(f.totalDebt),
+        ebitda: num(f.ebitda),
+        debtToEquity: rawDe != null ? rawDe / 100 : null,
+        quickRatio: num(f.quickRatio),
+        currentRatio: num(f.currentRatio),
+      },
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchYahooFundamentals(symbol: string): Promise<YahooFundamentals | null> {
   const sym = symbol.trim().toUpperCase();
   if (!sym) return null;

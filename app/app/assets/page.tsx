@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Card } from '@/components/Card';
 import { BlurFade } from '@/components/ui/blur-fade';
 import { AssetLibraryTable, type LibraryRow } from '@/components/assets/AssetLibraryTable';
+import { RequestStock } from '@/components/assets/RequestStock';
 import { requirePageUser } from '@/lib/server/pageAuth';
 import { prisma } from '@/lib/prisma';
 import { computeSignalState, effectiveSignalState } from '@/lib/signals/engine';
@@ -77,6 +78,13 @@ export default async function AssetsPage() {
           ) : (
             <AssetLibraryTable rows={rows} />
           )}
+        </Card>
+      </BlurFade>
+
+      <BlurFade delay={0.15}>
+        <Card title="Request a stock">
+          <p className="mb-4 text-sm text-muted-foreground">Not tracking a stock you follow? Ask the academy to add it to the universe.</p>
+          <RequestStock />
         </Card>
       </BlurFade>
     </div>

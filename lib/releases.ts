@@ -25,6 +25,94 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: '2026.07.22',
+    date: '2026-07-22',
+    title: 'Feedback round two: pitch quality, inline plans and actions',
+    summary:
+      'Acts on the 22 July feedback: a rebuilt trade pitch (distinct sections, interpreted Financial Health with a traffic-light score, analyst price targets, a 3 to 5 year horizon), inline averaging plans on your holdings, Asset Centre action buttons, 5Y and Max charts, a live logo, subscription-end flagging, and a way to request a stock.',
+    feedbackDoc: '2026-07-22 WhatsApp forward',
+    groups: [
+      {
+        heading: 'Trade pitch',
+        items: [
+          {
+            title: 'Rebuilt pitch: each section does its own job',
+            body: 'Story now explains what the company does and its last 12 months; Weather Outside is confined to the macro section; Financial Health interprets the balance sheet, profitability, cash flow, leverage and bankruptcy risk with a red/amber/green traffic-light score; Key Risk is company-specific; the horizon is 3 to 5 years. You can reorder the sections, and there is a proper loading animation.',
+            feedback: 'Feedback 3, 4, 6',
+            href: '/app/assets',
+            linkLabel: 'Open Asset Centre',
+          },
+          {
+            title: 'Analyst price targets replace the execution section',
+            body: 'The old Trade Plan (Execution) section is gone. In its place is a blended analyst price target (mean, range, implied upside and consensus), or a plain statement when there is no analyst coverage.',
+            feedback: 'Feedback 5',
+            href: '/assets/{assetId}?view=alerts',
+            linkLabel: 'Open an asset',
+          },
+        ],
+      },
+      {
+        heading: 'Portfolio and Asset Centre',
+        items: [
+          {
+            title: 'Averaging plans open inline on your holdings',
+            body: 'On the Portfolio holdings table, each holding now expands to show or create its averaging plan on the same page, with no jump to a separate screen.',
+            feedback: 'Feedback 1',
+            href: '/app/portfolio-tools/live-portfolio',
+            linkLabel: 'Open Live Portfolio',
+          },
+          {
+            title: 'Asset Centre action buttons',
+            body: 'Every asset now has Add to watchlist, Add to portfolio (live or virtual) and Create plan buttons.',
+            feedback: 'Feedback 7',
+            href: '/assets/{assetId}',
+            linkLabel: 'Open an asset',
+          },
+          {
+            title: '5Y and Max chart ranges',
+            body: 'Price history charts now include 5Y and Max alongside the shorter ranges.',
+            feedback: 'Feedback 8',
+            href: '/assets/{assetId}',
+            linkLabel: 'Open an asset',
+          },
+          {
+            title: 'Request a stock',
+            body: 'Members can ask the academy to add a stock to the universe; requests land in an admin review queue.',
+            feedback: 'Feedback 10',
+            href: '/app/assets',
+            linkLabel: 'Open Asset Centre',
+          },
+        ],
+      },
+      {
+        heading: 'Brand and admin',
+        items: [
+          {
+            title: 'Stock Pickers Academy logo mark',
+            body: 'The header and marketing pages now show the academy chart logo in place of the plain SPA text chip.',
+            feedback: 'Feedback 9',
+            href: '/app',
+            linkLabel: 'Open Dashboard',
+          },
+          {
+            title: 'Subscription-end flagging',
+            body: 'When Stripe reports a subscription has ended or been cancelled, it is flagged in the Members billing queue for you to remove access manually. Access is never cut automatically.',
+            feedback: 'Feedback 11',
+            href: '/admin/members',
+            linkLabel: 'Open Members',
+          },
+          {
+            title: 'Stock request review queue',
+            body: 'Member stock requests appear here to mark reviewed, added or declined.',
+            feedback: 'Feedback 10',
+            href: '/admin/assets',
+            linkLabel: 'Open Stock Requests',
+          },
+        ],
+      },
+    ],
+  },
+  {
     version: '2026.07',
     date: '2026-07-21',
     title: 'Client feedback round: research workspace upgrade',

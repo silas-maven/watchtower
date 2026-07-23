@@ -1,11 +1,12 @@
 import Link from 'next/link';
+import { SpaLogo } from '@/components/brand/SpaLogo';
 
 export function MarketingFooter() {
   return (
     <footer className="relative z-10 border-t border-border">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-10 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-xs font-bold text-primary-foreground">SPA</div>
+          <SpaLogo className="h-9 w-9 rounded-xl" />
           <div className="text-sm text-muted-foreground">Stock Pickers Academy</div>
         </div>
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">

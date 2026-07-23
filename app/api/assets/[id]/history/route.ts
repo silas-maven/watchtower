@@ -9,7 +9,7 @@ export const runtime = 'nodejs';
 export const preferredRegion = 'fra1';
 export const maxDuration = 20;
 
-const RANGES = ['1mo', '3mo', '6mo', '1y', '2y', '5y'] as const;
+const RANGES = ['1mo', '3mo', '6mo', '1y', '2y', '5y', 'max'] as const;
 const INTERVALS = ['1d', '1wk', '1mo'] as const;
 
 // 200-period indicators need enough candles at the chosen interval; clamp the
@@ -20,7 +20,7 @@ const MIN_RANGE_FOR_INTERVAL: Record<ChartInterval, ChartRange> = {
   '1mo': '5y',
 };
 
-const RANGE_ORDER: ChartRange[] = ['1mo', '3mo', '6mo', '1y', '2y', '5y'];
+const RANGE_ORDER: ChartRange[] = ['1mo', '3mo', '6mo', '1y', '2y', '5y', 'max'];
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {

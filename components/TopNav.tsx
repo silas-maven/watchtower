@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import type { SessionUser } from '@/lib/auth';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { TickerStrip } from '@/components/market/TickerStrip';
+import { SpaLogo } from '@/components/brand/SpaLogo';
 
 type NavUser = Pick<SessionUser, 'name' | 'email' | 'role' | 'accessState'> | null;
 
@@ -65,7 +66,7 @@ export function TopNav({ children, initialUser }: { children: React.ReactNode; i
     <div className="min-h-screen bg-background text-foreground selection:bg-primary selection:text-primary-foreground">
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 overflow-y-auto border-r border-border bg-card/95 px-4 py-5 shadow-2xl backdrop-blur-xl lg:block">
         <Link href="/app" className="group flex items-center gap-3 px-1">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-md">SPA</div>
+          <SpaLogo className="h-10 w-10 rounded-xl" />
           <div>
             <div className="text-sm font-bold tracking-tight text-foreground">Stock Pickers Academy</div>
             <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Investment console</div>
@@ -99,7 +100,7 @@ export function TopNav({ children, initialUser }: { children: React.ReactNode; i
         <div className="flex min-h-14 items-center justify-between gap-3 px-4 lg:px-6">
           <div className="lg:hidden">
             <Link href="/app" className="flex items-center gap-2">
-              <span className="grid h-7 w-7 place-items-center rounded-lg bg-primary text-[10px] font-bold text-primary-foreground">SPA</span>
+              <SpaLogo className="h-7 w-7 rounded-lg" />
               <span className="text-sm font-bold tracking-tight text-foreground">Stock Pickers Academy</span>
             </Link>
           </div>

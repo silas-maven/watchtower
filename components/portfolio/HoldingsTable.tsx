@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
-import { Trash2, ExternalLink } from 'lucide-react';
+import { Fragment, useState } from 'react';
+import { Trash2, ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/Badge';
 import { useToast } from '@/components/ui/ToastProvider';
+import { InlineAveragePlan } from '@/components/portfolio/InlineAveragePlan';
 
 export type HoldingRow = {
   id: string;
@@ -45,6 +46,7 @@ export function HoldingsTable({
   gbpRate,
   onUpdated,
   onRemove,
+  onRefresh,
   busy,
 }: {
   holdings: HoldingRow[];
@@ -52,10 +54,12 @@ export function HoldingsTable({
   gbpRate: number;
   onUpdated: (view: unknown) => void;
   onRemove: (assetId: string) => void;
+  onRefresh?: () => void;
   busy?: boolean;
 }) {
   const { pushToast } = useToast();
   const [patchingId, setPatchingId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const money = (g: number | null) => (g == null ? '—' : `${sym(displayCurrency)}${(g * gbpRate).toLocaleString(undefined, { maximumFractionDigits: 0 })}`);
   const price = (n: number | null, c: string) => (n == null ? '—' : `${sym(c)}${n.toLocaleString(undefined, { maximumFractionDigits: 2 })}`);
@@ -74,7 +78,7 @@ export function HoldingsTable({
     }
   }
 
-  const plannerHref = (assetId: string) => `/app/portfolio-tools/average-calculator?assetId=${assetId}`;
+  const toggle = (id: string) => setExpandedId((cur) => (cur === id ? null : id));
 
   return (
     <div className="overflow-x-auto">
@@ -100,7 +104,8 @@ export function HoldingsTable({
           {holdings.map((h) => {
             const rowBusy = busy || patchingId === h.id;
             return (
-              <tr key={h.id} className="border-b border-border/50 align-top">
+              <Fragment key={h.id}>
+              <tr className="border-b border-border/50 align-top">
                 <td className="py-2 pr-3">
                   <Link href={`/assets/${h.assetId}`} className="font-semibold text-foreground hover:text-primary">{h.symbol}</Link>
                   <div className="text-xs text-muted-foreground">{h.currency}</div>
@@ -146,15 +151,15 @@ export function HoldingsTable({
                   )}
                 </td>
 
-                {/* Averaging Plan: View if linked, else dash */}
+                {/* Averaging Plan: expands inline (no navigation) */}
                 <td className="py-2 pr-3">
-                  {h.hasPlan ? (
-                    <Link href={plannerHref(h.assetId)} className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs font-semibold text-foreground transition hover:bg-muted/40">
-                      View <ExternalLink className="h-3 w-3" />
-                    </Link>
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
+                  <button
+                    onClick={() => toggle(h.id)}
+                    className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs font-semibold text-foreground transition hover:bg-muted/40"
+                  >
+                    {h.hasPlan ? 'View' : 'Create'}
+                    <ChevronDown className={`h-3 w-3 transition-transform ${expandedId === h.id ? 'rotate-180' : ''}`} />
+                  </button>
                 </td>
 
                 {/* Spartan toggle */}
@@ -174,9 +179,9 @@ export function HoldingsTable({
                   {h.hasPlan ? (
                     <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-500">Plan active</span>
                   ) : (
-                    <Link href={plannerHref(h.assetId)} className="inline-flex items-center gap-1 text-xs font-semibold text-amber-500 hover:underline">
+                    <button onClick={() => toggle(h.id)} className="inline-flex items-center gap-1 text-xs font-semibold text-amber-500 hover:underline">
                       Create Average Plan
-                    </Link>
+                    </button>
                   )}
                 </td>
 
@@ -184,6 +189,20 @@ export function HoldingsTable({
                   <button onClick={() => onRemove(h.assetId)} disabled={rowBusy} className="text-rose-500 transition hover:text-rose-400 disabled:opacity-60"><Trash2 className="h-4 w-4" /></button>
                 </td>
               </tr>
+              {expandedId === h.id && (
+                <tr className="border-b border-border/50 bg-muted/10">
+                  <td colSpan={13} className="px-3 py-3">
+                    <InlineAveragePlan
+                      assetId={h.assetId}
+                      holdingId={h.id}
+                      currency={h.currency}
+                      currentPrice={h.currentPrice}
+                      onSaved={() => onRefresh?.()}
+                    />
+                  </td>
+                </tr>
+              )}
+              </Fragment>
             );
           })}
         </tbody>

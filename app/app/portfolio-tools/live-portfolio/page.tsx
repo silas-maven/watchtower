@@ -204,6 +204,7 @@ export default function LivePortfolioPage() {
             gbpRate={rate}
             onUpdated={(v) => setView(v as View)}
             onRemove={removeHolding}
+            onRefresh={load}
             busy={busy}
           />
         )}

@@ -11,6 +11,7 @@ import { latestStochasticK } from '@/lib/indicators';
 import { marketCapLabel } from '@/lib/marketCap';
 import { IndicatorView } from '@/components/assets/IndicatorView';
 import { PriceAlertsView, type PositionPayload } from '@/components/assets/PriceAlertsView';
+import { AssetActions } from '@/components/assets/AssetActions';
 
 type Snapshot = {
   capturedAt: string;
@@ -26,6 +27,7 @@ type AssetPayload = {
   reason: string | null;
   assetType: string;
   currency: string;
+  isMacro?: boolean;
   brokerEntryPrice: number | null;
   averageEntryPrice: number | null;
   shares: number | null;
@@ -55,8 +57,9 @@ type AssetPayload = {
 type InsightPayload = { summary: string; bullets: string[]; confidence: number; model: string };
 type ChartPoint = { date: string; open: number; high: number; low: number; close: number };
 
-const RANGES = ['1mo', '3mo', '6mo', '1y'] as const;
+const RANGES = ['1mo', '3mo', '6mo', '1y', '5y', 'max'] as const;
 type Range = (typeof RANGES)[number];
+const RANGE_LABEL: Record<Range, string> = { '1mo': '1mo', '3mo': '3mo', '6mo': '6mo', '1y': '1y', '5y': '5Y', max: 'Max' };
 
 type View = 'history' | 'indicator' | 'alerts';
 
@@ -171,6 +174,8 @@ export default function AssetPage() {
         </div>
       </div>
 
+      {!asset.isMacro && <AssetActions assetId={asset.id} currency={asset.currency} currentPrice={latest?.currentPrice ?? null} />}
+
       {/* View selector */}
       <div className="flex flex-wrap gap-2">
         {VIEWS.map(({ value, label, icon: Icon }) => (
@@ -195,9 +200,9 @@ export default function AssetPage() {
             <Card
               title="Price history"
               right={
-                <div className="flex gap-1">
+                <div className="flex flex-wrap gap-1">
                   {RANGES.map((r) => (
-                    <button key={r} onClick={() => setRange(r)} className={`rounded-md px-2 py-1 text-xs font-semibold transition ${range === r ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>{r}</button>
+                    <button key={r} onClick={() => setRange(r)} className={`rounded-md px-2 py-1 text-xs font-semibold transition ${range === r ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>{RANGE_LABEL[r]}</button>
                   ))}
                 </div>
               }
