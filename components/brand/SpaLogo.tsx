@@ -55,25 +55,24 @@ export function SpaEmblem({ animated = false, className }: { animated?: boolean;
         />
       ))}
 
-      {/* Up-trend arrow shaft */}
+      {/* Up-trend arrow shaft: up to a peak, a dip, then one clean rise to the head */}
       <path
         className={animated ? 'spa-arrow' : undefined}
         pathLength={1}
-        d="M24 120 L74 78 L110 96 L150 66 L206 40"
+        d="M32 116 L94 62 L126 92 L203 45"
         fill="none"
         stroke="url(#spaArrow)"
-        strokeWidth={13}
+        strokeWidth={12}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      {/* Arrowhead corner at the tip */}
+      {/* Filled arrowhead at the top-right tip, pointing up and to the right */}
       <path
         className={animated ? 'spa-arrowhead' : undefined}
-        d="M206 62 L206 40 L184 40"
-        fill="none"
+        d="M222 34 L206 56 L196 34 Z"
+        fill="url(#spaArrow)"
         stroke="url(#spaArrow)"
-        strokeWidth={13}
-        strokeLinecap="round"
+        strokeWidth={4}
         strokeLinejoin="round"
       />
     </svg>
