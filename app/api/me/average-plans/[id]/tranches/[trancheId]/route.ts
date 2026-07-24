@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { ok, fail } from '@/lib/api';
-import { requireUser } from '@/lib/auth';
+import { requirePaid } from '@/lib/entitlements';
 import { prisma } from '@/lib/prisma';
 import { fromCaughtError } from '@/lib/route';
 import { fetchFxRates } from '@/lib/market/fx';
@@ -15,7 +15,7 @@ const Schema = z.object({ executed: z.boolean() });
 // if this plan is linked to a holding, recompute that holding's shares + avg price.
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string; trancheId: string }> }) {
   try {
-    const user = await requireUser();
+    const user = await requirePaid();
     const { id, trancheId } = await params;
     const body = await req.json().catch(() => ({}));
     const parsed = Schema.safeParse(body);

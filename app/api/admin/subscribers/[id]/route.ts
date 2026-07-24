@@ -1,4 +1,4 @@
-import { AccessState, Role, SubscriptionStatus } from '@prisma/client';
+import { AccessState, MemberTier, Role, SubscriptionStatus } from '@prisma/client';
 import { z } from 'zod';
 import { fail, ok } from '@/lib/api';
 import { requireRole } from '@/lib/auth';
@@ -8,6 +8,7 @@ import { fromCaughtError } from '@/lib/route';
 const Schema = z.object({
   status: z.nativeEnum(SubscriptionStatus).optional(),
   accessState: z.nativeEnum(AccessState).optional(),
+  tier: z.nativeEnum(MemberTier).optional(),
   dueAt: z.string().datetime().optional().nullable(),
   reason: z.string().optional().nullable(),
 });
@@ -26,6 +27,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (!profile) return fail('Subscriber not found', 404, 'NOT_FOUND');
 
     const updates = [];
+    // Manual tier control. Explicit `tier` wins; otherwise removing access also
+    // drops the paid entitlement (this is the manual downgrade the academy rule
+    // reserves to admins), while restoring access does not silently re-grant it.
+    const nextTier =
+      parsed.data.tier ??
+      (parsed.data.accessState === AccessState.REMOVED ? MemberTier.FREE : undefined);
+    if (nextTier) {
+      updates.push(prisma.profile.update({ where: { id }, data: { tier: nextTier } }));
+    }
     if (parsed.data.accessState) {
       updates.push(prisma.profile.update({
         where: { id },

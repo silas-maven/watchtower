@@ -218,14 +218,44 @@ export async function fetchYahooFundamentals(symbol: string): Promise<YahooFunda
   }
 }
 
+// Symbols per Yahoo quote request. Kept well under the point where Yahoo starts
+// rejecting long symbol lists, so a ~1,000-asset universe refreshes reliably.
+const QUOTE_CHUNK_SIZE = 100;
+
 /**
  * Batch quote fetch. Returns a map keyed by the requested symbol; symbols Yahoo
- * does not recognise are simply absent. Throws only when the whole request fails.
+ * does not recognise are simply absent. Large lists are chunked automatically.
+ * Throws only when every chunk fails.
  */
 export async function fetchYahooQuotes(symbols: string[]): Promise<Map<string, YahooQuote>> {
   const out = new Map<string, YahooQuote>();
   const unique = [...new Set(symbols.map((s) => s.trim().toUpperCase()).filter(Boolean))];
   if (unique.length === 0) return out;
+
+  // A universe-sized list (~1,000 assets) cannot go out as one request: Yahoo
+  // rejects or truncates it. Chunk instead, and let one bad chunk fail on its
+  // own rather than losing the whole run.
+  if (unique.length > QUOTE_CHUNK_SIZE) {
+    const chunks: string[][] = [];
+    for (let i = 0; i < unique.length; i += QUOTE_CHUNK_SIZE) {
+      chunks.push(unique.slice(i, i + QUOTE_CHUNK_SIZE));
+    }
+    let lastError: unknown = null;
+    let anySucceeded = false;
+    for (const chunk of chunks) {
+      try {
+        const partial = await fetchYahooQuotes(chunk);
+        for (const [key, value] of partial) out.set(key, value);
+        anySucceeded = true;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    // Only surface a failure when every chunk failed; a partial result is still
+    // useful and keeps the refresh job going.
+    if (!anySucceeded && lastError) throw lastError;
+    return out;
+  }
 
   const yf = getClient();
   const results = await yf.quote(unique, {}, { validateResult: false });

@@ -10,6 +10,7 @@ export const preferredRegion = 'fra1';
 
 const Schema = z.object({
   baseCurrency: z.enum(SUPPORTED_CURRENCIES).optional(),
+  dailyBriefEmail: z.boolean().optional(),
 });
 
 export async function GET() {
@@ -17,9 +18,13 @@ export async function GET() {
     const user = await requireUser();
     const profile = await prisma.profile.findUnique({
       where: { id: user.id },
-      select: { baseCurrency: true, declaredPortfolioGBP: true },
+      select: { baseCurrency: true, declaredPortfolioGBP: true, dailyBriefEmail: true },
     });
-    return ok({ baseCurrency: profile?.baseCurrency ?? 'GBP', declaredPortfolioGBP: profile?.declaredPortfolioGBP ?? null });
+    return ok({
+      baseCurrency: profile?.baseCurrency ?? 'GBP',
+      declaredPortfolioGBP: profile?.declaredPortfolioGBP ?? null,
+      dailyBriefEmail: profile?.dailyBriefEmail ?? false,
+    });
   } catch (error) {
     return fromCaughtError(error);
   }
@@ -34,10 +39,13 @@ export async function PATCH(req: Request) {
 
     const updated = await prisma.profile.update({
       where: { id: user.id },
-      data: { baseCurrency: parsed.data.baseCurrency },
-      select: { baseCurrency: true },
+      data: {
+        ...(parsed.data.baseCurrency ? { baseCurrency: parsed.data.baseCurrency } : {}),
+        ...(parsed.data.dailyBriefEmail !== undefined ? { dailyBriefEmail: parsed.data.dailyBriefEmail } : {}),
+      },
+      select: { baseCurrency: true, dailyBriefEmail: true },
     });
-    return ok({ baseCurrency: updated.baseCurrency });
+    return ok({ baseCurrency: updated.baseCurrency, dailyBriefEmail: updated.dailyBriefEmail });
   } catch (error) {
     return fromCaughtError(error);
   }

@@ -2,8 +2,20 @@ import { APP_TIMEZONE } from '@/lib/env';
 import { prisma } from '@/lib/prisma';
 import { callJsonModel, hasLlmProvider } from '@/lib/ai/llm';
 import { getDailySignalSummary } from '@/lib/server/signals';
+import { EXTREME_RANGE_PCT, getBriefHighlights, type BriefHighlights } from '@/lib/server/briefHighlights';
 import { getSetting } from '@/lib/server/settings';
 import { startOfDayInTimeZone } from '@/lib/time';
+
+// The breadth numbers the narrative was written against. Persisted with the
+// brief so the stat cards can render the same snapshot the prose describes.
+export type DailyBriefStats = {
+  totalAssets: number;
+  activeSignals: number;
+  advancers: number;
+  decliners: number;
+  flat: number;
+  avgChangePct: number;
+};
 
 export type DailyBriefPayload = {
   summary: string;
@@ -12,6 +24,9 @@ export type DailyBriefPayload = {
   newToday: string[];
   droppedOff: string[];
   insights: string[];
+  stats: DailyBriefStats | null;
+  /** Section-6 additions; deterministic, persisted alongside the narrative. */
+  highlights: BriefHighlights | null;
   model: string;
   isFallback: boolean;
   generationError: string | null;
@@ -33,11 +48,39 @@ export function buildFallbackBrief(input: {
     topLosers: Array<{ symbol: string; assetType: string; changePct: number }>;
     byAssetType: Array<{ assetType: string; total: number; activeSignals: number; buySignals: number; sellSignals: number }>;
   };
+  highlights?: BriefHighlights | null;
 }): DailyBriefPayload {
   const insights: string[] = [];
   insights.push(`Active BUY signals: ${input.buy.length}. Active SELL signals: ${input.sell.length}.`);
   if (input.newToday.length > 0) insights.push(`New signal entries today: ${input.newToday.join(', ')}.`);
   if (input.droppedOff.length > 0) insights.push(`Dropped from signal zones today: ${input.droppedOff.join(', ')}.`);
+
+  // Section-6 additions. Newly triggered is stated separately from still active.
+  const h = input.highlights;
+  if (h) {
+    if (h.newBuy.length > 0) {
+      insights.push(`New buy alerts since yesterday: ${h.newBuy.map((a) => a.symbol).join(', ')}.`);
+    }
+    if (h.newSell.length > 0) {
+      insights.push(`New sell alerts since yesterday: ${h.newSell.map((a) => a.symbol).join(', ')}.`);
+    }
+    if (h.newBuy.length === 0 && h.newSell.length === 0) {
+      insights.push('No new buy or sell alerts since yesterday; the active signals are carried over.');
+    }
+    if (h.extremeRange.length > 0) {
+      insights.push(
+        `Extreme daily ranges (over ${EXTREME_RANGE_PCT}% of the previous close): ${h.extremeRange
+          .slice(0, 5)
+          .map((r) => `${r.symbol} (${r.rangePct.toFixed(1)}%)`)
+          .join(', ')}.`,
+      );
+    }
+    if (h.earningsThisWeek.length > 0) {
+      insights.push(
+        `Reporting earnings this week: ${h.earningsThisWeek.slice(0, 8).map((r) => `${r.symbol} (${r.date})`).join(', ')}.`,
+      );
+    }
+  }
   if (input.market) {
     insights.push(
       `Market breadth: ${input.market.advancers} advancing, ${input.market.decliners} declining, ${input.market.flat} flat. Avg change ${input.market.avgChangePct.toFixed(2)}%.`,
@@ -68,6 +111,17 @@ export function buildFallbackBrief(input: {
     newToday: input.newToday,
     droppedOff: input.droppedOff,
     insights: insights.slice(0, 6),
+    stats: input.market
+      ? {
+          totalAssets: input.market.totalAssets,
+          activeSignals: input.market.activeSignals,
+          advancers: input.market.advancers,
+          decliners: input.market.decliners,
+          flat: input.market.flat,
+          avgChangePct: input.market.avgChangePct,
+        }
+      : null,
+    highlights: input.highlights ?? null,
     model: 'deterministic-fallback',
     isFallback: true,
     generationError: null,
@@ -85,6 +139,10 @@ function parseModelOutput(text: string, model: string, fallback: DailyBriefPaylo
       newToday: Array.isArray(parsed.newToday) ? parsed.newToday : fallback.newToday,
       droppedOff: Array.isArray(parsed.droppedOff) ? parsed.droppedOff : fallback.droppedOff,
       insights: parsed.insights,
+      // Stats and highlights are computed deterministically in code, never taken
+      // from the model.
+      stats: fallback.stats,
+      highlights: fallback.highlights,
       model,
       isFallback: false,
       generationError: null,
@@ -95,11 +153,17 @@ function parseModelOutput(text: string, model: string, fallback: DailyBriefPaylo
 }
 
 const DAILY_BRIEF_SYSTEM =
-  'You are a financial watchlist analyst. Return a strict JSON object with keys: summary (string), buy (string[]), sell (string[]), newToday (string[]), droppedOff (string[]), insights (string[]). Insights must cover market breadth, top movers, and asset-class observations when the data is provided. Use UK English. Do not give trading advice or predict prices.';
+  'You are a financial watchlist analyst. Return a strict JSON object with keys: summary (string), buy (string[]), sell (string[]), newToday (string[]), droppedOff (string[]), insights (string[]). ' +
+  'Insights must lead with any new buy or sell alerts since yesterday (from newAlertsSinceYesterday), stating clearly that they are NEWLY triggered as opposed to still active, then cover extreme daily ranges, earnings due this week, market breadth and top movers where the data is provided. ' +
+  'Use only the figures given. Never state a dividend date, a rights issue or an all-time low: those are listed in doNotClaim because the data is not reliable. ' +
+  'Use UK English. Do not give trading advice or predict prices.';
 
 export async function generateDailyBrief(forDate = new Date()): Promise<DailyBriefPayload> {
-  const signal = await getDailySignalSummary(forDate.toISOString().slice(0, 10));
-  const fallback = buildFallbackBrief(signal);
+  const [signal, highlights] = await Promise.all([
+    getDailySignalSummary(forDate.toISOString().slice(0, 10)),
+    getBriefHighlights(forDate).catch(() => null),
+  ]);
+  const fallback = buildFallbackBrief({ ...signal, highlights });
 
   const enabled = await getSetting('ai_briefs_enabled');
   if (!enabled) {
@@ -113,7 +177,26 @@ export async function generateDailyBrief(forDate = new Date()): Promise<DailyBri
   }
 
   try {
-    const { text, model } = await callJsonModel(DAILY_BRIEF_SYSTEM, JSON.stringify(signal));
+    // The model must see the section-6 additions or it cannot narrate them. It
+    // only ever rephrases these figures; the rendered brief reads the structured
+    // `highlights` object, so the prose can never invent or contradict them.
+    const modelInput = {
+      ...signal,
+      newAlertsSinceYesterday: highlights
+        ? {
+            since: highlights.since,
+            timezone: highlights.timezone,
+            newBuy: highlights.newBuy.map((a) => a.symbol),
+            newSell: highlights.newSell.map((a) => a.symbol),
+            stillActiveBuyCount: highlights.stillActiveBuy.length,
+            stillActiveSellCount: highlights.stillActiveSell.length,
+          }
+        : null,
+      extremeDailyRanges: highlights?.extremeRange.slice(0, 5).map((r) => ({ symbol: r.symbol, rangePct: Number(r.rangePct.toFixed(1)) })) ?? [],
+      earningsThisWeek: highlights?.earningsThisWeek.slice(0, 10).map((r) => ({ symbol: r.symbol, date: r.date })) ?? [],
+      doNotClaim: highlights?.unavailable ?? [],
+    };
+    const { text, model } = await callJsonModel(DAILY_BRIEF_SYSTEM, JSON.stringify(modelInput));
     if (!text) {
       const message = 'The model returned an empty response; using deterministic fallback.';
       console.error(`[dailyBrief] ${message}`);
@@ -145,6 +228,8 @@ export async function persistDailyBrief(forDate = new Date()): Promise<DailyBrie
       newToday: payload.newToday,
       droppedOff: payload.droppedOff,
       insights: payload.insights,
+      stats: payload.stats ?? undefined,
+      highlights: payload.highlights ?? undefined,
       model: payload.model,
       isFallback: payload.isFallback,
       generationError: payload.generationError,
@@ -159,6 +244,8 @@ export async function persistDailyBrief(forDate = new Date()): Promise<DailyBrie
       newToday: payload.newToday,
       droppedOff: payload.droppedOff,
       insights: payload.insights,
+      stats: payload.stats ?? undefined,
+      highlights: payload.highlights ?? undefined,
       model: payload.model,
       isFallback: payload.isFallback,
       generationError: payload.generationError,

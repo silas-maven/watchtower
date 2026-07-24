@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { fail, ok } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
+import { checkPitchQuota } from '@/lib/entitlements';
 import { prisma } from '@/lib/prisma';
 import { fromCaughtError } from '@/lib/route';
 import { buildPitchInputs, generatePitch } from '@/lib/ai/pitch';
@@ -16,6 +17,8 @@ const Schema = z.object({ assetId: z.string() });
 export async function POST(req: Request) {
   try {
     const user = await requireUser();
+    const quota = await checkPitchQuota(user);
+    if (!quota.allowed) return fail(quota.reason ?? 'Pitch limit reached', 402, 'PAYWALL');
     const json = await req.json().catch(() => ({}));
     const parsed = Schema.safeParse(json);
     if (!parsed.success) return fail('Invalid payload', 400, 'INVALID_PAYLOAD');

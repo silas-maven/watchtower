@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { fail, ok } from '@/lib/api';
-import { requireUser } from '@/lib/auth';
+import { requirePaid } from '@/lib/entitlements';
 import { prisma } from '@/lib/prisma';
 import { fromCaughtError } from '@/lib/route';
 import { runFinanceSimulation } from '@/lib/finance/simulate';
@@ -30,7 +30,7 @@ const Schema = z.object({
 
 export async function POST(req: Request) {
   try {
-    const user = await requireUser();
+    const user = await requirePaid();
     const json = await req.json().catch(() => ({}));
     const parsed = Schema.safeParse(json);
     if (!parsed.success) return fail('Invalid payload', 400, 'INVALID_PAYLOAD');

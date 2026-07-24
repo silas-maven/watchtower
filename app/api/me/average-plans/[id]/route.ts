@@ -1,5 +1,5 @@
 import { ok, fail } from '@/lib/api';
-import { requireUser } from '@/lib/auth';
+import { requirePaid } from '@/lib/entitlements';
 import { prisma } from '@/lib/prisma';
 import { fromCaughtError } from '@/lib/route';
 
@@ -8,7 +8,7 @@ export const preferredRegion = 'fra1';
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const user = await requireUser();
+    const user = await requirePaid();
     const { id } = await params;
     const plan = await prisma.averagePlan.findFirst({
       where: { id, profileId: user.id },
@@ -23,7 +23,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const user = await requireUser();
+    const user = await requirePaid();
     const { id } = await params;
     const plan = await prisma.averagePlan.findFirst({ where: { id, profileId: user.id } });
     if (!plan) return fail('Plan not found', 404, 'NOT_FOUND');

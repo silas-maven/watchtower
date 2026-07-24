@@ -2,6 +2,7 @@ import { Card } from '@/components/Card';
 import { Badge } from '@/components/Badge';
 import { BillingPanel } from '@/components/BillingPanel';
 import { BaseCurrencySelect } from '@/components/BaseCurrencySelect';
+import { DailyBriefEmailToggle } from '@/components/DailyBriefEmailToggle';
 import { BlurFade } from '@/components/ui/blur-fade';
 import { requirePageUser } from '@/lib/server/pageAuth';
 import { prisma } from '@/lib/prisma';
@@ -14,7 +15,7 @@ export default async function AccountPage() {
   const [customer, mirror, profile] = await Promise.all([
     prisma.stripeCustomer.findUnique({ where: { profileId: user.id } }).catch(() => null),
     prisma.subscriptionMirror.findUnique({ where: { profileId: user.id } }).catch(() => null),
-    prisma.profile.findUnique({ where: { id: user.id }, select: { baseCurrency: true } }).catch(() => null),
+    prisma.profile.findUnique({ where: { id: user.id }, select: { baseCurrency: true, dailyBriefEmail: true } }).catch(() => null),
   ]);
 
   return (
@@ -54,7 +55,12 @@ export default async function AccountPage() {
 
       <BlurFade delay={0.12}>
         <Card title="Preferences">
-          <BaseCurrencySelect initial={profile?.baseCurrency ?? 'GBP'} />
+          <div className="space-y-5">
+            <BaseCurrencySelect initial={profile?.baseCurrency ?? 'GBP'} />
+            <div className="border-t border-border pt-5">
+              <DailyBriefEmailToggle initial={profile?.dailyBriefEmail ?? false} />
+            </div>
+          </div>
         </Card>
       </BlurFade>
 

@@ -1,4 +1,4 @@
-import { Role, SubscriptionStatus } from '@prisma/client';
+import { MemberTier, Role, SubscriptionStatus } from '@prisma/client';
 import { fail, ok } from '@/lib/api';
 import { optionalEnv } from '@/lib/env';
 import { prisma } from '@/lib/prisma';
@@ -145,6 +145,14 @@ export async function POST(req: Request) {
 
     // Subscription ended or was cancelled/left unpaid: flag it for admin review
     // so access can be removed MANUALLY. Never auto-cut access (academy rule).
+    // A live subscription grants the paid tier. We only ever UPGRADE tier here;
+    // downgrades stay manual (academy rule: never auto-cut access), which is why
+    // a canceled/unpaid subscription is flagged for admin review below rather
+    // than dropping the member to FREE automatically.
+    if (object.status === 'active' || object.status === 'trialing') {
+      await prisma.profile.update({ where: { id: profileId }, data: { tier: MemberTier.MEMBER } }).catch(() => undefined);
+    }
+
     const endedNow =
       event.type === 'customer.subscription.deleted' ||
       object.status === 'canceled' ||
@@ -173,6 +181,8 @@ export async function POST(req: Request) {
       update: { status: SubscriptionStatus.ACTIVE, lastPaidAt: new Date(), lastPaymentFailedAt: null },
       create: { profileId, status: SubscriptionStatus.ACTIVE, lastPaidAt: new Date() },
     });
+    // A paid invoice is the clearest signal of a paying member: grant the tier.
+    await prisma.profile.update({ where: { id: profileId }, data: { tier: MemberTier.MEMBER } }).catch(() => undefined);
     await prisma.billingAlert.updateMany({ where: { profileId, status: 'OPEN' }, data: { status: 'RESOLVED', resolvedAt: new Date() } });
   }
 

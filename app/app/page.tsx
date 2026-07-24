@@ -34,14 +34,15 @@ function toneForState(state: string) {
 export default async function MemberDashboard() {
   const profile = await requirePageUser('/app');
 
-  const [live, rows, watchItems, xHandle, macroTiles] = await Promise.all([
+  const [live, rows, watchItems, xHandle, xListUrl, macroTiles] = await Promise.all([
     getLivePortfolioView(profile.id).catch(() => null),
     getAssetsForDashboard().catch(() => []),
     prisma.userWatchlistItem.findMany({
       where: { watchlist: { profileId: profile.id } },
       select: { assetId: true },
     }).catch(() => []),
-    getSetting('news_x_handle').catch(() => 'MarketWatch'),
+    getSetting('news_x_handle').catch(() => 'StockTwits'),
+    getSetting('news_x_list_url').catch(() => ''),
     getMacroTiles().catch(() => new Map()),
   ]);
 
@@ -186,7 +187,7 @@ export default async function MemberDashboard() {
           </div>
 
           {/* Collapsible Market Pulse rail */}
-          <MarketPulseRail xHandle={xHandle || 'MarketWatch'} />
+          <MarketPulseRail xHandle={xHandle || 'StockTwits'} xListUrl={xListUrl || ''} />
         </div>
       </BlurFade>
     </div>

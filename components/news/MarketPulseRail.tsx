@@ -28,7 +28,7 @@ function useCollapsed(): [boolean, () => void] {
   return [collapsed, toggle];
 }
 
-export function MarketPulseRail({ xHandle }: { xHandle: string }) {
+export function MarketPulseRail({ xHandle, xListUrl = '' }: { xHandle: string; xListUrl?: string }) {
   const [collapsed, toggle] = useCollapsed();
 
   if (collapsed) {
@@ -55,7 +55,7 @@ export function MarketPulseRail({ xHandle }: { xHandle: string }) {
         </button>
       </div>
       <NewsFeedCard />
-      <XTimelineCard handle={xHandle || 'MarketWatch'} />
+      <XTimelineCard handle={xHandle || 'StockTwits'} listUrl={xListUrl} />
     </div>
   );
 }

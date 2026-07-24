@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { fail, ok } from '@/lib/api';
-import { requireUser } from '@/lib/auth';
+import { requirePaid } from '@/lib/entitlements';
 import { prisma } from '@/lib/prisma';
 import { fromCaughtError } from '@/lib/route';
 import { getOrCreateVirtualPortfolio, getVirtualPortfolioView } from '@/lib/server/virtualPortfolio';
@@ -23,7 +23,7 @@ const SettingsSchema = z.object({
 
 export async function GET() {
   try {
-    const user = await requireUser();
+    const user = await requirePaid();
     const view = await getVirtualPortfolioView(user.id);
     return ok(view);
   } catch (error) {
@@ -34,7 +34,7 @@ export async function GET() {
 // Upsert a paper holding into the member's virtual portfolio.
 export async function POST(req: Request) {
   try {
-    const user = await requireUser();
+    const user = await requirePaid();
     const body = await req.json().catch(() => ({}));
     const parsed = HoldingSchema.safeParse(body);
     if (!parsed.success) return fail('Invalid holding payload', 400, 'INVALID_PAYLOAD');
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
 // Update portfolio settings (size, constraints).
 export async function PATCH(req: Request) {
   try {
-    const user = await requireUser();
+    const user = await requirePaid();
     const body = await req.json().catch(() => ({}));
     const parsed = SettingsSchema.safeParse(body);
     if (!parsed.success) return fail('Invalid settings payload', 400, 'INVALID_PAYLOAD');
@@ -90,7 +90,7 @@ export async function PATCH(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    const user = await requireUser();
+    const user = await requirePaid();
     const assetId = new URL(req.url).searchParams.get('assetId');
     if (!assetId) return fail('assetId is required', 400, 'INVALID_PAYLOAD');
 

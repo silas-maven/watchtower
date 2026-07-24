@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { fail, ok } from '@/lib/api';
-import { requireUser, getDefaultWatchlist } from '@/lib/auth';
+import { getDefaultWatchlist } from '@/lib/auth';
+import { requirePaid } from '@/lib/entitlements';
 import { prisma } from '@/lib/prisma';
 import { fromCaughtError } from '@/lib/route';
 import { fetchFxRates } from '@/lib/market/fx';
@@ -26,7 +27,7 @@ const PlanSchema = z.object({
 
 export async function GET(req: Request) {
   try {
-    const user = await requireUser();
+    const user = await requirePaid();
     const assetId = new URL(req.url).searchParams.get('assetId');
     const plans = await prisma.averagePlan.findMany({
       where: { profileId: user.id, ...(assetId ? { assetId } : {}) },
@@ -45,7 +46,7 @@ export async function GET(req: Request) {
 // Upsert the member's plan for an asset (one plan per profile+asset). Replaces tranches.
 export async function POST(req: Request) {
   try {
-    const user = await requireUser();
+    const user = await requirePaid();
     const body = await req.json().catch(() => ({}));
     const parsed = PlanSchema.safeParse(body);
     if (!parsed.success) return fail('Invalid plan payload', 400, 'INVALID_PAYLOAD');

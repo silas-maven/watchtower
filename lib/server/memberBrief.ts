@@ -1,6 +1,13 @@
-import { SignalState } from '@prisma/client';
+import { PortfolioKind, SignalState } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { fetchFxRates } from '@/lib/market/fx';
+import { localToGbp } from '@/lib/portfolio';
 import { computeSignalState, effectiveSignalState, isBuyLike, isSellLike } from '@/lib/signals/engine';
+
+// Which book the brief reports on. Live = the member's real holdings
+// (portfolioId null), matching the Live Portfolio page; virtual = their paper
+// portfolio. Default is live.
+export type BriefScope = 'live' | 'virtual';
 
 export type MemberBriefAsset = {
   symbol: string;
@@ -58,7 +65,21 @@ function resolveAsset(asset: AssetRow): MemberBriefAsset {
  * Deterministic per-member summary across the sublists they track and the
  * holdings they hold. No model call: it is cheap, private, and reproducible.
  */
-export async function getMemberBrief(profileId: string): Promise<MemberBrief> {
+export async function getMemberBrief(profileId: string, scope: BriefScope = 'live'): Promise<MemberBrief> {
+  // Scope the holdings the same way the portfolio pages do, so the brief and the
+  // portfolio always agree. Live = portfolioId null; virtual = the paper book.
+  const virtualPortfolio =
+    scope === 'virtual'
+      ? await prisma.userPortfolio.findFirst({
+          where: { profileId, kind: PortfolioKind.VIRTUAL },
+          orderBy: { createdAt: 'asc' },
+          select: { id: true },
+        })
+      : null;
+  // A member who has no virtual portfolio yet simply has no virtual holdings.
+  const holdingScope =
+    scope === 'virtual' ? { portfolioId: virtualPortfolio?.id ?? '__none__' } : { portfolioId: null };
+
   const [watchlists, holdings] = await Promise.all([
     prisma.userWatchlist.findMany({
       where: { profileId },
@@ -77,7 +98,7 @@ export async function getMemberBrief(profileId: string): Promise<MemberBrief> {
       },
     }),
     prisma.userHolding.findMany({
-      where: { profileId },
+      where: { profileId, ...holdingScope },
       include: {
         asset: {
           include: {
@@ -108,12 +129,34 @@ export async function getMemberBrief(profileId: string): Promise<MemberBrief> {
   const gainers = [...withChange].sort((a, b) => (b.dailyChangePct ?? 0) - (a.dailyChangePct ?? 0)).slice(0, 3);
   const losers = [...withChange].sort((a, b) => (a.dailyChangePct ?? 0) - (b.dailyChangePct ?? 0)).slice(0, 3);
 
+  // Value holdings LIVE (shares x price, converted to GBP), exactly as the
+  // portfolio pages do. The stored investedGBP/currentValueGBP columns are not
+  // maintained, so summing them reported GBP 0 while the portfolio showed real
+  // money. Fall back to the stored columns only when shares/price are missing.
+  const fx = holdings.length > 0 ? await fetchFxRates() : { USD: 1.27, EUR: 1.17, CAD: 1.84 };
+
   let investedGBP = 0;
   let valueGBP = 0;
   const holdingSignals: MemberBriefAsset[] = [];
   for (const holding of holdings) {
-    investedGBP += holding.investedGBP ?? 0;
-    valueGBP += holding.currentValueGBP ?? 0;
+    const currency = holding.asset.currency;
+    const shares = holding.shares ?? null;
+    const avgPrice = holding.averagePrice ?? null;
+    const currentPrice = holding.asset.snapshots[0]?.currentPrice ?? null;
+
+    // localToGbp returns null for a currency we have no rate for; fall back to
+    // the stored column rather than silently counting the holding as zero.
+    const costGBP =
+      (shares != null && avgPrice != null ? localToGbp(shares * avgPrice, currency, fx) : null) ??
+      holding.investedGBP ??
+      0;
+    const marketGBP =
+      (shares != null && currentPrice != null ? localToGbp(shares * currentPrice, currency, fx) : null) ??
+      holding.currentValueGBP ??
+      costGBP;
+
+    investedGBP += costGBP;
+    valueGBP += marketGBP;
     const resolved = resolveAsset(holding.asset as AssetRow);
     if (resolved.signalState !== SignalState.NONE) holdingSignals.push(resolved);
   }

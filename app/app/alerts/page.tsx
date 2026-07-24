@@ -1,12 +1,23 @@
 import { Card } from '@/components/Card';
 import { Badge } from '@/components/Badge';
 import { requirePageUser } from '@/lib/server/pageAuth';
+import { isPaidUser } from '@/lib/entitlements';
+import { Paywall } from '@/components/Paywall';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AlertsPage() {
   const user = await requirePageUser('/app/alerts');
+  // Deterministic buy/sell signals across the master list are members-only.
+  if (!isPaidUser(user)) {
+    return (
+      <Paywall
+        title="Signals and alerts are a members feature"
+        message="Live buy and sell signals across the master watchlist are part of the paid membership."
+      />
+    );
+  }
   const notifications = await prisma.notification.findMany({ where: { OR: [{ profileId: user.id }, { role: user.role }] }, orderBy: { createdAt: 'desc' }, take: 50 }).catch(() => []);
   const signals = await prisma.assetSnapshot.findMany({ where: { signalState: { not: 'NONE' } }, include: { asset: true }, orderBy: { capturedAt: 'desc' }, take: 50 }).catch(() => []);
   return (

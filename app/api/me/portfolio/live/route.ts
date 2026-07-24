@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { fail, ok } from '@/lib/api';
-import { requireUser } from '@/lib/auth';
+import { requirePaid } from '@/lib/entitlements';
 import { prisma } from '@/lib/prisma';
 import { fromCaughtError } from '@/lib/route';
 import { getLivePortfolioView } from '@/lib/server/livePortfolio';
@@ -18,7 +18,7 @@ const SizeSchema = z.object({ declaredSizeGBP: z.number().nonnegative().max(1_00
 
 export async function GET() {
   try {
-    const user = await requireUser();
+    const user = await requirePaid();
     return ok(await getLivePortfolioView(user.id));
   } catch (error) {
     return fromCaughtError(error);
@@ -29,7 +29,7 @@ export async function GET() {
 // null does not upsert reliably in Postgres, so resolve by findFirst.
 export async function POST(req: Request) {
   try {
-    const user = await requireUser();
+    const user = await requirePaid();
     const body = await req.json().catch(() => ({}));
     const parsed = HoldingSchema.safeParse(body);
     if (!parsed.success) return fail('Invalid holding payload', 400, 'INVALID_PAYLOAD');
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
 
 export async function PATCH(req: Request) {
   try {
-    const user = await requireUser();
+    const user = await requirePaid();
     const body = await req.json().catch(() => ({}));
     const parsed = SizeSchema.safeParse(body);
     if (!parsed.success) return fail('Invalid payload', 400, 'INVALID_PAYLOAD');
@@ -79,7 +79,7 @@ export async function PATCH(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    const user = await requireUser();
+    const user = await requirePaid();
     const assetId = new URL(req.url).searchParams.get('assetId');
     if (!assetId) return fail('assetId is required', 400, 'INVALID_PAYLOAD');
 

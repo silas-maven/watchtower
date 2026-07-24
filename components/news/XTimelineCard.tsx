@@ -28,10 +28,14 @@ function ensureWidgetScript(onReady: () => void) {
   document.body.appendChild(script);
 }
 
-export function XTimelineCard({ handle = 'MarketWatch' }: { handle?: string }) {
+export function XTimelineCard({ handle = 'StockTwits', listUrl = '' }: { handle?: string; listUrl?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { resolvedTheme } = useTheme();
   const [failed, setFailed] = useState(false);
+
+  // A curated List (many investor accounts) takes precedence over a single handle.
+  const embedUrl = listUrl ? listUrl : `https://twitter.com/${handle}`;
+  const label = listUrl ? 'Curated list' : `@${handle}`;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -47,8 +51,8 @@ export function XTimelineCard({ handle = 'MarketWatch' }: { handle?: string }) {
     anchor.setAttribute('data-dnt', 'true');
     anchor.setAttribute('data-chrome', 'noheader nofooter transparent');
     anchor.setAttribute('data-height', '440');
-    anchor.href = `https://twitter.com/${handle}`;
-    anchor.textContent = `Posts by @${handle}`;
+    anchor.href = embedUrl;
+    anchor.textContent = listUrl ? 'Investing list on X' : `Posts by @${handle}`;
     container.appendChild(anchor);
 
     ensureWidgetScript(() => {
@@ -68,14 +72,14 @@ export function XTimelineCard({ handle = 'MarketWatch' }: { handle?: string }) {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [handle, resolvedTheme]);
+  }, [handle, listUrl, embedUrl, resolvedTheme]);
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card">
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
-        <span className="text-sm font-semibold text-foreground">On X</span>
-        <a href={`https://twitter.com/${handle}`} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-primary hover:underline">
-          @{handle}
+        <span className="text-sm font-semibold text-foreground">Investing on X</span>
+        <a href={embedUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-primary hover:underline">
+          {label}
         </a>
       </div>
 

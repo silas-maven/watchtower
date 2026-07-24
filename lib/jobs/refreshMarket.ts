@@ -27,6 +27,9 @@ const DEFAULT_PORTFOLIO_SIZE_GBP = 5000;
 // If an asset has not been snapshotted in this long, refresh it even with its
 // market closed so closing values and 52-week context stay current.
 const STALE_SAFETY_MS = 18 * 60 * 60 * 1000;
+// Assets written in parallel per batch. Keeps the universe-scale run inside the
+// cron function's time budget without opening too many database connections.
+const ASSET_WRITE_CONCURRENCY = 20;
 
 async function portfolioSizeGbp(): Promise<number> {
   try {
@@ -97,7 +100,10 @@ async function runRefresh(force: boolean, jobRunId: string): Promise<RefreshMark
     batchError = error instanceof Error ? error.message : String(error);
   }
 
-  for (const asset of due) {
+  // Each asset writes only its own rows, so they can be processed concurrently.
+  // Sequentially this is 2-3 database round-trips per asset, which at universe
+  // scale (~900 assets) overran the cron function's time budget.
+  const processAsset = async (asset: (typeof due)[number]) => {
     const previous = asset.snapshots[0];
     const quoteSymbol = symbolByAssetId.get(asset.id) ?? asset.symbol;
     let quote: YahooQuote | null = quotes.get(quoteSymbol) ?? null;
@@ -271,6 +277,18 @@ async function runRefresh(force: boolean, jobRunId: string): Promise<RefreshMark
 
     result.refreshed += 1;
     if (quote) result.updated += 1;
+  };
+
+  for (let i = 0; i < due.length; i += ASSET_WRITE_CONCURRENCY) {
+    const batch = due.slice(i, i + ASSET_WRITE_CONCURRENCY);
+    // One bad asset must not abort the whole run.
+    const settled = await Promise.allSettled(batch.map((asset) => processAsset(asset)));
+    for (const outcome of settled) {
+      if (outcome.status === 'rejected') {
+        result.failed += 1;
+        console.error('[refreshMarket] asset failed:', outcome.reason);
+      }
+    }
   }
 
   // Inert unless alert delivery is explicitly enabled (off by default).

@@ -4,7 +4,7 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 import { trackEvent } from '@/lib/server/trackEvent';
 
-export type SessionUser = Pick<Profile, 'id' | 'email' | 'name' | 'role' | 'accessState'> & {
+export type SessionUser = Pick<Profile, 'id' | 'email' | 'name' | 'role' | 'tier' | 'accessState'> & {
   clerkUserId: string;
 };
 
@@ -56,6 +56,7 @@ function sessionUser(profile: Profile): SessionUser {
     email: profile.email,
     name: profile.name,
     role: profile.role,
+    tier: profile.tier,
     accessState: profile.accessState,
   };
 }

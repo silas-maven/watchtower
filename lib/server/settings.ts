@@ -19,7 +19,10 @@ export const SETTING_DEFAULTS = {
   alert_delivery_enabled: false,
   portfolio_size_gbp: 5000,
   news_feed_urls: [] as string[],
-  news_x_handle: 'MarketWatch',
+  news_x_handle: 'StockTwits',
+  // Optional curated X List URL (many investor accounts in one timeline). When
+  // set, it overrides news_x_handle. Empty = use the single handle above.
+  news_x_list_url: '',
   macro_boe_base_rate: EMPTY_MACRO,
   macro_uk_10y_gilt: EMPTY_MACRO,
   macro_itraxx_5y: EMPTY_MACRO,

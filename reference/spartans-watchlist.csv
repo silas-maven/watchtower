@@ -1,0 +1,1068 @@
+ticker,name
+BTC,Bitcoin
+LTC,Litecoin
+ETH,Ethereum
+XRP,Ripple
+ADA,Cardano
+BNB,Binance coin
+SOL,Solana
+AVAX,Avalanche
+LINK,Chainlink
+RNDR,Render
+FET,FET
+DOGE,Dogecoin
+IBIT,iShares Bitcoin Trust ETF
+IASH,iShares MSCI China A UCITS ETF USD (Acc)
+HMCH,HSBC MSCI China UCITS ETF USD
+EMQP,EMQQ Emerging Markets Internet UCITS ETF Acc
+INRG,iShares Global Clean Energy Trnstn UCITS ETF USD D
+ECAR,iShares Elctrc Vhcls and Drvng Tech UCITS ETF USDA
+NUCG,VanEck Uranium and Nuclear Technologies UCITS ETF
+IUKD,iShares UK Dividend UCITS ETF GBP (Dist)
+CSP1,iShares Core S&P 500 UCITS ETF USD (Acc)
+PHSP,#N/A
+BATT,Amplify Lithium & Battery Technology ETF
+IWMO,iShares Edge MSCI World Momentum Factor UCITS USD (Acc) ETF
+ESPO,VanEck Video Gaming and eSports ETF
+ISPY,L&G Cyber Security UCITS ETF USD Acc
+VMOM,#N/A
+PQDI,Principal Spectrum Preferred and Income ETF
+VOLT,Tema Electrification ETF
+IIPR,Innovative Industrial Properties Inc
+ROBG,L&G ROBO Global Robotics and Auto UCITS ETF USDAcc
+GLD,SPDR Gold Trust
+WFH,#N/A
+CHRG,WisdomTree Battery Solutions UCITS ETF USD Acc
+BRNT,Wisdomtree Brent Crude ETC
+LOIL,WisdomTree WTI Crude Oil ETC
+BBOX,Tritax Big Box REIT PLC
+DLR,Digital Realty Trust Inc
+RBOD,iShares Automation & Robotics UCITS ETF USD D
+LNGA,#N/A
+HERO,Global X Video Games & Esports ETF
+JEDG,VanEck Space Innovators UCITS ETF
+SMGB,VanEck Semiconductor UCITS ETF USD A
+IKOR,iShares MSCI Korea UCITS ETF USD (Dist)
+EWT,Ishares Msci Taiwan ETF
+XSPX,Xtrackers S&P 500 Swap UCITS 1C ETF
+XSDX,Xtrackers ShortDAX Daily Swap UCITS 1C ETF
+WRCY,#N/A
+OKTA,Okta Inc
+AAXN,#N/A
+ANIC,Agronomics Ltd
+ATVI,#N/A
+BARC,Barclays PLC
+BHP,BHP Group Ltd
+BIDU,Baidu Inc
+BLUE,BNPPE ECPI Global ESG Blue Economy UCITS ETF C
+DEBS,Boohoo Group PLC
+BYG,Big Yellow Group plc
+BYND,Beyond Meat Inc
+CHWY,Chewy Inc
+CLLS,Cellectis SA
+CMCX,CMC Markets Plc
+CRM,Salesforce Inc
+CRSP,Crispr Therapeutics AG
+MEDIF,Medipharm Labs Corp
+CWBR,#N/A
+DATA,GlobalData PLC
+DBK,Deutsche Bank AG
+DIS,Walt Disney Co
+DOYU,Douyu International Holdings Ltd
+EDIT,Editas Medicine Inc
+EXK,Endeavour Silver Corp
+FIZZ,National Beverage Corp
+FOUR,Shift4 Payments Inc Class A
+GAMA,Gamma Resources Ltd
+GAZP,#N/A
+GLEN,Glencore PLC
+GME,GameStop Corp
+GRPN,Groupon Inc Common Stock
+GS,Goldman Sachs Group Inc
+HUYA,HUYA Inc - ADR
+IGG,IG Group Holdings plc
+INTC,Intel Corp
+JD,JD.Com Inc
+KO,Coca-Cola Co
+MA,Mastercard Inc
+MANO,Manolete Partners PLC
+MANU,Manchester United PLC
+MELI,MercadoLibre Inc
+MKS,Marks and Spencer Group Plc
+NAT,Nordic American Tankers Ltd
+NEE,NextEra Energy Inc
+NFLX,Netflix Inc
+NG,NovaGold Resources Inc
+NSA,National Storage Affiliates Trust
+NTLA,Intellia Therapeutics Inc
+NVDA,NVIDIA Corp
+OCDO,Ocado Group PLC
+ORSTED,Oersted A/S
+PAAS,Pan American Silver Corp
+PANW,Palo Alto Networks Inc
+PWM,Power Metals Corp
+PYPL,PayPal Holdings Inc
+QCOM,Qualcomm Inc
+RGLD,Royal Gold Inc
+RTO,Rentokil Initial PLC
+RVLV,Revolve Group Inc
+SAFE,Safehold Inc
+SDF,Steadfast Group Ltd
+SFR,Sandfire Resources America Inc
+SGMO,#N/A
+SHOP,Shopify Inc
+SNAP,Snap Inc
+SPOT,Spotify Technology SA
+SSE,Silver Spruce Resources Inc
+TIT,Telecom Italia SpA
+TLW,Tullow Oil plc
+TSLA,Tesla Inc
+TWTR,#N/A
+UAA,Under Armour Inc Class A
+ULVR,Unilever plc
+V,Visa Inc
+VOD,Vodafone Group PLC
+WPP,WPP PLC
+CWR,Ceres Power Holdings plc
+CRON,Cronos Group Inc
+IOG,#N/A
+NIO,Nio Inc - ADR
+SPCE,Virgin Galactic Holdings Inc
+CCL,Carnival Corporation Ltd
+BT.A,BT Group - CLASS A Common Stock
+NCYT,Novacyt SA
+GILD,Gilead Sciences Inc
+KAPE,#N/A
+NCC,NCC Group PLC
+MONY,MONY Group PLC
+YGEN,#N/A
+LRN,Stride Inc
+TWLO,Twilio Inc
+TWOU,#N/A
+TDOC,Teladoc Health Inc
+ZM,Zoom Communications Inc
+CIHL,#N/A
+REGN,Regeneron Pharmaceuticals Inc
+WORX,Scworx Corp
+SCWX,Scalable MSCI AC World Xtrackers UCITS ETF
+FLIR,#N/A
+PAF,Pan African Resources plc
+MRNA,Moderna Inc
+NVAX,Novavax Inc
+DOCU,Docusign Inc
+APPS,Digital Turbine Inc
+LULU,Lululemon Athletica Inc
+WING,Wingstop Inc
+AZPN,#N/A
+ZBRA,Zebra Technologies Corp
+JMIA,Jumia Technologies AG - ADR
+SNSR,Global X Internet of Things ETF
+SOCL,Global X Social Media ETF
+ODX,#N/A
+HEMO,Hemogenyx Pharmaceuticals PLC
+MGGT,#N/A
+POLX,#N/A
+EVBG,#N/A
+LYB,Lyondellbasell Industries N.v
+FLTA,#N/A
+PTON,Peloton Interactive Inc
+VERI,Veritone Inc
+ANAB,AnaptysBio Inc
+QDEL,Quidelortho Corp
+DKNG,DraftKings Inc
+WMT,Walmart Inc
+WM,Waste Management Inc
+BIFF,#N/A
+MNL,Manchester & London Investment Trust plc
+RBTX,iShares Automation & Robotics UCITS ETF USD A
+IITU,iShares S&P 500 Info Technolg Sctr UCITS ETF USD A
+DDOG,Datadog Inc
+ZOO,Zoo Digital Group plc
+WBA,Walgreen Boots Alliance Ord Shs
+LTG,#N/A
+VRE,Vanguard FTSE Canadian Capped REIT Index ETF
+LYV,Live Nation Entertainment Inc
+SFIX,Stitch Fix Inc
+CODX,Co-Diagnostics Inc
+FSLY,Fastly Inc
+HASI,HA Sustainable Infrastructure Capitl Inc
+XWEL,Xwell Inc
+TRUP,Trupanion Inc
+ALGN,Align Technology Inc
+LVS,Las Vegas Sands Corp.
+MARS,Marston's PLC
+MAB,Mitchells & Butlers plc
+JDW,J D Wetherspoon plc
+GNUS,#N/A
+SDC,#N/A
+RCL,Royal Caribbean Cruises Ltd
+CPE,Callon Petroleum Ord Shs
+SSL,Sasol Ltd
+SONO,Sonos Inc
+GOOG,Alphabet Inc Class C
+NKLA,#N/A
+PLUG,Plug Power Inc
+IZEA,IZEA Worldwide Inc
+MMAT,#N/A
+TTNP,#N/A
+BETZ,Roundhill Sports Betting & iGaming ETF
+NOVN,Novartis AG
+FEYE,#N/A
+TAL,TAL Education Group
+SONG,Music Licensing Inc
+AAF,Airtel Africa PLC
+PINS,Pinterest Inc
+CRWD,Crowdstrike Holdings Inc
+NACP,Impact Shares NAACP Minority Empowerment ETF
+SQ,#N/A
+CINE,#N/A
+LLOY,Lloyds Banking Group PLC
+ROKU,Roku Inc
+UONEK,Urban One Inc Class D
+TSQ,Townsquare Media Inc
+GPS,Great Plains Metals Corp
+M,Macy's Inc
+VUZI,Vuzix Corp
+BWNG,#N/A
+PCTY,Paylocity Holding Corp
+MSLH,Marshalls plc
+EB,Eventbrite
+META,Meta Platforms Inc
+MTCH,Match Group Inc
+NET,Cloudflare Inc
+BRWM,BlackRock World Mining Trust Plc
+NKE,Nike Inc
+MAXR,#N/A
+AJRD,#N/A
+PRPO,Precipio Inc
+CLNE,Clean Energy Fuels Corp
+SMT,Scottish Mortgage Investment Trust PLC
+NAPS,#N/A
+SLVR,Sprott Silver Miners & Physical Silver ETF
+KODK,Eastman Kodak Co
+DTIL,Precision BioSciences Inc
+D,Dominion Energy Inc
+BOWL,Hollywood Bowl Group PLC
+FIVN,Five9 Inc
+COUP,#N/A
+SYS1,System1 Group PLC
+CNVS,Cineverse Corp
+INGA,ING Groep NV
+TOOP,#N/A
+GRMN,Garmin Ltd
+PHPP,#N/A
+LMND,Lemonade Inc
+ANET,Arista Networks Inc
+ILMN,Illumina Inc
+Z,Zillow Group Inc Class C
+PD,Pagerduty Inc
+PRLB,Proto Labs Inc
+IBIO,Ibio Inc
+PING,#N/A
+CHEK,Diastika Biotekindo Tbk PT
+VISL,Vislink Technologies Inc
+EQIX,Equinix Inc
+GD,General Dynamics Corp
+ARES,Ares Management Corp
+EXPN,Experian plc
+PHP,Primary Health Properties PLC
+WELL,Welltower Inc
+CONE,Canada One Mining Corp
+HOTC,#N/A
+AYX,#N/A
+HYLN,Hyliion Holdings Corp
+WKHS,Workhorse Group Inc
+TMO,Thermo Fisher Scientific Inc
+ONTO,Onto Innovation Inc
+AGEN,Agenus Inc
+RVVTF,Revive Therapeutics Ltd
+AMZN,Amazon.com Inc
+MSFT,Microsoft Corp
+MAERSK-B,AP Moeller - Maersk A/S Class B
+DNLM,Dunelm Group plc
+TSE,#N/A
+ZEN,Zentek Ltd
+EKSO,#N/A
+ONEM,#N/A
+ESTC,Elastic NV
+SPLK,#N/A
+ADES,Akasha Wira International Tbk PT
+ADMA,ADMA Biologics Inc
+VERB,#N/A
+T,AT&T Inc
+BIGC,#N/A
+RIOT,Riot Platforms Inc
+LOCK,iShares Digital Security UCITS ETF USD (Acc)
+MSTR,Strategy Inc Class A
+CSCO,Cisco Systems Inc
+BYFC,Broadway Financial Corp
+NIU,Niu Technologies - ADR
+CLSK,CleanSpark Inc
+SPG,Simon Property Group Inc
+EPR,EPR Properties
+STOR,iShares Energy Storage & Hydrogen UCITS ETF USD Ac
+ZS,Zscaler Inc
+WCMK,#N/A
+BYOT,#N/A
+UNBLF,Unibail-Rodamco-Westfield SE
+ADSK,Autodesk Inc
+XERS,Xeris Biopharma Holdings Inc
+NXPI,NXP Semiconductors NV
+ADI,Analog Devices Inc
+XLNX,#N/A
+SWKS,Skyworks Solutions Inc
+KEYS,Keysight Technologies Inc
+MXIM,#N/A
+ESSITY-A,Essity AB (publ) Class A
+IDEX,IDEX Metals Corp
+BLNK,Blink Charging Co
+CSTM,Constellium SE
+FL,Frontier Lithium Inc
+7DIG,#N/A
+CTEA,#N/A
+CYBR,Rize Cyber Security And Data Privacy UCITS - USD Acc ETF
+RUR,#N/A
+NOW,ServiceNow Inc
+TLRY,Tilray Brands Inc
+SEA,US Global Sea to Sky Cargo ETF
+CSOD,#N/A
+AYRO,#N/A
+KE,Kimball Electronics Inc
+WIR.U,#N/A
+NNOX,Nano-X Imaging Ltd
+GEVO,Gevo Inc
+IPOB,#N/A
+MRVL,Marvell Technology Inc
+KFY,Korn Ferry
+PGNY,Progyny Inc
+VITR,Vitrolife AB
+CTXS,#N/A
+PAVM,PAVmed Inc
+ONTX,Corgi ONTO 2x Daily ETF
+HCAC,Hall Chadwick Acquisition Corp
+BLFS,BioLife Solutions Inc
+ELYS,Elys BMG Group Inc
+IBUY,Amplify Online Retail ETF
+OGEN,Oragenics Inc
+CVAC,#N/A
+HTRY,#N/A
+DELL,Dell Technologies Inc
+ALTO,Alto Ingredients Inc
+NNDM,Nano Dimension Ltd - ADR
+VMW,VMware Class A Ord Shs
+DT,Dynatrace Inc
+DDD,3D Systems Corp
+WDAY,Workday Inc
+EXPI,#N/A
+TBIO,Telesis Bio Inc
+BEPC,Brookfield Renewable Corp
+PSNL,Personalis Inc
+ARNA,Arwana Citramulia Tbk PT
+PENN,PENN Entertainment Inc
+FDX,FedEx Corp
+PBW,Invesco WilderHill Clean Energy ETF
+ACES,ALPS Clean Energy ETF
+ICLN,iShares Global Clean Energy ETF
+WCLD,WisdomTree Cloud Computing Fund
+ETSY,Etsy Inc
+SLGG,#N/A
+DAR,Darling Ingredients Inc
+FVRR,Fiverr International Ltd
+UPWK,Upwork Inc
+ICVT,iShares Convertible Bond ETF
+CWB,State Street SPDR Bloomberg Convertible Sec ETF
+FCVT,First Trust SSI Strategic Convertible Sec ETF
+ZYXI,#N/A
+CYTO,#N/A
+MDGS,#N/A
+ISUN,Invesco Solar Energy UCITS ETF USD Acc
+BEEM,Beam Global
+ZAL,Zalando SE
+SMDS,#N/A
+WRK,WRKR Ltd
+PKG,Packaging Corp Of America
+BOX,Box Inc
+TEAM,Atlassian Corp
+ORPH,#N/A
+SAM,Boston Beer Company Inc
+INGR,Ingredion Inc
+CAL,Caleres Inc
+EPC,Edgewell Personal Care Co
+FRPT,Freshpet Inc
+LQD,iShares iBoxx $ Inv Grade Corporate Bond ETF
+JKS,JinkoSolar Holding Co. Ltd
+DXCM,DexCom Inc
+ACA,Arcosa Inc
+HOG,Harley-Davidson Inc
+BCHN,Invesco CoinShares Global Blockchain UCITS ETF Acc
+U,Unity Software Inc
+THULE,Thule Group AB
+RWLK,#N/A
+AMLM,American Lithium Minerals Inc
+RIDE,#N/A
+IPG,IPD Group Ltd
+PKI,#N/A
+CGC,Canopy Growth Corp
+MTUM,Betashares Australian Momentum ETF
+GWS,Great-West Lifeco Inc
+CVNA,Carvana Co
+LIN,Linde PLC
+FTCH,#N/A
+AIT,Applied Industrial Technologies Inc
+AMGO,Amigo Resources PLC
+FSR,Firstrand ADR
+XPEV,Xpeng Inc - ADR
+LI,Li Auto Inc
+DVRG,#N/A
+SOLO,#N/A
+MCK,McKesson Corp
+LLY,Eli Lilly And Co
+WKP,Workspace Group plc
+FXB,Invesco CurrencyShares British Pound Strlng Tr
+CYB,Cymbria Corp
+CEW,WisdomTree Emerging Currency Strategy Fund
+NCNO,nCino Inc
+CVS,CVS Health Corp
+SHIP,Seanergy Maritime Holdings Corp
+GLBS,Globus Maritime Ltd
+FSJ,James Fisher and Sons PLC
+EURN,#N/A
+BC,Brunswick Corp
+MBUU,Malibu Boats Inc
+ONEW,OneWater Marine Inc
+OC,Owens Corning
+DRIV,Global X Autonomous & Electric Vehicles ETF
+FUV,#N/A
+CIIC,#N/A
+KNDI,Kandi Technologies Group Inc
+POLA,Polar Power Inc
+PEI,Prospera Energy Inc
+DLPN,Dolphin Entertainment Inc
+SWEL,#N/A
+CMPS,Compass Pathways PLC
+QTMM,#N/A
+ABDP,Ab Dynamics PLC
+AES,AES Corp
+VRTX,Vertex Pharmaceuticals Inc
+AMT,American Tower Corp
+SBAC,SBA Communications Corp
+CCI,Crown Castle Inc
+THCB,#N/A
+OUST,Ouster Inc
+METX,ME Therapeutics Holdings Inc
+HYVE,#N/A
+ZNGA,#N/A
+EXPR,#N/A
+SGLB,#N/A
+MUX,McEwen Inc
+PURP,#N/A
+GGP,Greatland Resources Ltd
+WMH,#N/A
+BX,Blackstone Inc
+RVP,Retractable Technologies Inc
+N4P,#N/A
+PHE,Powerhouse Energy Group PLC
+MARA,MARA Holdings Inc
+BABA,Alibaba Group Holding Ltd - ADR
+BABYF,#N/A
+FUNFF,Fansunite Entertainment Inc
+PRD,Predator Oil & Gas Holdings PLC
+LDO,Leonardo SpA
+DASH,DoorDash Inc
+NUMI,Nuveen Municipal Income ETF
+MMED,MiniMed Group Inc
+ABNB,Airbnb Inc
+DMYD,#N/A
+MP,Mp Materials Corp
+BFT,#N/A
+TCOM,Trip.com Group Ltd
+BE,Bloom Energy Corp
+TDG,TransDigm Group Inc
+WYNN,Wynn Resorts Ltd
+QTUM,Defiance Quantum ETF
+NEON,Neonode Inc
+DIGS,#N/A
+FUNO11,Fideicomiso Irrevocable No F/1401
+CBAT,CBAK Energy Technology Ltd
+MGTI,MGT Capital Investments Inc
+DS,Dividend Select 15 Corp
+FUBO,Fubotv Inc
+FVE,#N/A
+AVTX,Avalo Therapeutics Inc
+AMRS,#N/A
+BNTX,BioNTech SE - ADR
+CGRO,CoreValues Alpha Greater China Growth ETF
+HIMS,Hims & Hers Health Inc
+USAT,#N/A
+IESC,IES Holdings Inc
+AVAV,AeroVironment Inc.
+IPWR,Ideal Power Inc
+ABM,ABM Industries Inc
+SBE,#N/A
+KERN,Kering SA
+PSTG,#N/A
+PLL,Prudential Financial Inc
+CMCM,Cheetah Mobile Inc
+SECO,#N/A
+TIGR,UP Fintech Holding Ltd
+TDC,Teradata Corp
+ZUO,#N/A
+SPIP,State Street SPDR Portfolio TIPS ETF
+MOMO,Hello Group Inc
+LIT,Global X Lithium & Battery Tech ETF
+SKLZ,#N/A
+IPV,#N/A
+IVZ,Invesco Ltd
+TW,Tradeweb Markets Inc
+VVI,#N/A
+UFO,Procure Space ETF
+ASP,Aspermont Ltd
+NPF,Smart Nz Property ETF
+NRR,Newriver Reit PLC
+WHR,Whirlpool Corp
+MNR,Mach Natural Resources LP
+DNB,Deneb Investments Ltd
+BKI,Black Iron Inc
+ALPP,Alpine 4 Holdings Inc
+PSTI,#N/A
+KL,#N/A
+VERO,#N/A
+EQ,Equillium Inc
+SE,Sea Ltd
+TRAK,Repositrak Inc
+HAYD,Haydale PLC
+W,Wayfair Inc
+EBON,Ebang International Holdings Inc
+BCN,Beacon Minerals Ltd
+UROV,#N/A
+VTRS,Viatris Inc
+OSMT,#N/A
+MRK,Merck & Co Inc
+AUPH,Aurinia Pharmaceuticals Inc
+OKE,ONEOK Inc
+AMGN,Amgen Inc
+ADMS,#N/A
+MNK,Minerals Technologies Inc
+TGTX,TG Therapeutics Inc common stock
+GTHX,#N/A
+EXEL,Exelixis Inc
+AZN,AstraZeneca PLC (US)
+SRPT,Sarepta Therapeutics Inc
+CAN,Canaan Inc - ADR
+AQB,Aquabounty Technologies Inc
+SWI,Swire Pacific Ord Shs A
+IQ,IQIYI Inc - ADR
+HIVE,HIVE Digital Technologies Ltd
+AHT,Ashford Hospitality Trust Inc
+BBI,#N/A
+ZOM,Zoominfo Technologies Inc
+QRTEA,#N/A
+LGHL,Lion Group Holding  American Depositary Share Representing Ord Shs
+RWT,Redwood Trust Inc
+PTVE,#N/A
+BOXL,Boxlight Corp
+ORTX,#N/A
+AMRN,Amarin Corporation PLC
+ELVN,Enliven Therapeutics Inc
+KBNT,Kubient Inc
+PLTXF,JIVA Technologies Inc
+BYRN,Byrna Technologies Inc
+AVGR,#N/A
+SOL,SOL Global Investments Corp
+AY,#N/A
+BEP,Brookfield Renewable Partners LP Unit Non Voting
+CLWD,Amundi MSCI Wld ESG Broad Transition UCITS ETF Dis
+VMAR,Vision Marine Technologies Inc
+MWK,Mohawk Industries Inc
+XL,XXL Energy Corp
+GOEV,#N/A
+XAN,#N/A
+LCTX,Lineage Cell Therapeutics Inc
+LMFA,#N/A
+STRA,Strategic Education Inc
+BW,Babcock & Wilcox Enterprises Inc
+MTLS,Materialise NV - ADR
+LCID,Lucid Group Inc
+TTOO,T2 Biosystems Inc
+WW,WW International Inc
+TSM,Taiwan Semicndctr Mnufctrng Co Ltd
+INFY,Infosys Ltd
+FDMT,4D Molecular Therapeutics Inc
+WIMI,WiMi Hologram Cloud Inc
+ISR,#N/A
+TUA,Simplify Short Term Treasury Futures Strategy ETF
+ATVK,Globaltek Ventures Inc
+TSCRF,#N/A
+SCR,Strathcona Resources Ltd
+SALT,Atlas Salt Inc
+OBSV,#N/A
+IONI,I-On Digital Corp
+VTGN,Vistagen Therapeutics Inc
+STSA,#N/A
+CRNT,Ceragon Networks Ltd
+UAVS,Ageagle Aerial Systems Inc
+TTI,Tetra Technologies Inc
+ND,#N/A
+FFWD,#N/A
+DARE,Dare Bioscience Inc
+JAGX,Jaguar Health Inc
+KWEB,KraneShares CSI China Internet ETF
+POAI,#N/A
+VIVE,Viveve Medical Inc
+SPA,Spanish Mountain Gold Ltd
+GBT,BMTC Group Inc
+MKD,#N/A
+PTN,Palatin Technologies Inc
+AMTX,Aemetis Inc
+COIN,Coinbase Global Inc
+CMLF,#N/A
+ADOM,#N/A
+BB,BlackBerry Ltd
+LPCN,Lipocine Inc
+EVFM,Evofem Biosciences Inc
+KOPN,Kopin Corp
+LSYN,#N/A
+NANO,Nanoco Group PLC
+OSTK,#N/A
+LBTI,Lithium & Boron Technology Inc
+PCTI,#N/A
+KOSS,KOSS Corp
+NAKD,#N/A
+SHSL,#N/A
+VYNE,Vyne Therapeutics Inc
+NXMH,Next Meats Holdings Inc
+ECOR,electroCore Inc.
+NOK,Nokia Oyj
+PHUN,Phunware Inc
+SLS,Sellas Life Sciences Group Inc
+TAKOF,Volatus Aerospace Inc
+AJAX,AFC Ajax NV
+GVP,#N/A
+OPTT,Ocean Power Technologies Inc
+ACTC,#N/A
+YALA,Yalla Group Ltd - ADR
+API,Agora Inc
+SYK,Stryker Corp
+BMIX,#N/A
+PCPL,#N/A
+FLT,Volatus Aerospace Inc
+MTOR,#N/A
+ENVB,Enveric Biosciences Inc
+AIM,AIM ImmunoTech Inc
+LEA,Lear Corp
+DSS,DSS Inc
+VJET,#N/A
+XONE,BondBloxx Bloomberg 1 Yr Tgt Duration US Trsy ETF
+ONVO,#N/A
+UUUU,Energy Fuels Inc
+SOS,Sos Ltd - ADR
+ENZC,Enzolytics Inc
+NKTR,Nektar Therapeutics
+VFF,Village Farms International Inc
+EA71,#N/A
+GRWG,GrowGeneration Corp
+RAPT,#N/A
+SENS,Senseonics Holdings Inc
+SVA,Sinovac Biotech Ltd
+ASTI,Ascent Solar Technologies Inc.
+PPBT,Purple Biotech Ltd - ADR
+KMPH,#N/A
+OTLK,Outlook Therapeutics Inc
+BOSC,BOS Better Online Solutions Ltd
+CYRN,#N/A
+JP,#N/A
+SAVA,#N/A
+BIOL,#N/A
+SNDL,SNDL Inc
+EHTH,eHealth Inc
+CLVS,#N/A
+SYN,Synergia Energy Ltd
+WPRT,Westport Fuel Systems Inc
+ORGO,Organogenesis Holdings Inc
+NXE,NexGen Energy Ltd
+DNN,Denison Mines Corp
+HYRE,#N/A
+LAIX,#N/A
+FCEL,FuelCell Energy Inc
+OGI,Organigram Global Inc
+CLVR,Clever Leaves Holdings Inc
+CGIX,#N/A
+BMBL,Bumble Inc
+ESYS,#N/A
+CNC,Centene Corp
+PROF,Profound Medical Corp
+ETWO,#N/A
+GHVI,#N/A
+HEC,#N/A
+DOCRF,#N/A
+CLOV,Clover Health Investments Corp
+ARTL,Artelo Biosciences Inc
+AMBA,Ambarella Inc
+ORBC,#N/A
+IRDM,Iridium Communications Inc
+EH,EHang Holdings Ltd - ADR
+BFIT,Basic-Fit NV
+HCMC,Healthier Choices Management Corp
+SEEL,#N/A
+PDD,PDD Holdings Inc - ADR
+TRMR,#N/A
+TTD,Trade Desk Inc
+CRBP,Corbus Pharmaceuticals Holdings Inc
+VGLS,#N/A
+RMGR,#N/A
+EGEC,#N/A
+DVN,Devon Energy Corp
+POLL,Polledo SAIC y F
+COOL,#N/A
+AMCI,AMC Robotics Corp
+ALYI,#N/A
+COWI,CarbonMeta Technologies Inc
+EVSV,Enviro-Serv Inc Common Stock
+CLIS,Clal Insurance Enterprises Holdings Ltd
+BILI,Bilibili Inc - ADR
+THBR,#N/A
+REEMF,Rare Element Resources Ltd (Vancouver)
+ANTE,#N/A
+BRQS,#N/A
+ABBV,AbbVie Common Stock
+PTCT,PTC Therapeutics Inc.
+TCEHY,Tencent Holdings ADR
+PTY,PIMCO Corporate&Income Opportunity Fund
+BXP,BXP Inc
+AVB,AvalonBay Communities Inc
+BIIB,Biogen Inc
+BHVN,Biohaven Ltd
+WPC,W.p. Carey Inc
+NNN,NNN REIT Inc
+NVO,Novo Nordisk A/S
+MPW,Metal Powder Works Ltd
+NWE,NorthWestern Energy Group Inc
+MMM,3M Co
+VICR,Vicor Corp
+MDT,Medtronic PLC
+OPK,OPKO Health Inc
+SINA,#N/A
+KSS,Kohls Corp
+CNET,ZW Data Action Technologies Inc
+PSN,Parsons Corp
+MRIN,YD More Investments Ltd
+AGGP,#N/A
+STIC,#N/A
+PW,Power REIT
+GTCH,GBT Technologies Inc
+VWDRY,Vestas Wind Systems AS ADR
+CACI,CACI INTERNATIONAL INC Common Stock
+GMBL,Esports Entertainment Group Inc
+VCVC,#N/A
+AONE,#N/A
+FLGT,Fulgent Genetics Inc
+KMI,Kinder Morgan Inc
+CELH,Celsius Holdings Inc
+PDSB,PDS Biotechnology Corp
+ESGC,Invesco S&P/TSX Composite ESG Index ETF (CAD)
+MREO,Mereo BioPharma Group plc - ADR
+AI,C3.ai Inc
+IBKR,Interactive Brokers Group Inc.
+OTRK,#N/A
+HUM,Humana Inc
+BLE,#N/A
+RESN,#N/A
+PLTR,Palantir Technologies Inc
+CDEV,Cohen Development Gas & Oil Ltd
+GTE,Gran Tierra Energy Inc
+ARLO,Arlo Technologies Inc
+LUNA,Luna Innovations Inc
+ABML,#N/A
+CLEU,#N/A
+DCPH,#N/A
+MBRX,Moleculin Biotech Inc
+EXPFF,#N/A
+LKCO,#N/A
+RBLX,Roblox Corp
+TECH,BIO-TECHNE Corp
+VRNT,#N/A
+DEFI,Hashdex Bitcoin ETF
+TALK,Talkspace Inc
+PEGA,Pegasystems Inc
+GWAC,#N/A
+VIH,#N/A
+EQOS,#N/A
+CHPT,ChargePoint Holdings Inc
+MKGI,#N/A
+OCGN,Ocugen Inc
+NOAC,#N/A
+ARCO,Arcos Dorados Holdings Inc
+AVON,Avon Technologies PLC
+DUKE,Duke Capital Ltd
+ATOS,Atossa Therapeutics Inc
+MOTS,Motus GI Holdings Inc
+TRN,Trinity Industries Inc
+FTCV,#N/A
+CINGF,Coinsilium Group Ltd
+OCN,Oceana Metals Ltd
+TKAT,#N/A
+CWRK,#N/A
+ZKIN,ZK International Group Co Ltd
+SINO,#N/A
+CPNG,Coupang Inc
+CREE,#N/A
+SNES,SenesTech Inc
+MOGO,#N/A
+ATIF,#N/A
+HOFV,#N/A
+AIKI,#N/A
+RMO,Rainy Mountain Royalty Corp
+AZRE,#N/A
+CSCW,#N/A
+AMWL,American Well Corp
+BUD,Anheuser-Busch Inbev SA
+HEIO,Heineken Holding NV
+ASTC,Astrotech Corp
+NUMD,Nu-Med Plus Inc
+DAL,Delta Air Lines Inc
+JBLU,JetBlue Airways Corp
+SAVE,Savannah Energy PLC
+LIFE,Ethos Technologies Inc
+COUR,Coursera Inc
+COCP,Cocrystal Pharma Inc
+UMC,United Microelectronics Corp
+WATR,Water Intelligence PLC
+HNST,Honest Company Inc
+OTLY,Oatly Group AB (publ) - ADR
+INCY,Incyte Corp
+VMEO,#N/A
+CMGR,Clubhouse Media Group Inc
+HSW,Hostelworld Group PLC
+ABEO,Abeona Therapeutics Inc
+NCTY,The9 Ltd
+APPN,Appian Corp
+GHSI,#N/A
+ATHA,Athena Gold Corp
+PFPT,#N/A
+FTNT,Fortinet Inc
+ETHE,Grayscale Ethereum Trust ETF
+VANI,Vivani Medical Inc
+BBBY,Bed Bath & Beyond Inc
+UEC,Uranium Energy Corp.
+ERIC,Telefonaktiebolaget LM Ericsson - ADR
+ONC,BeOne Medicines AG
+ZIM,ZIM Integrated Shipping Services Ltd
+AAPL,Apple Inc
+OWLT,Owlet Inc
+HUT,Hut 8 Corp
+IHG,InterContinental Hotels Group PLC
+TRIP,Tripadvisor Inc Common Stock
+LUNR,Intuitive Machines Inc
+WIX,Wix.Com Ltd
+IONQ,IONQ Inc
+ORCL,Oracle Corp
+el,Estee Lauder Companies Inc
+IBM,IBM Common Stock
+W7L,Warpaint London PLC
+SRP,Serco Group plc
+MTO,Mitie Group PLC
+CPI,Carlton Precious Inc
+CPG,Compass Group plc
+BAVA,Bitwise Avalanche ETF
+RZLV,Rezolve AI PLC
+MU,Micron Technology Inc
+UNH,UnitedHealth Group Inc
+RVSN,Rail Vision Ltd
+GTI,Gratifii Ltd
+TEM,Tempus AI Inc
+KLXE,KLX Energy Services Holdings Inc
+COST,Costco Wholesale Corp
+NVT,nVent Electric PLC
+QSI,Quantum-Si Inc
+GNPX,Genprex Inc
+YYAI,AiRWA Inc
+SHCO,#N/A
+OKLO,Oklo Inc
+CRTO,Criteo SA
+QUBT,Quantum Computing Inc
+Fig,Figma Inc
+SBET,Sharplink Inc
+JOBY,Joby Aviation Inc
+CRCL,Circle Internet Group Inc
+DUOL,Duolingo Inc
+MEIP,#N/A
+SLNH,Soluna Holdings Inc
+BMNR,Bitmine Immersion Technologies Inc
+SOUN,SoundHound AI Inc
+QS,Quantumscape Corp
+GRAB,Grab Holdings Ltd
+ALB,Albemarle Corp
+VKTX,Viking Therapeutics Inc
+CCJ,Cameco Corp
+SMR,Nuscale
+MDAI,Spectral AI Inc
+WWR,Westwater Resources Inc
+ISRG,Intuitive Surgical Inc
+ACLS,Axcelis Technologies Inc
+ACHR,Archer Aviation Inc
+NVX,NOVONIX Ltd
+ROOT,Root Inc
+STRL,Sterling Infrastructure Inc
+URI,United Rentals Inc
+CAT,Caterpillar Inc
+ETN,Eaton Corporation PLC
+CMI,Cummins Inc
+EME,Emcor Group Inc
+POWL,Powell Industries Inc
+PWR,Quanta Services Inc
+JCI,Johnson Controls International PLC
+AIRO,AIRO Group Holdings Inc
+CORZ,Core Scientific Inc
+DGX,Quest Diagnostics Inc
+LH,Labcorp Holdings Inc
+ABT,Abbott Laboratories
+EKF,EKF Diagnostics Holdings PLC
+UMAC,Unusual Machines Inc
+CHTR,Charter Communications Inc
+DEO,Diageo PLC
+DVA,Davita Inc
+POOL,Pool Corp
+SEZL,Sezzle Inc
+GTT,Gaztransport et Technigaz SA
+XPOF,Xponential Fitness Inc
+ENPH,Enphase Energy Inc
+SMCI,Super Micro Computer Inc
+RKLB,Rocket Lab Corp
+ADBE,Adobe Inc
+PSEC,Prospect Capital Corporation
+TRIG,Renewables Infrastructure Group Ltd
+ASCCY,Asics ADR
+ALMU,Aeluma Inc
+POET,POET Technologies Inc
+SPIR,Spire Global Inc
+NBIS,Nebius Group NV
+CPSH,CPS Technologies Corp
+NEXT,Nextdecade Corp
+DVLT,Datavault AI Inc
+USAR,USA Rare Earth Inc
+MYSZ,My Size Inc
+SAP,SAP SE
+KLAR,Klarna Group PLC
+RBRK,Rubrik Inc
+HOOD,Robinhood Markets Inc
+FCX,Freeport-McMoRan Inc
+SCCO,Southern Copper Corp
+GTLB,Gitlab Inc
+NTR,Nutrien Ltd
+DXC,DXC Technology Co
+CAAS,China Automotive Systems Inc
+DOMH,Dominari Holdings Inc
+TZOO,Travelzoo
+UBER,Uber Technologies Inc
+NU,Nu Holdings Ltd.
+REI,Ring Energy Inc
+EONR,EON Resources Inc
+ONCY,Oncolytics Biotech Inc
+BKKT,Bakkt Inc
+IVDA,Iveda Solutions Inc
+OWL,Blue Owl Capital Inc
+NSIT,Insight Enterprises Inc
+CDNS,Cadence Design Systems Inc
+SNPS,Synopsys Inc
+LMT,Lockheed Martin Corp
+SST,System1 Inc
+IT,Gartner Inc
+BIRD,Smartbird Inc
+FIX,Comfort Systems USA Inc
+VRT,Vertiv Holdings Co
+AGX,Argan Inc
+APH,Amphenol Corp
+WWD,Woodward Inc.Common Stock
+COHR,Coherent Corp
+LITE,Lumentum Holdings Inc
+AAOI,Applied Optoelectronics Inc
+PHM,Pultegroup Inc
+TBLA,Taboola.com Ltd
+BKNG,Booking Holdings Inc
+GRND,Grindr Inc
+LAKE,Lakeland Industries Inc
+XE,X-Energy Inc
+PNR,Pentair PLC
+XYL,Xylem Inc
+ECL,Ecolab Inc
+AAON,Aaon Inc
+IREN,IREN Ltd
+ASTS,AST SpaceMobile Inc
+VLO,Valero Energy Corp
+FN,Fabrinet
+HELP,Cybin Inc
+LRCX,Lam Research Corp
+MLI,Mueller Industries Inc
+SABR,Sabre Corp
+INFQ,Infleqtion inc
+KITT,Nauticus Robotics Inc
+SPAI,Safe Pro Group Inc
+WK,Workiva Inc
+LHX,L3harris Technologies Inc
+ADUR,Aduro Clean Technologies Inc
+SNR,Senior plc
+BOY,Bodycote PLC
+IPGP,IPG Photonics Corporation
+PDYN,Palladyne AI Corp
+BKSY,Blacksky Technology Inc
+AXTI,AXT Inc
+CVU,CPI Aerostructures Inc
+FEIM,Frequency Electronics Inc
+BBAI,BigBear.ai Holdings Inc
+KVYO,Klaviyo Inc
+S,SentinelOne Inc
+OVH,Ovh Groupe SA
+AADX,Applied Aerospace & Defense Inc
+CRNC,Cerence Inc
+VERU,Veru Inc
+ON,ON Semiconductor Corp
+APTV,Aptiv PLC
+FABC,Fabric.AI Inc
+BTU,Peabody Energy Corp
+MSGS,Madison Square Garden Sports Corp
+LEU,Centrus Energy Corp
+HON,Honeywell International Inc
+MNTS,Momentus Inc
+SATL,Satellogic Inc
+YSS,York Space Systems Inc
+RDW,Redwire Corp
+NASA,Tema Space Innovators ETF
+PL,Planet Labs PBC
+FJET,Starfighters Space Inc
+SATS,Satsuma Technology PLC
+VOYG,Voyager Technologies Inc
+SIDU,Sidus Space Inc
+FLY,Firefly Aerospace Inc
+TSAT,Telesat Corp
+GILT,Gilat Satellite Networks Ltd
+MTRN,Materion Corp
+AGNC,AGNC Investment Corp
+TRT,Trio-Tech International
+REAL,RealReal Inc
+TMDX,TransMedics Group Inc
+PWRL,Powerlaw Ord Shs
+ARQQ,Arqit Quantum Inc
+SIVE,Sivers Semiconductors AB
+CGNX,Cognex Corp
+ALGM,Allegro MicroSystems Inc
+VPG,Vishay Precision Group Inc
+CEVA,Ceva Inc
+LSCC,Lattice Semiconductor Corp
+RBC,RBC Bearings Inc
+RRX,Regal Rexnord Corp
+AME,Ametek Inc
+ALNT,Allient Inc
+NVTS,Navitas Semiconductor Corp
+TXN,Texas Instruments Inc
+WOLF,Wolfspeed Inc
+IFNNY,Infineon Technologies AG
+STM,STMicroelectronics NV
+MPWR,Monolithic Power Systems Inc
+ENS,EnerSys
+MP,Mp Materials Corp
+LYSCF,Lynas Rare Earths Ltd
+SNDK,SanDisk Corp
+PTC,PTC Inc
+SIEGY,Siemens AG
+DASTY,Dassault Systemes SE
+SKHY,SK Hynix Inc - ADR

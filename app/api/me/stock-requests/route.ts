@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { fail, ok } from '@/lib/api';
-import { requireUser } from '@/lib/auth';
+import { requirePaid } from '@/lib/entitlements';
 import { prisma } from '@/lib/prisma';
 import { fromCaughtError } from '@/lib/route';
 
@@ -14,7 +14,7 @@ const Schema = z.object({
 
 export async function POST(req: Request) {
   try {
-    const user = await requireUser();
+    const user = await requirePaid();
     const body = await req.json().catch(() => ({}));
     const parsed = Schema.safeParse(body);
     if (!parsed.success) return fail('Enter a ticker symbol', 400, 'INVALID_PAYLOAD');

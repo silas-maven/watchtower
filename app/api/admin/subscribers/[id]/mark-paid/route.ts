@@ -1,4 +1,4 @@
-import { Role, SubscriptionStatus } from '@prisma/client';
+import { MemberTier, Role, SubscriptionStatus } from '@prisma/client';
 import { fail, ok } from '@/lib/api';
 import { requireRole } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -32,6 +32,9 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
         currentPeriodEnd: nextDue,
       },
     });
+
+    // Marking paid is a manual grant of the paid tier.
+    await prisma.profile.update({ where: { id }, data: { tier: MemberTier.MEMBER } });
 
     await prisma.billingAlert.updateMany({
       where: { profileId: id, status: 'OPEN' },

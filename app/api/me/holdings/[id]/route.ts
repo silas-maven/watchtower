@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { ok, fail } from '@/lib/api';
-import { requireUser } from '@/lib/auth';
+import { requirePaid } from '@/lib/entitlements';
 import { prisma } from '@/lib/prisma';
 import { fromCaughtError } from '@/lib/route';
 import { getLivePortfolioView } from '@/lib/server/livePortfolio';
@@ -20,7 +20,7 @@ const Schema = z.object({
 // and link/unlink an averaging plan. Works for both live + virtual holdings.
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const user = await requireUser();
+    const user = await requirePaid();
     const { id } = await params;
     const body = await req.json().catch(() => ({}));
     const parsed = Schema.safeParse(body);

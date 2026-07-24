@@ -21,6 +21,18 @@ export const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-5-nano-2025-08-07';
 export const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'openai/gpt-oss-120b:free';
 export const APP_TIMEZONE = process.env.APP_TIMEZONE || 'Europe/London';
 
+/**
+ * Absolute base URL, used for links in outbound email (which cannot use
+ * relative paths). Set APP_BASE_URL in production; VERCEL_URL is the fallback.
+ */
+export function appBaseUrl(): string {
+  const explicit = optionalEnv('APP_BASE_URL');
+  if (explicit) return explicit.replace(/\/$/, '');
+  const vercel = optionalEnv('VERCEL_PROJECT_PRODUCTION_URL') ?? optionalEnv('VERCEL_URL');
+  if (vercel) return `https://${vercel.replace(/\/$/, '')}`;
+  return 'http://localhost:3007';
+}
+
 export function assertRuntimeEnv() {
   if (process.env.NODE_ENV !== 'production') return;
   for (const name of REQUIRED_IN_PROD) {

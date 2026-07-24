@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { SignInButton, UserButton, useUser } from '@clerk/nextjs';
-import { Activity, Bell, BriefcaseBusiness, Calculator, ChartCandlestick, Gauge, LayoutDashboard, Megaphone, Newspaper, Settings, ShieldCheck, UsersRound } from 'lucide-react';
+import { Activity, Bell, BriefcaseBusiness, Calculator, ChartCandlestick, Gauge, LayoutDashboard, Megaphone, Newspaper, PiggyBank, Settings, ShieldCheck, UsersRound } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import type { SessionUser } from '@/lib/auth';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -18,6 +18,8 @@ const memberItems: NavItem[] = [
   { href: '/app/watchlists', label: 'Watchlists', icon: Bell },
   { href: '/app/assets', label: 'Asset Centre', icon: ChartCandlestick },
   { href: '/app/portfolio-tools', label: 'Portfolio', icon: Calculator },
+  // Personal Finance is a destination in its own right, not a sub-tool (24 Jul feedback).
+  { href: '/app/portfolio-tools/personal-finance', label: 'Personal Finance', icon: PiggyBank },
   { href: '/app/account', label: 'Account', icon: Settings },
 ];
 
@@ -31,14 +33,28 @@ const adminItems: NavItem[] = [
   { href: '/admin/releases', label: "What's New", icon: Megaphone },
 ];
 
-function NavLink({ href, label, icon: Icon }: NavItem) {
+// Roots that only ever match exactly, so a deeper page does not light them up.
+const NAV_ROOTS = new Set(['/app', '/admin']);
+
+function matchesNav(pathname: string, href: string): boolean {
+  if (pathname === href) return true;
+  if (NAV_ROOTS.has(href)) return false;
+  return pathname.startsWith(`${href}/`);
+}
+
+function NavLink({ href, label, icon: Icon, siblings }: NavItem & { siblings: NavItem[] }) {
   const pathname = usePathname();
-  const active = pathname === href || (href !== '/app' && href !== '/admin' && pathname.startsWith(`${href}/`));
+  // Highlight only the MOST SPECIFIC match, so Personal Finance (a child route
+  // promoted to its own tab) does not also light up its Portfolio parent.
+  const bestMatch = siblings
+    .filter((item) => matchesNav(pathname, item.href))
+    .sort((a, b) => b.href.length - a.href.length)[0];
+  const active = bestMatch?.href === href;
   return (
     <Link
       href={href}
       prefetch
-      className={`group relative flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition ${
+      className={`group relative flex shrink-0 items-center gap-3 whitespace-nowrap rounded-2xl px-3 py-2.5 text-sm font-medium transition ${
         active
           ? 'bg-primary text-primary-foreground shadow-md'
           : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -85,12 +101,12 @@ export function TopNav({ children, initialUser }: { children: React.ReactNode; i
         <nav className="mt-5 space-y-5">
           <section>
             <div className="mb-1.5 px-3 text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">Member</div>
-            <div className="space-y-1">{memberItems.map((item) => <NavLink key={item.href} {...item} />)}</div>
+            <div className="space-y-1">{memberItems.map((item) => <NavLink key={item.href} {...item} siblings={memberItems} />)}</div>
           </section>
           {canAdmin && (
             <section>
               <div className="mb-1.5 px-3 text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">Admin</div>
-              <div className="space-y-1">{adminItems.map((item) => <NavLink key={item.href} {...item} />)}</div>
+              <div className="space-y-1">{adminItems.map((item) => <NavLink key={item.href} {...item} siblings={adminItems} />)}</div>
             </section>
           )}
         </nav>
@@ -121,8 +137,8 @@ export function TopNav({ children, initialUser }: { children: React.ReactNode; i
           </div>
         </div>
         <div className="flex gap-2 overflow-x-auto px-4 pb-3 lg:hidden">
-          {memberItems.map((item) => <NavLink key={item.href} {...item} />)}
-          {canAdmin && adminItems.map((item) => <NavLink key={item.href} {...item} />)}
+          {memberItems.map((item) => <NavLink key={item.href} {...item} siblings={memberItems} />)}
+          {canAdmin && adminItems.map((item) => <NavLink key={item.href} {...item} siblings={adminItems} />)}
         </div>
         {initialUser && <TickerStrip />}
       </header>

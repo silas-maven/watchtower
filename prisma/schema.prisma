@@ -16,6 +16,16 @@ enum Role {
   @@map("watchtower_spa_role")
 }
 
+// Freemium entitlement tier, distinct from billing health (SubscriptionStatus)
+// and account access (AccessState). FREE = taster; MEMBER = paid academy member.
+// Owners/admins bypass tier checks entirely (see lib/entitlements.ts).
+enum MemberTier {
+  FREE
+  MEMBER
+
+  @@map("watchtower_spa_member_tier")
+}
+
 enum SubscriptionStatus {
   ACTIVE
   OVERDUE
@@ -134,12 +144,17 @@ model Profile {
   email                String      @unique
   name                 String
   role                 Role        @default(MEMBER)
+  tier                 MemberTier  @default(FREE)
   accessState          AccessState @default(ACTIVE)
   accessNote           String?
   baseCurrency         String      @default("GBP")
   declaredPortfolioGBP Float?
   averageInvestmentGBP Float?
   lastSeenAt           DateTime?
+  // Opt-in (default off) for the daily personalised brief email, plus a stable
+  // token so one-click unsubscribe works without signing in.
+  dailyBriefEmail      Boolean     @default(false)
+  emailUnsubToken      String?     @unique
   createdAt            DateTime    @default(now())
   updatedAt            DateTime    @updatedAt
 
@@ -160,6 +175,7 @@ model Profile {
   aiReports              AiReport[]
   personalFinance        PersonalFinanceInput?
   stockRequests          StockRequest[]
+  emailDeliveries        EmailDelivery[]
 
   @@index([role, accessState])
   @@index([lastSeenAt(sort: Desc)])
@@ -585,6 +601,30 @@ model AnalyticsRollup {
   @@map("watchtower_spa_analytics_rollups")
 }
 
+// Outbound email log: one row per member per kind per brief day. Makes sends
+// observable (status, provider id, error, attempts) and lets the job retry a
+// failure without double-sending a success.
+model EmailDelivery {
+  id         String    @id @default(cuid())
+  profileId  String
+  kind       String
+  sendDate   DateTime
+  subject    String
+  status     String    @default("PENDING")
+  providerId String?
+  error      String?
+  attempts   Int       @default(0)
+  sentAt     DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, kind, sendDate])
+  @@index([status, createdAt(sort: Desc)])
+  @@map("watchtower_spa_email_deliveries")
+}
+
 model DailyBrief {
   id          String   @id @default(cuid())
   briefDate   DateTime
@@ -595,6 +635,14 @@ model DailyBrief {
   newToday    Json
   droppedOff  Json
   insights    Json
+  // Market breadth as it stood when this brief was written. The narrative bakes
+  // these numbers in, so the page must render the SAME snapshot rather than
+  // recomputing live, or the prose and the stat cards contradict each other.
+  stats           Json?
+  // Section-6 brief additions (new buy/sell vs yesterday, extreme ranges,
+  // earnings this week). Deterministic, computed in code, persisted so the
+  // rendered brief always matches the narrative it was written with.
+  highlights      Json?
   model           String
   isFallback      Boolean  @default(false)
   generationError String?
