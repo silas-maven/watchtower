@@ -189,8 +189,9 @@ export default function AveragePlannerPage() {
         </p>
       </div>
 
-      {/* Plan summary: stock selector + target sell */}
-      <Card title="Plan summary">
+      {/* Stock picker only. Deliberately NOT titled "Plan summary": the plan and
+          its results live in exactly one card below, per the 24 July feedback. */}
+      <Card title="Choose your stock">
         <div className="grid gap-6 lg:grid-cols-2">
           <div>
             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Stock</label>
