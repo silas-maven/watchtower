@@ -80,8 +80,101 @@ export function HoldingsTable({
 
   const toggle = (id: string) => setExpandedId((cur) => (cur === id ? null : id));
 
+  // Editable price input shared by both layouts, so the mobile cards and the
+  // desktop table can never drift apart in behaviour.
+  const priceInput = (h: HoldingRow, field: 'manualNextBuyPrice' | 'manualSellTarget', current: number | null, width: string) => (
+    <input
+      defaultValue={current ?? ''}
+      onBlur={(e) => {
+        const v = e.target.value ? Number(e.target.value) : null;
+        if (v !== (current ?? null)) patchHolding(h.id, { [field]: v });
+      }}
+      inputMode="decimal"
+      placeholder="set"
+      className={`${width} rounded border border-border bg-background px-2 py-0.5 text-xs text-foreground focus:border-primary focus:outline-none`}
+    />
+  );
+
   return (
-    <div className="overflow-x-auto">
+    <div>
+      {/* Mobile: one card per holding. The desktop table is 13 columns wide, which
+          on a phone means scrolling sideways to read a single position. */}
+      <div className="space-y-3 md:hidden">
+        {holdings.map((h) => {
+          const rowBusy = busy || patchingId === h.id;
+          return (
+            <div key={h.id} className="rounded-xl border border-border bg-card p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link href={`/assets/${h.assetId}`} className="font-bold text-foreground hover:text-primary">{h.symbol}</Link>
+                    <Badge tone={toneForSignal(h.signalState)}>{h.signalState}</Badge>
+                  </div>
+                  <div className="mt-0.5 truncate text-xs text-muted-foreground">{h.name} · {h.currency}</div>
+                </div>
+                <button onClick={() => onRemove(h.assetId)} disabled={rowBusy} aria-label={`Remove ${h.symbol}`} className="shrink-0 text-rose-500 transition hover:text-rose-400 disabled:opacity-60">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                <Field label="Shares" value={h.shares ?? '—'} />
+                <Field label="Value" value={money(h.valueGBP)} />
+                <Field label="Avg price" value={price(h.averagePrice, h.currency)} />
+                <Field label="Current price" value={price(h.currentPrice, h.currency)} />
+                <Field label="Weight" value={h.weightPct == null ? '—' : `${h.weightPct.toFixed(1)}%`} />
+                <Field
+                  label="Next buy"
+                  value={h.spartanEnabled ? price(h.nextBuyPrice, h.currency) : priceInput(h, 'manualNextBuyPrice', h.nextBuyPrice, 'w-full')}
+                />
+                <Field
+                  label="Sell target"
+                  value={
+                    h.spartanEnabled
+                      ? <span className={h.sellTarget != null ? 'text-emerald-500' : ''}>{price(h.sellTarget, h.currency)}</span>
+                      : priceInput(h, 'manualSellTarget', h.sellTarget, 'w-full')
+                  }
+                />
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Spartan</div>
+                  <label className="mt-1 flex items-center gap-2 text-xs text-foreground">
+                    <input
+                      type="checkbox"
+                      checked={h.spartanEnabled}
+                      disabled={rowBusy}
+                      onChange={() => patchHolding(h.id, { spartanEnabled: !h.spartanEnabled })}
+                      className="h-4 w-4 accent-primary"
+                    />
+                    {h.spartanEnabled ? 'On' : 'Off'}
+                  </label>
+                </div>
+              </div>
+
+              <button
+                onClick={() => toggle(h.id)}
+                className="mt-3 flex w-full items-center justify-center gap-1 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground transition hover:bg-muted/40"
+              >
+                {h.hasPlan ? 'View averaging plan' : 'Create averaging plan'}
+                <ChevronDown className={`h-3 w-3 transition-transform ${expandedId === h.id ? 'rotate-180' : ''}`} />
+              </button>
+
+              {expandedId === h.id && (
+                <div className="mt-3 rounded-lg bg-muted/10 p-3">
+                  <InlineAveragePlan
+                    assetId={h.assetId}
+                    holdingId={h.id}
+                    currency={h.currency}
+                    currentPrice={h.currentPrice}
+                    onSaved={() => onRefresh?.()}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="hidden overflow-x-auto md:block">
       <table className="min-w-full text-sm">
         <thead>
           <tr className="border-b border-border text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
@@ -207,9 +300,19 @@ export function HoldingsTable({
           })}
         </tbody>
       </table>
+      </div>
       <p className="mt-3 text-xs text-muted-foreground">
         Spartan Strategy on = Next Buy &amp; Sell Target come from your averaging plan. Off = set them manually. Prices shown in each stock&rsquo;s currency.
       </p>
+    </div>
+  );
+}
+
+function Field({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div>
+      <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="mt-0.5 font-mono text-foreground">{value}</div>
     </div>
   );
 }

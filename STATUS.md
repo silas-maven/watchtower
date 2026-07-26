@@ -157,6 +157,45 @@ Phase 1 market data engine (everything depends on real prices) → Phase 2 summa
 
 ## Session Log
 
+### 2026-07-26
+- **Client feedback (26 Jul), two items, both shipped.**
+- **1. Holdings unreadable on mobile.** `components/portfolio/HoldingsTable.tsx` is a
+  13-column table in `overflow-x-auto`; on a 375px viewport that means scrolling
+  sideways to read one position. Added a card layout below `md:` with every field and
+  control (shares, avg/current price, value, weight, next buy, sell target, Spartan
+  toggle, inline average plan, remove). Table unchanged at `md:` and above. The
+  editable price input is now a shared helper so the two layouts cannot drift.
+  Verified in the browser at 375px: no horizontal document overflow
+  (`scrollWidth === clientWidth === 375`), and the table still renders at 800px.
+- **2. "Stress test has gone" — it had not.** Investigated before changing anything.
+  `app/app/portfolio-tools/stress-test/page.tsx` was added in `ca34ad5` (19 Jul) and
+  `git log --all -S "Stress" -- app/ components/` returns exactly that one commit: it
+  has never been edited or deleted. It is in HEAD and in the deployed build (prod alias
+  `watchtower-virid.vercel.app` resolves to the deployment made after `6d15a27`).
+  **Root cause is a navigation defect, not a removal:** the Dashboard's "Portfolio
+  Toolkit" grid in `app/app/page.tsx` was a hand-written list of 3 tools. When the
+  Stress Test (19 Jul) and Personal Finance (20 Jul) were added, only the
+  `/app/portfolio-tools` index was updated. Two hand-maintained lists of the same
+  thing; one drifted. Members who navigate from the Dashboard (the client's route:
+  "Manage holdings" links straight to `/app/portfolio-tools/live-portfolio`, which had
+  no outbound link but a back-link) never saw those two tools. Compounded on mobile:
+  the nav strip fits ~4 of 7 tabs with no scroll affordance, so "Portfolio" sat off the
+  right edge.
+- **Ruled out with evidence, not assumed:** the 25 Jul freemium paywall is not the
+  cause. The client's profile (`debodunosekita@googlemail.com`, holdings match the
+  screenshot exactly) is `role MEMBER / tier MEMBER / accessState ACTIVE`, so
+  `isPaidUser` is true; and the gate would have hidden the whole section, not one card.
+  `BlurFade` was also ruled out (`inView` defaults false, so `isInView` is always true).
+  Note: `UsageEvent` PAGE_VIEW is only instrumented on `/app` and `/app/daily-checks`,
+  so that table cannot tell you which other pages a member visited.
+- **Fix:** new `lib/portfolioTools.ts` is the single source of truth for the tool list;
+  both the Dashboard grid and the Portfolio index map over it, so they cannot diverge
+  again. Added a "Stress test this portfolio" button to the Live and Virtual Portfolio
+  pages, and a right-edge fade on the mobile tab strip.
+- Release `2026.07.26` added to `lib/releases.ts` (incl. a "Notes for the owner" group
+  stating plainly that nothing was removed); `OWNER-CHANGELOG.md` gained note 0 and a
+  26 July section. Typecheck, lint (0 errors), build and 75 tests clean.
+
 ### 2026-06-12
 - Full codebase familiarisation + verification pass. Tests 14/14 pass, typecheck clean.
 - **Found: market data pipeline has never worked in prod.** All 2,128 asset snapshots since the 12 May spreadsheet import are `source: fallback-previous` (zero successful Yahoo/CoinGecko fetches). Yahoo v7/v8 endpoints return 429 even with browser UA. Prices are frozen at import values; signal events stopped 15 May; the daily brief reports the same "8 buy signals" every day.

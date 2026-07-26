@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { ArrowLeft, Plus, ShieldAlert } from 'lucide-react';
 import { Card } from '@/components/Card';
 import { useToast } from '@/components/ui/ToastProvider';
 import { HoldingsTable, type HoldingRow } from '@/components/portfolio/HoldingsTable';
@@ -159,6 +159,14 @@ export default function VirtualPortfolioPage() {
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
           A paper portfolio priced off the live master watchlist. Nothing here is real money. Use it to rehearse the SPA method.
         </p>
+        {/* Same reasoning as the live portfolio: the Monte Carlo tool must be
+            reachable from the portfolio it analyses, not only from the index. */}
+        <Link
+          href="/app/portfolio-tools/stress-test"
+          className="mt-3 inline-flex items-center gap-2 rounded-lg border border-rose-500/40 px-3 py-1.5 text-xs font-semibold text-rose-500 transition hover:bg-rose-500/10"
+        >
+          <ShieldAlert className="h-3.5 w-3.5" /> Stress test this portfolio
+        </Link>
       </div>
 
       {/* Summary strip */}

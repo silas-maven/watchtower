@@ -7,7 +7,8 @@ import { getLivePortfolioView } from '@/lib/server/livePortfolio';
 import { prisma } from '@/lib/prisma';
 import { BorderBeam } from '@/components/ui/border-beam';
 import { BlurFade } from '@/components/ui/blur-fade';
-import { Calculator, CheckSquare, History, TrendingDown } from 'lucide-react';
+import { TrendingDown } from 'lucide-react';
+import { PORTFOLIO_TOOLS } from '@/lib/portfolioTools';
 import { MarketPulseRail } from '@/components/news/MarketPulseRail';
 import { WeatherSnapshotBoard } from '@/components/market/WeatherSnapshotBoard';
 import { getMacroTiles, weatherInputsFromTiles } from '@/lib/market/macro';
@@ -163,25 +164,22 @@ export default async function MemberDashboard() {
               )}
             </div>
 
-            {/* Portfolio Tools */}
+            {/* Portfolio Tools. Rendered from the shared registry, never hand-listed:
+                a hand-written subset here is what hid the Stress Test and Personal
+                Finance from members who navigate from the Dashboard. */}
             <div>
-              <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-muted-foreground">Portfolio Toolkit</h3>
-              <div className="grid gap-4 sm:grid-cols-3">
-                <Link href="/app/portfolio-tools/average-calculator" className="rounded-2xl border border-border bg-card p-5 transition hover:bg-muted/50 hover:shadow-md">
-                  <div className="w-fit rounded-xl bg-primary/10 p-3"><Calculator className="h-6 w-6 text-primary" /></div>
-                  <div className="mt-3 font-bold text-foreground">Average Planner</div>
-                  <div className="mt-1 text-sm text-muted-foreground">Split budget into deterministic entry tranches.</div>
-                </Link>
-                <Link href="/app/portfolio-tools/due-diligence" className="rounded-2xl border border-border bg-card p-5 transition hover:bg-muted/50 hover:shadow-md">
-                  <div className="w-fit rounded-xl bg-blue-500/10 p-3"><CheckSquare className="h-6 w-6 text-blue-500" /></div>
-                  <div className="mt-3 font-bold text-foreground">Due Diligence</div>
-                  <div className="mt-1 text-sm text-muted-foreground">Score assets on revenue, margin, and market cap.</div>
-                </Link>
-                <Link href="/app/portfolio-tools/trade-journal" className="rounded-2xl border border-border bg-card p-5 transition hover:bg-muted/50 hover:shadow-md">
-                  <div className="w-fit rounded-xl bg-emerald-500/10 p-3"><History className="h-6 w-6 text-emerald-500" /></div>
-                  <div className="mt-3 font-bold text-foreground">Trade Journal</div>
-                  <div className="mt-1 text-sm text-muted-foreground">Log closed positions and track realised profit.</div>
-                </Link>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Portfolio Toolkit</h3>
+                <Link href="/app/portfolio-tools" className="text-xs font-semibold text-primary hover:underline">Open Portfolio</Link>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {PORTFOLIO_TOOLS.map((tool) => (
+                  <Link key={tool.href} href={tool.href} className="rounded-2xl border border-border bg-card p-5 transition hover:bg-muted/50 hover:shadow-md">
+                    <div className={`w-fit rounded-xl ${tool.iconBg} p-3`}><tool.icon className={`h-6 w-6 ${tool.iconColor}`} /></div>
+                    <div className="mt-3 font-bold text-foreground">{tool.title}</div>
+                    <div className="mt-1 text-sm text-muted-foreground">{tool.short}</div>
+                  </Link>
+                ))}
               </div>
             </div>
           </div>

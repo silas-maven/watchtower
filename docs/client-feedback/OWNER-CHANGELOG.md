@@ -11,6 +11,26 @@ link to each change. Per-round detail lives in the dated folders in this directo
 Read this bit first. Everything here is either an action only you can take, or a
 judgement call worth knowing about before beta.
 
+**0. The stress test was never removed. Straight answer, since you asked for one.**
+The Portfolio Stress Test and its Monte Carlo simulation were added on 19 July and
+have not been edited or deleted since. They were in the code and on the live site
+the entire time, and still are, at Portfolio then Portfolio Stress Test.
+
+What went wrong is a navigation fault, and it is mine. The "Portfolio Toolkit" panel
+on the Dashboard was written by hand as a list of three tools, back when three were
+all there were. When the Stress Test (19 July) and Personal Finance (20 July) were
+added, they were added to the Portfolio page but that Dashboard panel was never
+updated. Two lists of the same thing, only one maintained. If you navigate from the
+Dashboard, which is where members start, those two tools were invisible. Add that the
+phone tab bar shows about four of seven tabs with nothing to hint the rest scroll into
+view, and there was genuinely no visible path to them from where you were standing.
+
+So "gone" is fair from your side, and it is a real defect. It just was not a removal,
+and nothing was cut for cost, complexity or any other reason. Fixed on 26 July: both
+lists are now generated from one shared source that cannot drift, the Dashboard shows
+all seven tools, and both portfolio pages carry a direct "Stress test this portfolio"
+button.
+
 **1. The daily brief email cannot send yet.** It is built and tested, but nothing will
 reach a member until an email provider key (`RESEND_API_KEY`) and a from-address on a
 domain you own are set. Until then every attempt is recorded as "no provider configured"
@@ -46,6 +66,28 @@ price-history back-fill: both good post-beta additions.
 **6. Free and paid is enforced on the server, not just hidden.** A free account cannot
 reach a members-only page or its data even by going straight to it. Trade pitches are
 metered because each one costs a real AI call.
+
+---
+
+## Mobile holdings, and every tool reachable (26 July)
+
+**Holdings read as cards on a phone.** The holdings list has thirteen columns, which is
+right on a laptop but meant swiping sideways to read one position on a phone. On small
+screens each holding is now its own card: shares, average price, current price, value,
+weight, next buy, sell target and the Spartan toggle all visible at once, no scrolling
+across. The averaging plan still opens in place, and the next buy and sell target are
+still editable when Spartan is off. Tablets and laptops keep the table exactly as it was.
+
+**The tab bar now shows there is more to see.** On a phone the tabs scroll sideways and
+about four of the seven fit. Nothing indicated the others existed. There is now a soft
+fade at the right edge so it is obvious the strip scrolls.
+
+**The Dashboard toolkit lists all seven tools.** It had been showing three. See note 0 at
+the top for the full explanation of how that happened.
+
+**Stress test reachable from the portfolio it analyses.** Both the Live and Virtual
+Portfolio pages now have a "Stress test this portfolio" button, since that is where you
+are standing when the question occurs to you.
 
 ---
 

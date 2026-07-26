@@ -25,6 +25,66 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: '2026.07.26',
+    date: '2026-07-26',
+    title: 'Holdings readable on a phone, and every tool reachable',
+    summary:
+      'The holdings list no longer has to be scrolled sideways on a phone. The Portfolio Stress Test and Personal Finance now appear on the Dashboard toolkit, which had been showing only three of the seven tools.',
+    feedbackDoc: '2026-07-26 WhatsApp forward',
+    groups: [
+      {
+        heading: 'Mobile',
+        items: [
+          {
+            title: 'Holdings now read as cards on a phone',
+            body: 'The holdings list is a thirteen-column table, which is right on a laptop but meant swiping sideways to read a single position on a phone. On small screens each holding is now a card, with shares, average price, current price, value, weight, next buy, sell target and the Spartan toggle all visible without scrolling across. The averaging plan still opens in place. On tablets and laptops the table is unchanged.',
+            feedback: 'Feedback 1 (26 July)',
+            href: '/app/portfolio-tools/live-portfolio',
+            linkLabel: 'Open Live Portfolio',
+          },
+          {
+            title: 'The tab bar now shows there are more tabs',
+            body: 'On a phone the navigation tabs scroll sideways, and roughly four of the seven fit on screen. There was nothing to indicate the rest existed, so Portfolio and Personal Finance sat off the right edge unnoticed. A soft fade at the right edge now signals that the strip scrolls.',
+            feedback: 'Feedback 1 (26 July)',
+            href: '/app',
+            linkLabel: 'Open Dashboard',
+          },
+        ],
+      },
+      {
+        heading: 'Finding the tools',
+        items: [
+          {
+            title: 'The Dashboard toolkit now lists all seven tools',
+            body: 'The "Portfolio Toolkit" panel on the Dashboard was a hand-written list of three tools, written before the Stress Test and Personal Finance existed. When those two were added they were listed on the Portfolio page but never added to the Dashboard panel, so anyone navigating from the Dashboard could not see them. Nothing was removed; they were never shown on that route. The panel is now generated from one shared list that the Portfolio page also uses, so the two cannot disagree again.',
+            feedback: 'Feedback 2 (26 July)',
+            href: '/app',
+            linkLabel: 'Open Dashboard',
+          },
+          {
+            title: 'Stress test reachable from the portfolio it analyses',
+            body: 'Both the Live and Virtual Portfolio pages now carry a "Stress test this portfolio" button. Members arrive at those pages straight from the Dashboard without passing the Portfolio index, so the Monte Carlo tool needs to be reachable from the portfolio it is about.',
+            feedback: 'Feedback 2 (26 July)',
+            href: '/app/portfolio-tools/stress-test',
+            linkLabel: 'Open Stress Test',
+          },
+        ],
+      },
+      {
+        heading: 'Notes for the owner',
+        items: [
+          {
+            title: 'The stress test was never removed',
+            body: 'For the record, because it matters: the Portfolio Stress Test and its Monte Carlo simulation were added on 19 July and have not been edited or deleted since. They were in the code and on the live site the whole time, at Portfolio then Portfolio Stress Test. What was missing was a route to them from the Dashboard, which is the page most members start on. The cause was duplication: the tool list was typed out by hand in two places and only one was kept up to date. That duplication is now gone.',
+            feedback: 'Feedback 2 (26 July)',
+            href: '/app/portfolio-tools',
+            linkLabel: 'Open Portfolio',
+          },
+        ],
+      },
+    ],
+  },
+  {
     version: '2026.07.25',
     date: '2026-07-25',
     title: 'A fuller daily brief, and an optional morning email',

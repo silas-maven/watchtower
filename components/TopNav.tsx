@@ -136,9 +136,15 @@ export function TopNav({ children, initialUser }: { children: React.ReactNode; i
             )}
           </div>
         </div>
-        <div className="flex gap-2 overflow-x-auto px-4 pb-3 lg:hidden">
-          {memberItems.map((item) => <NavLink key={item.href} {...item} siblings={memberItems} />)}
-          {canAdmin && adminItems.map((item) => <NavLink key={item.href} {...item} siblings={adminItems} />)}
+        {/* The tab strip scrolls sideways on phones. The right-edge fade is the
+            affordance that tells members there are more tabs than fit, which is
+            how Portfolio and Personal Finance were being missed entirely. */}
+        <div className="relative lg:hidden">
+          <div className="flex gap-2 overflow-x-auto px-4 pb-3">
+            {memberItems.map((item) => <NavLink key={item.href} {...item} siblings={memberItems} />)}
+            {canAdmin && adminItems.map((item) => <NavLink key={item.href} {...item} siblings={adminItems} />)}
+          </div>
+          <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent" />
         </div>
         {initialUser && <TickerStrip />}
       </header>

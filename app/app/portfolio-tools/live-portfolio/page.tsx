@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { ArrowLeft, Plus, ShieldAlert } from 'lucide-react';
 import { Card } from '@/components/Card';
 import { useToast } from '@/components/ui/ToastProvider';
 import { HoldingsTable, type HoldingRow } from '@/components/portfolio/HoldingsTable';
@@ -142,6 +142,15 @@ export default function LivePortfolioPage() {
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
           Your real holdings, valued against live prices. This is your own book, separate from the academy master list and the virtual portfolio.
         </p>
+        {/* Direct route to the Monte Carlo tool. Members land here from the
+            Dashboard without passing the Portfolio index, so the stress test has
+            to be reachable from the portfolio it actually analyses. */}
+        <Link
+          href="/app/portfolio-tools/stress-test"
+          className="mt-3 inline-flex items-center gap-2 rounded-lg border border-rose-500/40 px-3 py-1.5 text-xs font-semibold text-rose-500 transition hover:bg-rose-500/10"
+        >
+          <ShieldAlert className="h-3.5 w-3.5" /> Stress test this portfolio
+        </Link>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">

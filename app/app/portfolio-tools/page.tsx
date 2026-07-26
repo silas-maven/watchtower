@@ -1,69 +1,13 @@
 import Link from 'next/link';
 import { requirePageUser } from '@/lib/server/pageAuth';
 import { BlurFade } from '@/components/ui/blur-fade';
-import { Calculator, CheckSquare, History, ArrowLeft, ArrowRight, Wallet, Briefcase, ShieldAlert, PiggyBank } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { PORTFOLIO_TOOLS } from '@/lib/portfolioTools';
 
 export default async function PortfolioToolsPage() {
   await requirePageUser('/app/portfolio-tools');
 
-  const tools = [
-    {
-      href: '/app/portfolio-tools/live-portfolio',
-      icon: Briefcase,
-      iconBg: 'bg-emerald-500/10',
-      iconColor: 'text-emerald-500',
-      title: 'Live Portfolio',
-      description: 'Your real holdings, valued against live prices. Track invested cost, current value, profit and return across your own positions, separate from the academy list.',
-    },
-    {
-      href: '/app/portfolio-tools/virtual-portfolio',
-      icon: Wallet,
-      iconBg: 'bg-amber-500/10',
-      iconColor: 'text-amber-500',
-      title: 'Virtual Portfolio',
-      description: 'Paper-trade the master watchlist. Add positions with live prices, set your portfolio size and per-stock budget, and watch invested value, return, cash, liquidation value and profit update in real time.',
-    },
-    {
-      href: '/app/portfolio-tools/average-calculator',
-      icon: Calculator,
-      iconBg: 'bg-primary/10',
-      iconColor: 'text-primary',
-      title: 'Average Planner',
-      description: 'Split your budget into deterministic entry tranches. Models staged buys from the workbook, initial position, second buy, third buy, and calculates your resulting average entry price.',
-    },
-    {
-      href: '/app/portfolio-tools/due-diligence',
-      icon: CheckSquare,
-      iconBg: 'bg-blue-500/10',
-      iconColor: 'text-blue-500',
-      title: 'Due Diligence Checklist',
-      description: 'Score assets on 8 fundamental criteria — revenue growth, margins, debt, moat, management, shareholder return, macro tailwinds, and valuation — to arrive at a Conviction Score.',
-    },
-    {
-      href: '/app/portfolio-tools/trade-journal',
-      icon: History,
-      iconBg: 'bg-emerald-500/10',
-      iconColor: 'text-emerald-500',
-      title: 'Trade Journal',
-      description: 'Log closed positions, track realized profit & loss, and monitor your all-time win rate. Your personal trophy cabinet for every trade you make.',
-    },
-    {
-      href: '/app/portfolio-tools/stress-test',
-      icon: ShieldAlert,
-      iconBg: 'bg-rose-500/10',
-      iconColor: 'text-rose-500',
-      title: 'Portfolio Stress Test',
-      description: 'Run a Monte Carlo simulation over your live or virtual portfolio: probability of meeting your goal, expected range of outcomes, likely maximum drawdown, and where you are overexposed, explained in plain English.',
-    },
-    {
-      href: '/app/portfolio-tools/personal-finance',
-      icon: PiggyBank,
-      iconBg: 'bg-blue-500/10',
-      iconColor: 'text-blue-500',
-      title: 'Personal Finance',
-      description: 'Your CFO-style check-up. Enter income, expenses, savings, debts and goals, then simulate thousands of financial futures to see your emergency runway, biggest risks and the changes that matter most.',
-    },
-  ];
+  const tools = PORTFOLIO_TOOLS;
 
   return (
     <div className="space-y-8 pb-12 max-w-4xl mx-auto">
