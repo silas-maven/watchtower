@@ -306,9 +306,9 @@ These are known and tracked, not forgotten:
   need a full adjusted price-history back-fill. Both are sensible post-beta additions.
 - **Freemium follow-ups (small).** A free account can currently keep a small
   personal watchlist and see basic asset detail; per-asset signal badges and a
-  hard cap on the free watchlist size are still to add. An admin screen to edit
-  the news sources and the X list is also not built yet (they are set in
-  configuration for now).
+  hard cap on the free watchlist size are still to add. Admins can now edit the
+  reviewed RSS sources, fallback X account, and optional curated X List under
+  Admin → Assets → Market Pulse sources.
 
 ---
 

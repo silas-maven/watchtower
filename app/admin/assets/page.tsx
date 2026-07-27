@@ -4,6 +4,7 @@ import { Card } from '@/components/Card';
 import { AssetOperationsPanel } from '@/components/AssetOperationsPanel';
 import { AssetCatalogManager } from '@/components/AssetCatalogManager';
 import { MacroSettingsPanel } from '@/components/MacroSettingsPanel';
+import { NewsSourceSettingsPanel } from '@/components/NewsSourceSettingsPanel';
 import { StockRequestsPanel } from '@/components/StockRequestsPanel';
 import { HelpTip } from '@/components/ui/HelpTip';
 import { prisma } from '@/lib/prisma';
@@ -49,6 +50,10 @@ export default async function AdminPage() {
 
       <Card title="Macro Readings (manual)">
         <MacroSettingsPanel />
+      </Card>
+
+      <Card title="Market Pulse sources">
+        <NewsSourceSettingsPanel />
       </Card>
 
       <Card title="Stock Requests">

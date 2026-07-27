@@ -157,6 +157,9 @@ Phase 1 market data engine (everything depends on real prices) → Phase 2 summa
 
 ## Session Log
 
+### 2026-07-27
+- **Feedback follow-up: Market Pulse source controls shipped.** Admin → Assets now has a Market Pulse sources panel for reviewed RSS feeds, the fallback X account, and an optional curated public X List. The existing `news_feed_urls`, `news_x_handle`, and `news_x_list_url` settings are now editable through the authenticated admin API, with up to 10 HTTPS RSS URLs, a valid handle, and an X/Twitter List URL validation. An empty RSS override deliberately restores the investing-focused defaults; a List overrides the single account. No new data source, migration, or external action was introduced.
+
 ### 2026-07-26
 - **Client feedback (26 Jul), two items, both shipped.**
 - **1. Holdings unreadable on mobile.** `components/portfolio/HoldingsTable.tsx` is a

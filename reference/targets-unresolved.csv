@@ -1,0 +1,165 @@
+ticker|name|targetEntry|targetExit|matchedSymbol|reason
+XRP|Ripple|0.6|4|XRP-USD|crypto name "Ripple" vs "XRP USD" (0.00)
+BNB|Binance coin|300|1000|BNB-USD|crypto name "Binance coin" vs "BNB USD" (0.00)
+FET|FET|1||FET-USD|crypto name "FET" vs "Artificial Superintelligence Alliance USD" (0.00)
+AAXN||40|||no symbol match in the active universe
+ATVI||60|100||no symbol match in the active universe
+BLUE|BNPPE ECPI Global ESG Blue Economy UCITS ETF C||20||no symbol match in the active universe
+CPH:VWS|Vestas Wind Systems A/S|150|||no symbol match in the active universe
+CWBR||0.7|1.5||no symbol match in the active universe
+DBK|Deutsche Bank AG|5|25||no symbol match in the active universe
+ETR:BAYN|Bayer AG|30|75||no symbol match in the active universe
+LON:AFC||16|100||no symbol match in the active universe
+LON:ASC|ASOS plc|500|1000||no symbol match in the active universe
+LON:BAG|A G Barr PLC|300|||no symbol match in the active universe
+LON:CNA|Centrica PLC|40|150||no symbol match in the active universe
+LON:ECO|Eco (Atlantic) Oil & Gas Ltd|10|||no symbol match in the active universe
+LON:HUM||10|20|HUM|no price on one side; cannot corroborate the ticker
+LON:ITV|ITV plc|60|100||no symbol match in the active universe
+LON:RMG||140|300||no symbol match in the active universe
+LON:SSE|SSE PLC|1000|||no symbol match in the active universe
+LON:TSCO|Tesco PLC|170|||no symbol match in the active universe
+LON:UOG|United Oil & Gas PLC|0.17|0.5||no symbol match in the active universe
+EPA:MC|LVMH Moet Hennessy Louis Vuitton SE|450|||no symbol match in the active universe
+NSA|National Storage Affiliates Trust|25|50|NSA|no comparable price (name overlap 1.00 is not independent evidence)
+ORSTED|Oersted A/S|300|600||no symbol match in the active universe
+SFR|Sandfire Resources America Inc|0.18|||no symbol match in the active universe
+TIT|Telecom Italia SpA|0.25|0.75||no symbol match in the active universe
+NYSE:TEVA|Teva Pharmaceutical Indstris Lmtd..|10|15||no symbol match in the active universe
+TPE:2330|Taiwan Semiconductor Manufacturng Co Ltd|300|100||INVERTED: exit <= entry
+TSE:AR||0.5|||no symbol match in the active universe
+TWTR||20|||no symbol match in the active universe
+IOG||5|20||no symbol match in the active universe
+EPA:PUB|Publicis Groupe SA|22|100||no symbol match in the active universe
+CIHL||20|||no symbol match in the active universe
+WORX|Scworx Corp|1.3|2.5|WORX|no comparable price (name overlap 1.00 is not independent evidence)
+FLIR||30|||no symbol match in the active universe
+LON:OMG|Oxford Metrics PLC|50|100|OMG|currency GBX vs CAD
+ODX||60|100||no symbol match in the active universe
+LON:EMH|European Metals Holdings Ltd|15|||no symbol match in the active universe
+LON:EZJ|easyJet plc|300|1000||no symbol match in the active universe
+FLTA||75|180||no symbol match in the active universe
+NYSE:AXP|American Express Co|80|||no symbol match in the active universe
+SWX:ABBN|ABB Ltd|14|||no symbol match in the active universe
+lon:AML|Aston Martin Lagonda Global Holdings PLC|40|||no symbol match in the active universe
+LON:VLS||7|15||no symbol match in the active universe
+BIFF||170|||no symbol match in the active universe
+WBA|Walgreen Boots Alliance Ord Shs|20|50||no symbol match in the active universe
+VRE|Vanguard FTSE Canadian Capped REIT Index ETF|10|||no symbol match in the active universe
+BME:TEF|Telefonica SA|3.5|5.5||no symbol match in the active universe
+LON:PETS|Pets at Home Group PLC|150|||no symbol match in the active universe
+GNUS||2.5|||no symbol match in the active universe
+SDC||6|||no symbol match in the active universe
+LON:RR|Rolls-Royce Holdings PLC|100|1000||no symbol match in the active universe
+LON:FRES|Fresnillo Plc|950|3000||no symbol match in the active universe
+LON:BWY|Bellway plc|2000|||no symbol match in the active universe
+CPE|Callon Petroleum Ord Shs|7|30||no symbol match in the active universe
+LON:augm||80|||no symbol match in the active universe
+EPA:SU|Schneider Electric SE|60|||no symbol match in the active universe
+TTNP||3|5||no symbol match in the active universe
+NOVN|Novartis AG|25|100||no symbol match in the active universe
+FEYE||12|20||no symbol match in the active universe
+SQ||70|||no symbol match in the active universe
+CINE||40|65||no symbol match in the active universe
+GPS|Great Plains Metals Corp|10|25||no symbol match in the active universe
+EB|Eventbrite|8|20||no symbol match in the active universe
+LON:DWF||60|||no symbol match in the active universe
+LON:TED||100||TED|no price on one side; cannot corroborate the ticker
+LON:EMAN|Everyman Media Group PLC|50|||no symbol match in the active universe
+MAXR||15|40||no symbol match in the active universe
+AJRD||30|60||no symbol match in the active universe
+LON:SIS||20|50||no symbol match in the active universe
+NAPS||3.5|7||no symbol match in the active universe
+COUP||150|||no symbol match in the active universe
+PING||23|||no symbol match in the active universe
+AYX||50|100||no symbol match in the active universe
+LON:BME|B&M European Value Retail PLC|300|||no symbol match in the active universe
+MAERSK-B|AP Moeller - Maersk A/S Class B|6500|15000||no symbol match in the active universe
+TSE||5|||no symbol match in the active universe
+LON:GRG|Greggs plc|850|||no symbol match in the active universe
+SPLK||140|||no symbol match in the active universe
+BIGC||10|50||no symbol match in the active universe
+LON:ARB||20|||no symbol match in the active universe
+LON:GSK|GSK plc|1000|||no symbol match in the active universe
+UNBLF|Unibail-Rodamco-Westfield SE|50|100|UNBLF|no comparable price (name overlap 1.00 is not independent evidence)
+ESSITY-A|Essity AB (publ) Class A|200|||no symbol match in the active universe
+IDEX|IDEX Metals Corp|1|||no symbol match in the active universe
+7DIG||1.5|3||no symbol match in the active universe
+RUR||1|3||no symbol match in the active universe
+CSOD||30|||no symbol match in the active universe
+AYRO||1|||no symbol match in the active universe
+LON:HUR||1.5|3||no symbol match in the active universe
+LON:IAG|International Consolidated Airlns Grp SA|100|||no symbol match in the active universe
+VITR|Vitrolife AB|150|||no symbol match in the active universe
+CTXS||100|150||no symbol match in the active universe
+LON:THG|THG PLC|50|||no symbol match in the active universe
+HTRY||105||HTRY|no price on one side; cannot corroborate the ticker
+VMW|VMware Class A Ord Shs|110|||no symbol match in the active universe
+LON:HLMA|Halma plc|2000|||no symbol match in the active universe
+EXPI||10|||no symbol match in the active universe
+SLGG||2|5||no symbol match in the active universe
+CYTO|||5.5||no symbol match in the active universe
+MDGS||2|||no symbol match in the active universe
+ORPH||7|10||no symbol match in the active universe
+THULE|Thule Group AB|200|||no symbol match in the active universe
+RWLK||0.5|||no symbol match in the active universe
+RIDE||10|20||no symbol match in the active universe
+IPG|IPD Group Ltd|13|||no symbol match in the active universe
+LON:GAW|Games Workshop Group PLC|7000|||no symbol match in the active universe
+LON:ALM||30|50||no symbol match in the active universe
+ETR:DPW||30|||no symbol match in the active universe
+DVRG||25|50||no symbol match in the active universe
+LON:XSPS|Xtrackers S&P 500 Inverse Daily Swap UCITS 1C ETF|400|||no symbol match in the active universe
+SWEL||0.07|||no symbol match in the active universe
+METX|ME Therapeutics Holdings Inc|3|6||no symbol match in the active universe
+HYVE||100|||no symbol match in the active universe
+PURP||50|||no symbol match in the active universe
+LON:SHOE|Shoe Zone PLC|50|200||no symbol match in the active universe
+LDO|Leonardo SpA|5.5|50||no symbol match in the active universe
+FVE||4.5|10||no symbol match in the active universe
+AMRS||10|||no symbol match in the active universe
+TSE:AIF|Altus Group Ltd|40|||no symbol match in the active universe
+PSTI||4|||no symbol match in the active universe
+KL||30|||no symbol match in the active universe
+VERO||1|5||no symbol match in the active universe
+SWI|Swire Pacific Ord Shs A|10|||no symbol match in the active universe
+BBI||1|||no symbol match in the active universe
+AVGR||0.6|||no symbol match in the active universe
+ISR||1|||no symbol match in the active universe
+OBSV||3|10||no symbol match in the active universe
+STSA||4.5|||no symbol match in the active universe
+POAI||1|||no symbol match in the active universe
+LON:SUPR|Supermarket Income REIT PLC|70|||no symbol match in the active universe
+LBTI|Lithium & Boron Technology Inc|2.5|4|LBTI|no comparable price (name overlap 1.00 is not independent evidence)
+NAKD||0.5|||no symbol match in the active universe
+CLVS||5|||no symbol match in the active universe
+HYRE||7.5|||no symbol match in the active universe
+CGIX||5|10||no symbol match in the active universe
+GHVI||18|30||no symbol match in the active universe
+BFIT|Basic-Fit NV|20||BFIT|currency EUR vs USD
+BRQS||2.5|6||no symbol match in the active universe
+STIC||10|||no symbol match in the active universe
+ESGC|Invesco S&P/TSX Composite ESG Index ETF (CAD)|1|||no symbol match in the active universe
+LON:SHI|SIG plc|30|||no symbol match in the active universe
+RESN||3.5|||no symbol match in the active universe
+TKAT||30|||no symbol match in the active universe
+CWRK||3|||no symbol match in the active universe
+SINO||7|||no symbol match in the active universe
+AIKI||1|||no symbol match in the active universe
+RMO|Rainy Mountain Royalty Corp|10|15||no symbol match in the active universe
+AZRE||20|||no symbol match in the active universe
+LON:ROO||100|500||no symbol match in the active universe
+VMEO||5|||no symbol match in the active universe
+GHSI||1.5|||no symbol match in the active universe
+NYSE:PATH|UiPath Inc|12|||no symbol match in the active universe
+EPA:SOP|Sopra Steria Group SA|150|||no symbol match in the active universe
+LON:CBG|Close Brothers Group plc|200|400||no symbol match in the active universe
+SHCO||3|||no symbol match in the active universe
+EPA:AIR|Airbus SE|100|||no symbol match in the active universe
+LON:WPP|WPP PLC|270||WPP|currency GBX vs USD
+LON:ANTO|Antofagasta plc|2500|||no symbol match in the active universe
+LON:FUTR|Future plc|300|||no symbol match in the active universe
+LON:CAML|Central Asia Metals PLC|150|||no symbol match in the active universe
+EPA:RMS|Hermes International SCA|1000|||no symbol match in the active universe
+LON:SML|Strategic Minerals PLC|2.5|||no symbol match in the active universe
+MCD|McDonald's Corp|150|||no symbol match in the active universe

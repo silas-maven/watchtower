@@ -1,0 +1,108 @@
+action|symbol|newSymbol|storedName|providerName|price|reason
+recover|BTC|BTC-USD|Bitcoin|Bitcoin USD|64804.65|listed coin, must be the USD pair
+recover|XRP|XRP-USD|Ripple|XRP USD|1.0888|listed coin, must be the USD pair
+recover|LINK|LINK-USD|Chainlink|Chainlink USD|8.587|listed coin, must be the USD pair
+recover|FET|FET-USD|FET|Artificial Superintelligence Alliance USD|0.1494|listed coin, must be the USD pair
+recover|AVAX|AVAX-USD|Avalanche|Avalanche USD|6.56|listed coin, must be the USD pair
+recover|ADA|ADA-USD|Cardano|Cardano USD|0.1585|listed coin, must be the USD pair
+recover|LTC|LTC-USD|Litecoin|Litecoin USD|46.34|listed coin, must be the USD pair
+recover|DOGE|DOGE-USD|Dogecoin|Dogecoin USD|0.07177|listed coin, must be the USD pair
+recover|RNDR|RNDR-USD|Render|Render USD|6.8021464|listed coin, must be the USD pair
+recover|BNB|BNB-USD|Binance coin|BNB USD|574.9|listed coin, must be the USD pair
+recover|SOL|SOL-USD|SOL Global Investments Corp|Solana USD|75.52|listed coin, must be the USD pair
+recover|ETH|ETH-USD|Ethereum|Ethereum USD|1935.72|listed coin, must be the USD pair
+recover|GGP|GGP.L|Greatland Resources Ltd|Greatland Resources Limited|544.5|equity recovered on the London listing (name 1.00)
+recover|TLW|TLW.L|Tullow Oil plc|Tullow Oil plc|13.46|equity recovered on the London listing (name 1.00)
+recover|NCC|NCC.L|NCC Group PLC|NCC Group plc|143|equity recovered on the London listing (name 1.00)
+recover|BYG|BYG.L|Big Yellow Group plc|Big Yellow Group Plc|900|equity recovered on the London listing (name 1.00)
+recover|BBOX|BBOX.L|Tritax Big Box REIT PLC|Tritax Big Box Ord|172.6|equity recovered on the London listing (name 1.00)
+recover|GAMA|GAMA.L|Gamma Resources Ltd|Gamma Communications plc|954|equity recovered on the London listing (name 0.50)
+recover|LOCK|LOCK.L|iShares Digital Security UCITS ETF USD (Acc)|iShares Digital Security UCITS ETF USD Acc|11.736|equity recovered on the London listing (name 1.00)
+recover|NANO|NANO.L|Nanoco Group PLC|Nanoco Group plc|2.68|equity recovered on the London listing (name 1.00)
+recover|SRP|SRP.L|Serco Group plc|Serco Group plc|242.6|equity recovered on the London listing (name 1.00)
+recover|SYN|SYN.L|Synergia Energy Ltd|Synergia Energy Ltd|0.008|equity recovered on the London listing (name 1.00)
+recover|CYBR|CYBR.L|Rize Cyber Security And Data Privacy UCITS - USD Acc ETF|Rize UCITS ICAV - Rize Cybersecurity Data Privacy UCITS ETF|10.517|equity recovered on the London listing (name 0.60)
+recover|MTO|MTO.L|Mitie Group PLC|Mitie Group plc|209.4|equity recovered on the London listing (name 1.00)
+recover|DATA|DATA.L|GlobalData PLC|GlobalData Plc|77.8|equity recovered on the London listing (name 1.00)
+recover|DUKE|DUKE.L|Duke Capital Ltd|Duke Capital Limited|27|equity recovered on the London listing (name 1.00)
+recover|SAVE|SAVE.L|Savannah Energy PLC|Savannah Energy PLC|5.51|equity recovered on the London listing (name 1.00)
+recover|CMCX|CMCX.L|CMC Markets Plc|CMC Markets Plc|739|equity recovered on the London listing (name 1.00)
+recover|SMT|SMT.L|Scottish Mortgage Investment Trust PLC|Scottish Mortgage Ord|1329|equity recovered on the London listing (name 1.00)
+recover|BARC|BARC.L|Barclays PLC|Barclays PLC|530.4|equity recovered on the London listing (name 1.00)
+recover|BOWL|BOWL.L|Hollywood Bowl Group PLC|Hollywood Bowl Group plc|285|equity recovered on the London listing (name 1.00)
+recover|ZOO|ZOO.L|Zoo Digital Group plc|ZOO Digital Group plc|9.9|equity recovered on the London listing (name 1.00)
+recover|IGG|IGG.L|IG Group Holdings plc|IG Group Holdings plc|1713|equity recovered on the London listing (name 1.00)
+recover|AMGO|AMGO.L|Amigo Resources PLC|Amigo Resources PLC|1.625|London listing recovered
+recover|BOY|BOY.L|Bodycote PLC|Bodycote plc|689|London listing recovered
+recover|CHRG|CHRG.L|WisdomTree Battery Solutions UCITS ETF USD Acc|WisdomTree Battery Solutions UCITS ETF - USD Acc|3520.25|London listing recovered
+recover|DEBS|DEBS.L|Boohoo Group PLC|boohoo group plc|23.5|London listing recovered
+recover|ISPY|ISPY.L|L&G Cyber Security UCITS ETF USD Acc|L&G Cyber Security UCITS ETF|3213|London listing recovered
+recover|MAB|MAB.L|Mitchells & Butlers plc|Mitchells & Butlers plc|266.5|London listing recovered
+recover|MARS|MARS.L|Marston's PLC|Marston's PLC|51.9|London listing recovered
+recover|MKS|MKS.L|Marks and Spencer Group Plc|Marks and Spencer Group plc|392|London listing recovered
+recover|PAF|PAF.L|Pan African Resources plc|Pan African Resources PLC|95|London listing recovered
+adopt|BFIT||Basic-Fit NV|Global X Health & Wellness ETF|21.51|name adopted
+adopt|CPI||Carlton Precious Inc|IQ Real Return ETF|25.6047|name adopted
+adopt|CYB||Cymbria Corp|WisdomTree Chinese Yuan Strategy Fund|24.2674|name adopted
+adopt|GTI||Gratifii Ltd|Graphjet Technology|2.7|name adopted
+adopt|IBM||IBM Common Stock|International Business Machines Corporation|217.065|name adopted
+adopt|KSS||Kohls Corp|Kohl's Corporation|18.54|name adopted
+adopt|OMG||Omai Gold Mines Corp|OMGL Holdings Ltd||name adopted
+adopt|MTUM||Betashares Australian Momentum ETF|iShares MSCI USA Momentum Factor ETF|299.0099|name adopted
+adopt|TSM||Taiwan Semicndctr Mnufctrng Co Ltd|Taiwan Semiconductor Manufacturing Company Limited|392.285|name adopted
+deactivate|CONE||Canada One Mining Corp|||priced as a token; no equity listing resolves
+deactivate|SDF||Steadfast Group Ltd|||priced as a token; no equity listing resolves
+deactivate|EB||Eventbrite|||priced as a token; no equity listing resolves
+deactivate|GPS||Great Plains Metals Corp|||priced as a token; no equity listing resolves
+deactivate|POLX||Polylastic USD|||priced as a token; no equity listing resolves
+deactivate|SFR||Sandfire Resources America Inc|||priced as a token; no equity listing resolves
+deactivate|TWTR||Twitter tokenized stock FTX USD|||priced as a token; no equity listing resolves
+deactivate|SDC||SDC USD|||priced as a token; no equity listing resolves
+deactivate|ANTE||AnteDAO USD|||priced as a token; no equity listing resolves
+deactivate|FLT||Volatus Aerospace Inc|||priced as a token; no equity listing resolves
+deactivate|ZOM||Zoominfo Technologies Inc|||priced as a token; no equity listing resolves
+deactivate|ORBC||ORBIS USD|||priced as a token; no equity listing resolves
+deactivate|PING||Sonar USD|||priced as a token; no equity listing resolves
+deactivate|ND||Nemesis Downfall USD|||priced as a token; no equity listing resolves
+deactivate|IPV||IPVERSE USD|||priced as a token; no equity listing resolves
+deactivate|LDO||Leonardo SpA|||priced as a token; no equity listing resolves
+deactivate|WRK||WRKR Ltd|||priced as a token; no equity listing resolves
+deactivate|OCN||Oceana Metals Ltd|||priced as a token; no equity listing resolves
+deactivate|POLL||Polledo SAIC y F|||priced as a token; no equity listing resolves
+deactivate|RIDE||holoride USD|||priced as a token; no equity listing resolves
+deactivate|POAI||Port AI USD|||priced as a token; no equity listing resolves
+deactivate|ZEN||Zentek Ltd|||priced as a token; no equity listing resolves
+deactivate|BFT||BnkToTheFuture USD|||priced as a token; no equity listing resolves
+deactivate|HEC||Hector Network USD|||priced as a token; no equity listing resolves
+deactivate|SSE||Silver Spruce Resources Inc|||priced as a token; no equity listing resolves
+deactivate|MAXR||Max Revive USD|||priced as a token; no equity listing resolves
+deactivate|HYVE||Hyve USD|||priced as a token; no equity listing resolves
+deactivate|JP||JP USD|||priced as a token; no equity listing resolves
+deactivate|MKD||Musk Doge USD|||priced as a token; no equity listing resolves
+deactivate|XAN||Anoma USD|||priced as a token; no equity listing resolves
+deactivate|USAT||USAT USD|||priced as a token; no equity listing resolves
+deactivate|COOL||coolcat USD|||priced as a token; no equity listing resolves
+deactivate|SALT||Atlas Salt Inc|||priced as a token; no equity listing resolves
+deactivate|TIT||Telecom Italia SpA|||priced as a token; no equity listing resolves
+deactivate|ASP||Aspermont Ltd|||priced as a token; no equity listing resolves
+deactivate|STIC||StickMan USD|||priced as a token; no equity listing resolves
+deactivate|SECO||Serum Ecosystem Token USD|||priced as a token; no equity listing resolves
+deactivate|ISR||Insureum USD|||priced as a token; no equity listing resolves
+deactivate|BTCUSD||Bitcoin (BTC)|||priced as a token; no equity listing resolves
+deactivate|XL||XXL Energy Corp|||priced as a token; no equity listing resolves
+deactivate|BLUE||BNPPE ECPI Global ESG Blue Economy UCITS ETF C|||priced as a token; no equity listing resolves
+deactivate|SCR||Strathcona Resources Ltd|||priced as a token; no equity listing resolves
+deactivate|SQ||Square tokenized stock FTX USD|||priced as a token; no equity listing resolves
+deactivate|SOLO||Sologenic USD|||priced as a token; no equity listing resolves
+deactivate|GWS||Great-West Lifeco Inc|||priced as a token; no equity listing resolves
+deactivate|DS||Dividend Select 15 Corp|||priced as a token; no equity listing resolves
+deactivate|KERN||Kering SA|||priced as a token; no equity listing resolves
+deactivate|SPA||Spanish Mountain Gold Ltd|||priced as a token; no equity listing resolves
+deactivate|SBE||Sombe USD|||priced as a token; no equity listing resolves
+deactivate|BCN||Beacon Minerals Ltd|||priced as a token; no equity listing resolves
+deactivate|GBT||BMTC Group Inc|||priced as a token; no equity listing resolves
+deactivate|IOG||Playgroundz USD|||priced as a token; no equity listing resolves
+deactivate|SWI||Swire Pacific Ord Shs A|||priced as a token; no equity listing resolves
+deactivate|DIGS||Digies Coin USD|||priced as a token; no equity listing resolves
+deactivate|BBI||BigBoys Industry USD|||priced as a token; no equity listing resolves
+deactivate|IDEX||IDEX Metals Corp|||priced as a token; no equity listing resolves

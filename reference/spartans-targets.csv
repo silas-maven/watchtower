@@ -1,0 +1,415 @@
+ticker|name|ccy|sheetPrice|targetEntry|targetExit
+BTC|Bitcoin|||60000|100000
+LTC|Litecoin|||80|300
+ETH|Ethereum|||1000|10000
+XRP|Ripple|||0.6|4
+ADA|Cardano|||0.5|3
+BNB|Binance coin|||300|1000
+SOL|Solana|||100|
+AVAX|Avalanche|||30|100
+LINK|Chainlink|||10|
+RNDR|Render|||10|
+FET|FET|||1|
+IBIT|iShares Bitcoin Trust ETF|USD|36.44|30|
+INRG|iShares Global Clean Energy Trnstn UCITS ETF USD D|GBX|758.5|600|1000
+ECAR|iShares Elctrc Vhcls and Drvng Tech UCITS ETF USDA|USD|12.3|4|15
+NUCG|VanEck Uranium and Nuclear Technologies UCITS ETF|GBP|36.92|30|
+BATT|Amplify Lithium & Battery Technology ETF|USD|14.06|10|
+IWMO|iShares Edge MSCI World Momentum Factor UCITS USD (Acc) ETF|USD|111.31|80|
+ESPO|VanEck Video Gaming and eSports ETF|USD|91.15|40|
+PQDI|Principal Spectrum Preferred and Income ETF|USD|19.26|15|
+VOLT|Tema Electrification ETF|USD|36.63|25|
+IIPR|Innovative Industrial Properties Inc|USD|61.13|70|200
+GLD|SPDR Gold Trust|USD|372.93|300|
+BBOX|Tritax Big Box REIT PLC|GBX|171.4|120|160
+DLR|Digital Realty Trust Inc|USD|192|105|200
+RBOD|iShares Automation & Robotics UCITS ETF USD D|USD|12.95|6.5|
+HERO|Global X Video Games & Esports ETF|USD|25.03|1|
+OKTA|Okta Inc|USD|137.18|70|250
+AAXN||||40|
+ANIC|Agronomics Ltd|GBX|5.1|5|15
+ATVI||||60|100
+BARC|Barclays PLC|GBX|528.79|90|400
+BHP|BHP Group Ltd|USD|82.69|35|
+BIDU|Baidu Inc|USD|104.84|80|300
+BLUE|BNPPE ECPI Global ESG Blue Economy UCITS ETF C|EUR|18.71||20
+DEBS|Boohoo Group PLC|GBX|23|50|400
+BYG|Big Yellow Group plc|GBX|893.5|800|2000
+BYND|Beyond Meat Inc|USD|0.55|10|50
+CHWY|Chewy Inc|USD|21.2|20|
+CMCX|CMC Markets Plc|GBX|710|77|400
+CPH:VWS|Vestas Wind Systems A/S|DKK|169.9|150|
+CRM|Salesforce Inc|USD|167.14|100|
+CRSP|Crispr Therapeutics AG|USD|47.02|40|100
+MEDIF|Medipharm Labs Corp|USD|0.05|0.15|0.3
+CWBR||||0.7|1.5
+DATA|GlobalData PLC|GBX|74.4|200|
+DBK|Deutsche Bank AG|EUR|30.98|5|25
+DIS|Walt Disney Co|USD|95.51|100|200
+EDIT|Editas Medicine Inc|USD|2.6|3|
+ETR:BAYN|Bayer AG|EUR|46.53|30|75
+GLEN|Glencore PLC|GBX|515.9|125|400
+GME|GameStop Corp|USD|21.27|15|
+GRPN|Groupon Inc Common Stock|USD|26.02|10|30
+GS|Goldman Sachs Group Inc|USD|1034.15|140|1000
+INTC|Intel Corp|USD|86.94|40|
+JD|JD.Com Inc|USD|30.31|30|100
+KO|Coca-Cola Co|USD|82.5|40|
+LON:AFC||||16|100
+LON:ASC|ASOS plc|GBX|347.5|500|1000
+LON:BAG|A G Barr PLC|GBX|629|300|
+LON:CNA|Centrica PLC|GBX|159.05|40|150
+LON:ECO|Eco (Atlantic) Oil & Gas Ltd|GBX|57.2|10|
+LON:HUM||||10|20
+LON:ITV|ITV plc|GBX|73.35|60|100
+LON:RMG||||140|300
+LON:SSE|SSE PLC|GBX|2375.81|1000|
+LON:TSCO|Tesco PLC|GBX|478.9|170|
+LON:UOG|United Oil & Gas PLC|GBX|0.18|0.17|0.5
+EPA:MC|LVMH Moet Hennessy Louis Vuitton SE|EUR|462.6|450|
+MA|Mastercard Inc|USD|542.02|200|500
+MANO|Manolete Partners PLC|GBX|42|50|
+MANU|Manchester United PLC|USD|22.76|15|25
+MELI|MercadoLibre Inc|USD|1823.25|500|1500
+MKS|Marks and Spencer Group Plc|GBX|385.44|90|250
+NAT|Nordic American Tankers Ltd|USD|6.18|3|6
+NFLX|Netflix Inc|USD|69.86|70|1000
+NSA|National Storage Affiliates Trust|USD||25|50
+NVDA|NVIDIA Corp|USD|195.44|90|200
+OCDO|Ocado Group PLC|GBX|181||2500
+ORSTED|Oersted A/S|DKK|146.2|300|600
+PYPL|PayPal Holdings Inc|USD|55.48|100|250
+QCOM|Qualcomm Inc|USD|165.29|50|
+RTO|Rentokil Initial PLC|USD|28.39||550
+RVLV|Revolve Group Inc|USD|24.81|20|50
+SFR|Sandfire Resources America Inc|CAD||0.18|
+SHOP|Shopify Inc|USD|117.81|100|
+SNAP|Snap Inc|USD|4.4|10|20
+SPOT|Spotify Technology SA|USD|480.69|200|500
+TIT|Telecom Italia SpA|EUR|7.32|0.25|0.75
+NYSE:TEVA|Teva Pharmaceutical Indstris Lmtd..|USD|30.91|10|15
+TLW|Tullow Oil plc|GBX|13.16|5|250
+TPE:2330|Taiwan Semiconductor Manufacturng Co Ltd|TWD|2330|300|100
+TSE:AR||||0.5|
+TSLA|Tesla Inc|USD|304.28|200|600
+TWTR||||20|
+UAA|Under Armour Inc Class A|USD|6.96|7.5|20
+ULVR|Unilever plc|GBX|4551|3500|
+VOD|Vodafone Group PLC|USD|15.79|10|20
+IOG||||5|20
+EPA:PUB|Publicis Groupe SA|EUR|88.72|22|100
+SPCE|Virgin Galactic Holdings Inc|USD|2.5|2|
+BT.A|BT Group - CLASS A Common Stock|GBX|193.9|100|200
+NCYT|Novacyt SA|GBX|37|50|
+GILD|Gilead Sciences  Inc|USD|129.43|60|120
+MONY|MONY Group PLC|GBX|194.8|200|
+LRN|Stride Inc|USD|87.79|30|100
+TWLO|Twilio Inc|USD|191.83|50|
+TDOC|Teladoc Health Inc|USD|8.77|20|
+ZM|Zoom Communications Inc|USD|89.74|75|120
+CIHL||||20|
+REGN|Regeneron Pharmaceuticals Inc|USD|659.53|350|
+WORX|Scworx Corp|USD||1.3|2.5
+FLIR||||30|
+MRNA|Moderna Inc|USD|54.39||150
+DOCU|Docusign Inc|USD|51.22|60|100
+APPS|Digital Turbine Inc|USD|8.42|4.5|
+JMIA|Jumia Technologies AG - ADR|USD|5.96|2|
+SOCL|Global X Social Media ETF|USD|44.81|20|
+LON:OMG|Oxford Metrics PLC|GBX|37.9|50|100
+ODX||||60|100
+HEMO|Hemogenyx Pharmaceuticals PLC|GBX|698|1.5|
+LON:EMH|European Metals Holdings Ltd|GBX|11.5|15|
+LON:EZJ|easyJet plc|GBX|619.8|300|1000
+LYB|Lyondellbasell Industries N.v|USD|57.84|50|100
+FLTA||||75|180
+PTON|Peloton Interactive Inc|USD|6.04|5|
+NYSE:AXP|American Express Co|USD|329.79|80|
+VERI|Veritone Inc|USD|1.03|2|
+ANAB|AnaptysBio Inc|USD|53.96|14|
+SWX:ABBN|ABB Ltd|CHF|78.66|14|
+lon:AML|Aston Martin Lagonda Global Holdings PLC|GBX|35|40|
+LON:VLS||||7|15
+DKNG|DraftKings Inc|USD|23.48|16|
+BIFF||||170|
+DDOG|Datadog Inc|USD|249|50|
+ZOO|Zoo Digital Group plc|GBX|9.5|30|100
+WBA|Walgreen Boots Alliance Ord Shs|MXN||20|50
+VRE|Vanguard FTSE Canadian Capped REIT Index ETF|CAD|33.49|10|
+LYV|Live Nation Entertainment Inc|USD|178.57|40|
+SFIX|Stitch Fix Inc|USD|3.65|4|
+CODX|Co-Diagnostics Inc|USD|1.89|1|
+FSLY|Fastly Inc|USD|19.4|10|
+BME:TEF|Telefonica SA|EUR|3.59|3.5|5.5
+XWEL|Xwell Inc|USD|1.04|1|3
+LON:PETS|Pets at Home Group PLC|GBX|197.2|150|
+TRUP|Trupanion Inc|USD|24.37|25|50
+ALGN|Align Technology Inc|USD|164.75|200|
+GNUS||||2.5|
+SDC||||6|
+LON:RR|Rolls-Royce Holdings PLC|GBX|1413.2|100|1000
+LON:FRES|Fresnillo Plc|GBX|2516|950|3000
+LON:BWY|Bellway plc|GBX|1961|2000|
+CPE|Callon Petroleum Ord Shs|MXN||7|30
+SSL|Sasol Ltd|USD|11.44|7|15
+SONO|Sonos Inc|USD|14.88|12|30
+GOOG|Alphabet Inc Class C|USD|324.41|150|
+IZEA|IZEA Worldwide Inc|USD|3.35|3|10
+LON:augm||||80|
+EPA:SU|Schneider Electric SE|EUR|264.15|60|
+TTNP||||3|5
+NOVN|Novartis AG|CHF|127.38|25|100
+FEYE||||12|20
+AAF|Airtel Africa PLC|GBX|337|40|
+PINS|Pinterest Inc|USD|22.5|25|
+CRWD|Crowdstrike Holdings Inc|USD|180.87|70|
+SQ||||70|
+CINE||||40|65
+LLOY|Lloyds Banking Group PLC|GBX|113.95|30|
+ROKU|Roku Inc|USD|141.67|70|
+TSQ|Townsquare Media Inc|USD|5.68|4|
+GPS|Great Plains Metals Corp|CAD|0.14|10|25
+M|Macy's Inc|USD|23.72|5|
+VUZI|Vuzix Corp|USD|2.22|1|20
+PCTY|Paylocity Holding Corp|USD|127.35|100|
+EB|Eventbrite|USD|4.49|8|20
+META|Meta Platforms Inc|USD|593.51|100|
+MTCH|Match Group Inc|USD|38.45|40|
+NET|Cloudflare Inc|USD|257.6|30|250
+LON:DWF||||60|
+LON:TED||||100|
+LON:EMAN|Everyman Media Group PLC|GBX|48.5|50|
+NKE|Nike Inc|USD|41.58|50|150
+MAXR||||15|40
+AJRD||||30|60
+PRPO|Precipio Inc|USD|22.55|4|20
+LON:SIS||||20|50
+CLNE|Clean Energy Fuels Corp|USD|1.93|2|
+SMT|Scottish Mortgage Investment Trust PLC|GBX|1318.05|650|
+NAPS||||3.5|7
+FIVN|Five9 Inc|USD|23.51|50|
+COUP||||150|
+SYS1|System1 Group PLC|GBX|340|100|
+CNVS|Cineverse Corp|USD|2.38|1|4
+LMND|Lemonade Inc|USD|61.66|10|
+ANET|Arista Networks Inc|USD|165.9|100|
+ILMN|Illumina Inc|USD|188.51|100|
+PD|Pagerduty Inc|USD|9.29|20|
+IBIO|Ibio Inc|USD|1.35|1|3
+PING||||23|
+VISL|Vislink Technologies Inc|USD|2.62|1|
+AYX||||50|100
+LON:BME|B&M European Value Retail PLC|GBX|212.88|300|
+AMZN|Amazon.com Inc|USD|230.99|100|
+MSFT|Microsoft Corp|USD|387.99|250|
+MAERSK-B|AP Moeller - Maersk A/S Class B|DKK|16325|6500|15000
+TSE||||5|
+LON:GRG|Greggs plc|GBX|1575|850|
+SPLK||||140|
+T|AT&T Inc|USD|23|15|
+BIGC||||10|50
+RIOT|Riot Platforms Inc|USD|21.15|2|
+LOCK|iShares Digital Security UCITS ETF USD (Acc)|USD|11.66|4.5|
+LON:ARB||||20|
+MSTR|Strategy Inc Class A|USD|94.02|115|
+CSCO|Cisco Systems Inc|USD|112.74|30|
+CLSK|CleanSpark Inc|USD|13.69|6|
+EPR|EPR Properties|USD|63.06|22|
+LON:GSK|GSK plc|GBX|1932|1000|
+UNBLF|Unibail-Rodamco-Westfield SE|USD||50|100
+ADSK|Autodesk Inc|USD|212.19|150|
+NXPI|NXP Semiconductors NV|USD|262.17|100|
+ADI|Analog Devices Inc|USD|361.67|100|
+ESSITY-A|Essity AB (publ) Class A|SEK|276.5|200|
+IDEX|IDEX Metals Corp|CAD|0.33|1|
+BLNK|Blink Charging Co|USD|0.53|3|
+7DIG||||1.5|3
+RUR||||1|3
+NOW|ServiceNow Inc|USD|100.35|100|
+TLRY|Tilray Brands Inc|USD|3.91|4|
+CSOD||||30|
+AYRO||||1|
+LON:HUR||||1.5|3
+KE|Kimball Electronics Inc|USD|24.03|10|
+LON:IAG|International Consolidated Airlns Grp SA|GBX|439.4|100|
+GEVO|Gevo Inc|USD|1.53|1|
+PGNY|Progyny Inc|USD|31.25|10|
+VITR|Vitrolife AB|SEK|85.2|150|
+CTXS||||100|150
+ONTX|Corgi ONTO 2x Daily ETF|USD|15.63|0.3|
+LON:THG|THG PLC|GBX|29.76|50|
+HTRY||||105|
+ALTO|Alto Ingredients Inc|USD|4.37|1|4
+NNDM|Nano Dimension Ltd - ADR|USD|1.46|1.5|
+VMW|VMware Class A Ord Shs|MXN||110|
+DDD|3D Systems Corp|USD|2.58|5|
+WDAY|Workday Inc|USD|140.19|150|
+LON:HLMA|Halma plc|GBX|3528|2000|
+EXPI||||10|
+PSNL|Personalis Inc|USD|11.57|10|
+SLGG||||2|5
+FVRR|Fiverr International Ltd|USD|10.69|30|
+CYTO|||||5.5
+MDGS||||2|
+ORPH||||7|10
+INGR|Ingredion Inc|USD|101.04|60|
+CAL|Caleres Inc|USD|12.1|6|
+EPC|Edgewell Personal Care Co|USD|27.73|25|
+JKS|JinkoSolar Holding Co.  Ltd|USD|14.82|30|
+U|Unity Software Inc|USD|29.24|50|100
+THULE|Thule Group AB|SEK|218|200|
+RWLK||||0.5|
+RIDE||||10|20
+IPG|IPD Group Ltd|AUD|4.78|13|
+LON:GAW|Games Workshop Group PLC|GBX|19910|7000|
+LON:ALM||||30|50
+LIN|Linde PLC|USD|506.98|200|
+AIT|Applied Industrial Technologies Inc|USD|344.43|55|
+ETR:DPW||||30|
+AMGO|Amigo Resources PLC|GBX|1.5|0.3|3
+DVRG||||25|50
+MCK|McKesson Corp|USD|836.86|160|
+LLY|Eli Lilly And Co|USD|1183.45|600|1200
+LON:XSPS|Xtrackers S&P 500 Inverse Daily Swap UCITS 1C ETF|GBX|424.95|400|
+SHIP|Seanergy Maritime Holdings Corp|USD|15.67|0.5|
+GLBS|Globus Maritime Ltd|USD|2.84|1|3
+SWEL||||0.07|
+VRTX|Vertex Pharmaceuticals Inc|USD|478.53|200|
+OUST|Ouster Inc|USD|32.88|3.5|40
+METX|ME Therapeutics Holdings Inc|CAD||3|6
+HYVE||||100|
+PURP||||50|
+BABA|Alibaba Group Holding Ltd - ADR|USD|112.61|80|
+LON:SHOE|Shoe Zone PLC|GBX|58|50|200
+LDO|Leonardo SpA|EUR|52.08|5.5|50
+ABNB|Airbnb Inc|USD|143|100|
+FUBO|Fubotv Inc|USD|8.49|2|30
+FVE||||4.5|10
+AMRS||||10|
+HIMS|Hims & Hers Health Inc|USD|28.15|10|60
+CMCM|Cheetah Mobile Inc|USD|2.81|1.5|
+TDC|Teradata Corp|USD|29.15|20|
+TW|Tradeweb Markets Inc|USD|100.51|40|
+TSE:AIF|Altus Group Ltd|CAD|44.65|40|
+PSTI||||4|
+KL||||30|
+VERO||||1|5
+HAYD|Haydale PLC|GBX|0.26|0.5|
+W|Wayfair Inc|USD|87.6|50|
+SWI|Swire Pacific Ord Shs A|EUR|10.44|10|
+IQ|IQIYI Inc - ADR|USD|1.23||40
+AHT|Ashford Hospitality Trust Inc|USD|3.23|2|7
+BBI||||1|
+ELVN|Enliven Therapeutics Inc|USD|52.82|14|30
+AVGR||||0.6|
+STRA|Strategic Education Inc|USD|76.09|90|130
+ISR||||1|
+OBSV||||3|10
+IONI|I-On Digital Corp|USD|0.19|0.2|
+STSA||||4.5|
+POAI||||1|
+COIN|Coinbase Global Inc|USD|160.42|150|500
+LON:SUPR|Supermarket Income REIT PLC|GBX|85.41|70|
+NANO|Nanoco Group PLC|GBX|2.45|10|
+LBTI|Lithium & Boron Technology Inc|USD||2.5|4
+NAKD||||0.5|
+AIM|AIM ImmunoTech Inc|USD|0.24|0.5|
+UUUU|Energy Fuels Inc|USD|11.36|3|
+ASTI|Ascent Solar Technologies  Inc.|USD|2.89|3|
+CLVS||||5|
+NXE|NexGen Energy Ltd|USD|9.14|2|
+DNN|Denison Mines Corp|USD|2.9|0.6|
+HYRE||||7.5|
+CGIX||||5|10
+BMBL|Bumble Inc|USD|2.82|4|
+GHVI||||18|30
+BFIT|Basic-Fit NV|EUR|32.04|20|
+TTD|Trade Desk Inc|USD|17.63|20|
+CRBP|Corbus Pharmaceuticals Holdings Inc|USD|9.05|2|
+BILI|Bilibili Inc - ADR|USD|17.77|10|
+BRQS||||2.5|6
+STIC||||10|
+CELH|Celsius Holdings Inc|USD|27.52|30|50
+ESGC|Invesco S&P/TSX Composite ESG Index ETF (CAD)|CAD||1|
+AI|C3.ai Inc|USD|8.3|20|50
+LON:SHI|SIG plc|GBX|7.88|30|
+RESN||||3.5|
+PLTR|Palantir Technologies Inc|USD|125.31|15|
+RBLX|Roblox Corp|USD|45.76|30|100
+TALK|Talkspace Inc|USD|5.21|2|5
+TKAT||||30|
+CWRK||||3|
+SINO||||7|
+AIKI||||1|
+RMO|Rainy Mountain Royalty Corp|CAD||10|15
+AZRE||||20|
+LON:ROO||||100|500
+ASTC|Astrotech Corp|USD|6.83|3|30
+NUMD|Nu-Med Plus Inc|USD|0.02||1
+COUR|Coursera Inc|USD|5.44|10|
+HNST|Honest Company Inc|USD|3.81|2|
+INCY|Incyte Corp|USD|117.25||105
+VMEO||||5|
+GHSI||||1.5|
+NYSE:PATH|UiPath Inc|USD|11.12|12|
+ETHE|Grayscale Ethereum Trust ETF|USD|15.49|20|
+VANI|Vivani Medical Inc|USD|1.26|2|
+UEC|Uranium Energy Corp.|USD|9.65|1.5|
+OWLT|Owlet Inc|USD|5.26|5|12
+HUT|Hut 8 Corp|USD|100.88|10|100
+LUNR|Intuitive Machines Inc|USD|12.87|4|30
+IONQ|IONQ Inc|USD|34.3|5|
+IBM|IBM Common Stock|USD|215.29|150|
+W7L|Warpaint London PLC|GBX|180|350|
+EPA:SOP|Sopra Steria Group SA|EUR|154.1|150|
+RZLV|Rezolve AI PLC|USD|2.25|1|
+UNH|UnitedHealth Group Inc|USD|412.54|250|
+LON:CBG|Close Brothers Group plc|GBX|426.2|200|400
+RVSN|Rail Vision Ltd|USD|4.04|1|
+TEM|Tempus AI Inc|USD|42.01|50|
+COST|Costco Wholesale Corp|USD|936.66|500|1000
+NVT|nVent Electric PLC|USD|142.48|40|
+GNPX|Genprex Inc|USD|7.55|0.3|
+YYAI|AiRWA Inc|USD|2.64|1|
+SHCO||||3|
+EPA:AIR|Airbus SE|EUR|208.4|100|
+OKLO|Oklo Inc|USD|40.1|50|
+CRTO|Criteo SA|USD|20.5|20|
+QUBT|Quantum Computing Inc|USD|7.68|5|
+Fig|Figma Inc|USD|21.62|45|
+SBET|Sharplink Inc|USD|6.01|15|
+JOBY|Joby Aviation Inc|USD|7.04|8|
+DUOL|Duolingo Inc|USD|123.38|200|
+BMNR|Bitmine Immersion Technologies Inc|USD|16.67|30|
+GRAB|Grab Holdings Ltd|USD|3.32|4|
+VKTX|Viking Therapeutics Inc|USD|34.64|15|
+CCJ|Cameco Corp|USD|87.75|20|
+SMR|Nuscale|USD|8.06|20|
+WWR|Westwater Resources Inc|USD|0.39|1|
+UMAC|Unusual Machines Inc|USD|19.09|15|
+RKLB|Rocket Lab Corp|USD|64.03|50|
+KLAR|Klarna Group PLC|USD|17.72|10|
+LON:WPP|WPP PLC|GBX|284.4|270|
+RBRK|Rubrik Inc|USD|73.61|20|
+HOOD|Robinhood Markets Inc|USD|93.2|40|
+LON:ANTO|Antofagasta plc|GBX|3533|2500|
+FCX|Freeport-McMoRan Inc|USD|61.18|50|
+SCCO|Southern Copper Corp|USD|173.83|100|
+LON:FUTR|Future plc|GBX|290.2|300|
+LON:CAML|Central Asia Metals PLC|GBX|148|150|
+GTLB|Gitlab Inc|USD|31.83|20|
+REI|Ring Energy Inc|USD|1.17|1.5|
+EONR|EON Resources Inc|USD|0.53|0.5|
+EPA:RMS|Hermes International SCA|EUR|1658.5|1000|
+IT|Gartner Inc|USD|143.2|150|
+BIRD|Smartbird Inc|USD|2.45|10|
+LON:SML|Strategic Minerals PLC|GBX|3.5|2.5|
+PHM|Pultegroup Inc|USD|128.6|80|
+TBLA|Taboola.com Ltd|USD|4.87|3|
+PNR|Pentair PLC|USD|63.42|100|
+XYL|Xylem Inc|USD|119.96|70|
+ON|ON Semiconductor Corp|USD|84.58|80|
+APTV|Aptiv PLC|USD|56.37|60|
+FABC|Fabric.AI  Inc|USD|2.34|3|
+REAL|RealReal Inc|USD|11.29|5|
+MCD|McDonald's Corp|USD|266.8|150|

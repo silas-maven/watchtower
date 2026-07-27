@@ -33,6 +33,12 @@ type Resolved = {
 
 const CHUNK = 100;
 
+// The coins the academy actually lists (the crypto block at the top of the
+// SPArtans sheet). Kept as a REVIEWED list rather than a heuristic: "TICKER-USD
+// resolves" is true for a great many tickers that are not coins, which is
+// precisely how real equities came to be priced as tokens.
+const INTENDED_CRYPTO = new Set(['BTC', 'ETH', 'LTC', 'XRP', 'ADA', 'BNB', 'SOL', 'AVAX', 'LINK', 'RNDR', 'FET', 'DOGE']);
+
 function readCsv(limit: number | null): Row[] {
   const file = path.join(process.cwd(), 'reference', 'spartans-watchlist.csv');
   const lines = readFileSync(file, 'utf8').trim().split('\n').slice(1);
@@ -120,20 +126,34 @@ async function main() {
   const resolved = new Map<string, Resolved>();
   const pending = new Map<string, Row>(rows.map((r) => [r.ticker, r]));
 
-  // Three passes, each trying a different symbol shape for whatever is left.
-  const passes: Array<{ label: string; candidate: (t: string) => string }> = [
+  // Passes, each trying a different symbol shape for whatever is still pending.
+  //
+  // ORDER AND SCOPE MATTER. The original version tried `TICKER-USD` second, ahead
+  // of the London listing, and applied it to every ticker. A crypto token exists
+  // for very nearly every short ticker, so that pass essentially never failed and
+  // it captured real equities: "Eventbrite" was priced as a token at $0.0000042,
+  // "Barclays PLC" at $0.0034, "Duke Capital" at 2.19e-7 (the row behind the
+  // 553,400,848% daily range in the brief). 83 assets ended up priced as tokens.
+  //
+  // So the crypto pair is now LAST and is restricted to a reviewed list of the
+  // coins the academy actually tracks. See scripts/fix-asset-identity.ts.
+  const passes: Array<{ label: string; candidate: (t: string) => string | null }> = [
     { label: 'plain ticker', candidate: (t) => t },
-    { label: 'crypto pair (-USD)', candidate: (t) => `${t}-USD` },
     { label: 'London listing (.L)', candidate: (t) => `${t}.L` },
     // LSE class shares are written BT.A in the sheet but BT-A.L by Yahoo.
     { label: 'London class share (BT.A -> BT-A.L)', candidate: (t) => `${t.replace(/\./g, '-')}.L` },
+    { label: 'crypto pair (-USD, reviewed coins only)', candidate: (t) => (INTENDED_CRYPTO.has(t.toUpperCase()) ? `${t}-USD` : null) },
   ];
 
   for (const pass of passes) {
     if (pending.size === 0) break;
     console.log(`Pass: ${pass.label} (${pending.size} outstanding)`);
     const candidates = new Map<string, string>(); // candidate symbol -> ticker
-    for (const ticker of pending.keys()) candidates.set(pass.candidate(ticker), ticker);
+    for (const ticker of pending.keys()) {
+      const candidate = pass.candidate(ticker);
+      if (candidate) candidates.set(candidate, ticker);
+    }
+    if (candidates.size === 0) continue;
 
     const found = await lookup([...candidates.keys()]);
     for (const [candidate, ticker] of candidates) {
