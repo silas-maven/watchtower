@@ -174,7 +174,8 @@ model Profile {
   assetActions           AdminAssetAction[]   @relation("AdminAssetActor")
   aiReports              AiReport[]
   personalFinance        PersonalFinanceInput?
-  stockRequests          StockRequest[]
+  stockRequests          StockRequest[]       @relation("StockRequestAuthor")
+  decidedStockRequests   StockRequest[]       @relation("StockRequestDecider")
   emailDeliveries        EmailDelivery[]
 
   @@index([role, accessState])
@@ -712,21 +713,40 @@ model PersonalFinanceInput {
   @@map("watchtower_spa_personal_finance_inputs")
 }
 
-// Member-submitted request to add a stock to the academy universe. Reviewed by
-// an admin (status PENDING -> REVIEWED / ADDED / DECLINED).
+// Member-submitted request to add a security to the academy universe. Reviewed
+// by an admin (status PENDING -> REVIEWED / ADDED / DECLINED).
+//
+// The table is still named "stock_requests" because that is what it was called
+// when only stocks could be asked for. The concept has since widened to any
+// security, so `assetType` carries the kind. Renaming the table would need a
+// data migration for no functional gain.
 model StockRequest {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   profileId String
   symbol    String
+  /** AssetType value: STOCK, ETF, CRYPTO, COMMODITY, INDEX, FOREX, OTHER. */
+  assetType String  @default("STOCK")
+  /** Member's own wording for the security, and where they believe it trades. */
+  /** A ticker alone is ambiguous across exchanges, so both help verification. */
+  name      String?
+  market    String?
   note      String?
-  status    String   @default("PENDING")
+  status    String  @default("PENDING")
+
+  /** The decision trail, so the reason survives the status flip. */
+  adminNote   String?
+  decidedAt   DateTime?
+  decidedById String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profile   Profile  @relation("StockRequestAuthor", fields: [profileId], references: [id], onDelete: Cascade)
+  decidedBy Profile? @relation("StockRequestDecider", fields: [decidedById], references: [id], onDelete: SetNull)
 
   @@index([status, createdAt(sort: Desc)])
   @@index([profileId])
+  @@index([symbol])
   @@map("watchtower_spa_stock_requests")
 }
 

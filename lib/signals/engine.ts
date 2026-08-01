@@ -7,6 +7,24 @@ export type SignalInput = {
   targetExit: number | null;
 };
 
+/**
+ * Buy and sell are deliberate mirror images of each other.
+ *
+ * A buy target says "I want in at or below this price", so it is hit either when
+ * the day's range crosses it, or when the whole day traded BELOW it (the price
+ * gapped past the target and never came back through). The second case is what
+ * gives parity with the academy's spreadsheet.
+ *
+ * A sell target says "I want out at or above this price", so the mirror holds:
+ * the range crossing it, or the whole day trading ABOVE it. That second sell
+ * clause was missing, which meant a holding that gapped up through its exit and
+ * kept climbing never raised a sell. It cost nothing while a single asset had an
+ * exit target; it matters now that 85 of them are imported from the sheet.
+ *
+ * Note that an inverted pair (exit at or below entry) satisfies both outer
+ * clauses at once and pins the asset to BOTH forever. That is a data error, not
+ * a signal, and is rejected at import time by scripts/import-targets.ts.
+ */
 export function computeSignalState(input: SignalInput): SignalState {
   const { dailyLow, dailyHigh, targetEntry, targetExit } = input;
 
@@ -16,7 +34,9 @@ export function computeSignalState(input: SignalInput): SignalState {
     targetEntry != null &&
     ((hasRange && dailyLow <= targetEntry && targetEntry <= dailyHigh) || (dailyHigh != null && targetEntry > dailyHigh));
 
-  const exitHit = targetExit != null && hasRange && dailyLow <= targetExit && targetExit <= dailyHigh;
+  const exitHit =
+    targetExit != null &&
+    ((hasRange && dailyLow <= targetExit && targetExit <= dailyHigh) || (dailyLow != null && targetExit < dailyLow));
 
   if (entryHit && exitHit) return SignalState.BOTH;
   if (entryHit) return SignalState.BUY;

@@ -25,6 +25,80 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: '2026.08.02',
+    date: '2026-08-02',
+    title: 'Sell alerts now fire properly, and members can ask for any security',
+    summary:
+      'A gap in the sell rule meant a holding that jumped past your sell price without trading through it never raised an alert. Fixing it turns on 17 sell alerts that were silently missed. Members can also now request any kind of security, and the admin queue shows who asked for what.',
+    feedbackDoc: '2026-08-01 verbal feedback',
+    groups: [
+      {
+        heading: 'Sell alerts',
+        items: [
+          {
+            title: 'A price that jumps past your sell target now raises a sell',
+            body: 'The buy rule fires in two situations: the price crosses your buy target during the day, or the whole day trades below it. The sell rule only had the first of those. So a holding that gapped up through your sell price at the open and never traded back down through it stayed silent, which is the exact case where you most want telling. The sell rule now mirrors the buy rule. Checking this against live prices, 17 assets should have been showing a sell and were not, including Barclays at 508.7 against a 400 target and Mastercard at 573 against 500. Sell alerts across the watchlist go from 3 to 20.',
+            feedback: 'Sell signals (1 August)',
+            href: '/app/watchlists#master-watchlist',
+            linkLabel: 'Open Master Watchlist',
+          },
+        ],
+      },
+      {
+        heading: 'Requesting a security',
+        items: [
+          {
+            title: 'Request any security, not just a stock',
+            body: 'The request form now asks what kind of thing it is (stock, ETF, crypto, commodity, index, currency pair), and optionally its name and where it trades. Those two extras matter more than they look: a ticker on its own is ambiguous across exchanges, and guessing wrong is how an asset ends up priced as a completely different instrument.',
+            feedback: 'Security requests (1 August)',
+            href: '/app/watchlists#master-watchlist',
+            linkLabel: 'Open Master Watchlist',
+          },
+          {
+            title: 'The form now sits on the Master Watchlist as well',
+            body: 'Asking for something missing belongs next to the list you just searched. It previously existed only on the Asset Centre. It is on both now, and it tells the member straight away if the security is already tracked or if they have already asked for it.',
+            feedback: 'Security requests (1 August)',
+            href: '/app/watchlists#master-watchlist',
+            linkLabel: 'Open Master Watchlist',
+          },
+          {
+            title: 'Members can see what happened to their requests',
+            body: 'A request used to disappear after sending. Members now see their own list with each status, and any note you leave when you decide.',
+            feedback: 'Security requests (1 August)',
+            href: '/app/assets',
+            linkLabel: 'Open Asset Centre',
+          },
+        ],
+      },
+      {
+        heading: 'The admin queue',
+        items: [
+          {
+            title: 'Requests per member, by type, with the key details',
+            body: 'Admin then Assets now opens with how many requests are outstanding and who is asking, a table of requests per member with open and total counts, and a one-click filter to see just that person\'s. The queue itself shows the ticker, name, market, type, who asked, why, and how long it has been waiting, and can be filtered by status, type or member.',
+            feedback: 'Security requests (1 August)',
+            href: '/admin/assets',
+            linkLabel: 'Open Admin Assets',
+          },
+          {
+            title: 'Anything asked for by more than one member is called out',
+            body: 'Two members asking for the same security is the strongest signal for what to add next, so it is pulled to the top rather than left to be spotted in a list.',
+            feedback: 'Security requests (1 August)',
+            href: '/admin/assets',
+            linkLabel: 'Open Admin Assets',
+          },
+          {
+            title: 'Decisions now record who and why',
+            body: 'You can add a short reason when you mark a request added or declined. The queue keeps who decided it and when, and the member sees the reason on their own list. Anything already on the watchlist is flagged on the row so you are not asked to research something that exists.',
+            feedback: 'Security requests (1 August)',
+            href: '/admin/assets',
+            linkLabel: 'Open Admin Assets',
+          },
+        ],
+      },
+    ],
+  },
+  {
     version: '2026.08.01',
     date: '2026-08-01',
     title: 'Admin access fixed, and the watchlist filters take more than one choice',

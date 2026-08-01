@@ -56,7 +56,7 @@ export default async function AdminPage() {
         <NewsSourceSettingsPanel />
       </Card>
 
-      <Card title="Stock Requests">
+      <Card title="Security Requests">
         <StockRequestsPanel />
       </Card>
 

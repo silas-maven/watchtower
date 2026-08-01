@@ -157,6 +157,44 @@ Phase 1 market data engine (everything depends on real prices) → Phase 2 summa
 
 ## Session Log
 
+### 2026-08-02
+- **Sell-signal asymmetry fixed (`lib/signals/engine.ts`).** `entryHit` had two clauses
+  (range crosses the target, or the whole day traded below it, the second giving
+  spreadsheet parity); `exitHit` only had the first. A holding that gapped up through
+  its exit and never traded back down stayed silent. Added the mirror
+  (`targetExit < dailyLow`). Measured against live snapshots with
+  `scripts/audit-signal-change.ts`: **17 assets flip NONE → SELL**, watchlist sell
+  alerts 3 → 20, buy unchanged at 77. Spot-checked several (Barclays 508.7 GBX vs
+  exit 400, Mastercard 573 vs 500, Glencore 543 vs 400) and all are genuinely past
+  their sell price. 17 SignalEvents will fire on the first refresh after deploy.
+  Signal tests 7 → 13, including symmetry and the inverted-pair case that pins an
+  asset to BOTH (which is why `import-targets.ts` rejects inverted rows).
+- **Security requests widened and the admin queue rebuilt.** Migration
+  `20260801000000_security_request_details`, additive only: `assetType` (defaulted
+  'STOCK'), `name`, `market`, plus `adminNote` / `decidedAt` / `decidedById` for the
+  decision trail. Table name left as `watchtower_spa_stock_requests`; only the
+  concept widened, so renaming would be a data migration for no gain. New
+  `lib/securityRequests.ts` is the single vocabulary for statuses, types and tones.
+- Member form (`components/assets/RequestSecurity.tsx`, renamed from `RequestStock`)
+  now takes type, name and market, and shows the member their own request history
+  with status and the academy's note. Name and market are asked for because a ticker
+  alone is ambiguous across exchanges, which is the root of the wrong-instrument
+  problem. Also mounted on the Master Watchlist, not just the Asset Centre.
+- POST now rejects a symbol already on the watchlist (409 ALREADY_TRACKED) and a
+  member's own duplicate open request (409 DUPLICATE_REQUEST).
+- Admin queue: open/total header, requests-per-member table with open counts and a
+  one-click per-person filter, a "asked for by more than one member" callout,
+  status/type/member multi-select filters, waiting time, already-tracked flag, and a
+  reason box on the decide action. GET also returns `trackedBySymbol`.
+- **Verified in the browser** via a temporary harness that stubbed the admin and
+  member APIs (dev Clerk session is not signed in, and seeding test rows into the
+  shared production DB was not acceptable). Confirmed per-person counts, the
+  multi-member callout, filters, and a full decide round trip (SOL → DECLINED "by
+  You" with the reason, header recomputed 4 → 3 open). Harness deleted. Production
+  currently holds **0** security requests.
+- Typecheck and lint clean, 92 tests passing (was 86). Migration applied to
+  production via `prisma migrate deploy`.
+
 ### 2026-08-01
 - **Admin allowlist was dead code for anyone who had already signed up.** `lib/auth.ts`
   looked a returning profile up by Clerk ID and returned it as-is, so `roleForEmail`

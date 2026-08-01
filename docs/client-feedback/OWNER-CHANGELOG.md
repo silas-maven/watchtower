@@ -11,6 +11,22 @@ link to each change. Per-round detail lives in the dated folders in this directo
 Read this bit first. Everything here is either an action only you can take, or a
 judgement call worth knowing about before beta.
 
+**000. Sell alerts were missing cases, and 17 of them were live.**
+The buy rule fires either when the price crosses your buy target during the day,
+or when the whole day trades below it. The sell rule only ever had the first half.
+So a holding that jumped straight past your sell price at the open and kept going,
+without ever trading through it, raised nothing. That is precisely the case you
+would most want flagged.
+
+This cost nothing while only one security had a sell price on it. It costs a great
+deal now that 85 sell targets have been imported from your sheet. Checked against
+live prices, 17 securities should have been showing a sell and were silent,
+including Barclays at 508.7 against your 400 target, Mastercard at 573 against 500
+and Glencore at 543 against 400. Sell alerts across the watchlist go from 3 to 20.
+
+Expect those 17 to appear the first time prices refresh after this goes live. They
+are not new events; they are ones that were already true and were not being shown.
+
 **00. Why the admin panel was not showing for you, plainly.**
 Admins are named in a setting on the server. That setting was only ever read at the
 moment an account was first created. Your account was created on 14 June. Your email

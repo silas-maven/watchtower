@@ -8,6 +8,7 @@ import { Badge } from '@/components/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/ToastProvider';
 import { AssetFilterBar } from '@/components/assets/AssetFilterBar';
+import { RequestSecurity } from '@/components/assets/RequestSecurity';
 import { DEFAULT_ASSET_FILTERS, assetClassLabel, filterOptionsFor, matchesAssetFilters, productLabel, type AssetFilters, type FilterableAssetRow } from '@/lib/assetClass';
 import type { WatchlistAssetRow, WatchlistRow } from '@/lib/server/watchlists';
 
@@ -361,6 +362,16 @@ export function WatchlistsClient({
         </div>
       </Card>
       </div>
+
+      {/* Asking for something missing belongs next to the list you searched.
+          It previously only existed on the Asset Centre, which is not the route
+          most members take to look for a security. */}
+      <Card title="Not on the list?">
+        <p className="mb-4 text-sm text-muted-foreground">
+          Ask the academy to add it. Stocks, ETFs, crypto and commodities are all welcome.
+        </p>
+        <RequestSecurity />
+      </Card>
 
       {/* Create-list dialog */}
       <Modal
