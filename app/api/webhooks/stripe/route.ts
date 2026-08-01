@@ -1,8 +1,9 @@
-import { MemberTier, Role, SubscriptionStatus } from '@prisma/client';
+import { Role, SubscriptionStatus } from '@prisma/client';
 import { fail, ok } from '@/lib/api';
 import { optionalEnv } from '@/lib/env';
 import { prisma } from '@/lib/prisma';
 import { getStripe } from '@/lib/stripe';
+import { applyAccessDecision, decideFromSubscriptionEvent } from '@/lib/subscriptions/access';
 
 export const runtime = 'nodejs';
 
@@ -105,23 +106,10 @@ export async function POST(req: Request) {
     });
   }
 
-  if (profileId && event.type === 'checkout.session.completed') {
-    // One-time eCourse purchase: surface it to admins (the membership path is
-    // handled by the subscription events below). Subscriptions also land here,
-    // but we only need to confirm the customer link, already done above.
-    if (object.mode === 'payment' || object.metadata?.product === 'ecourse') {
-      await prisma.notification.create({
-        data: {
-          profileId,
-          role: Role.ADMIN,
-          type: 'ecourse_purchase',
-          title: 'eCourse purchased',
-          body: 'A member completed checkout for the SPArtan Investing eCourse.',
-          metadata: { customerId, sessionId: object.id, amount: object.amount_total ?? null },
-        },
-      }).catch(() => undefined);
-    }
-  }
+  // checkout.session.completed needs no handling of its own: membership is a
+  // subscription and lands in the events below, and the customer link was made
+  // above. The one-off eCourse branch that used to live here is gone with the
+  // in-app eCourse checkout, which moved to Whop.
 
   if (profileId && (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.created' || event.type === 'customer.subscription.deleted')) {
     // For subscription events the object is the subscription itself.
@@ -143,15 +131,20 @@ export async function POST(req: Request) {
       },
     });
 
-    // Subscription ended or was cancelled/left unpaid: flag it for admin review
-    // so access can be removed MANUALLY. Never auto-cut access (academy rule).
-    // A live subscription grants the paid tier. We only ever UPGRADE tier here;
-    // downgrades stay manual (academy rule: never auto-cut access), which is why
-    // a canceled/unpaid subscription is flagged for admin review below rather
-    // than dropping the member to FREE automatically.
-    if (object.status === 'active' || object.status === 'trialing') {
-      await prisma.profile.update({ where: { id: profileId }, data: { tier: MemberTier.MEMBER } }).catch(() => undefined);
-    }
+    // Access now follows the subscription automatically in BOTH directions
+    // (owner's decision, 2026-08-02). A live subscription grants the paid tier;
+    // a finished one withdraws it. A subscription merely set to cancel at the
+    // period end still reads as active, so it keeps access until Stripe ends it.
+    // See lib/subscriptions/access.ts for what "withdraw" does and does not do.
+    await applyAccessDecision(
+      profileId,
+      decideFromSubscriptionEvent({
+        eventType: event.type,
+        status: object.status,
+        cancelAtPeriodEnd: object.cancel_at_period_end,
+      }),
+      `Stripe reported subscription status "${object.status ?? event.type}".`,
+    ).catch(() => undefined);
 
     const endedNow =
       event.type === 'customer.subscription.deleted' ||
@@ -166,8 +159,8 @@ export async function POST(req: Request) {
           type: 'subscription_ended',
           title: cancelsAtEnd ? 'Subscription set to cancel' : 'Subscription ended',
           body: cancelsAtEnd
-            ? 'Stripe reports this subscription will not renew. Access is unchanged; remove it manually when it lapses.'
-            : 'Stripe reports this subscription has ended. Access was not changed automatically; remove it manually if appropriate.',
+            ? 'Stripe reports this subscription will not renew. Access is unchanged and stays that way until the period actually ends.'
+            : 'Stripe reports this subscription has ended, so the paid tier was withdrawn automatically. The member can still sign in and pay again; reinstate from the Members page to give it back sooner.',
           stripeEventId: event.id,
           metadata: { customerId, subscriptionId: object.id, stripeStatus: object.status ?? null },
         },
@@ -181,8 +174,9 @@ export async function POST(req: Request) {
       update: { status: SubscriptionStatus.ACTIVE, lastPaidAt: new Date(), lastPaymentFailedAt: null },
       create: { profileId, status: SubscriptionStatus.ACTIVE, lastPaidAt: new Date() },
     });
-    // A paid invoice is the clearest signal of a paying member: grant the tier.
-    await prisma.profile.update({ where: { id: profileId }, data: { tier: MemberTier.MEMBER } }).catch(() => undefined);
+    // A paid invoice is the clearest signal of a paying member, and it is what
+    // reinstates somebody the overdue sweep had already moved to the free tier.
+    await applyAccessDecision(profileId, 'GRANT', 'Stripe reported a successful payment.').catch(() => undefined);
     await prisma.billingAlert.updateMany({ where: { profileId, status: 'OPEN' }, data: { status: 'RESOLVED', resolvedAt: new Date() } });
   }
 

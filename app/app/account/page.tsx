@@ -71,7 +71,6 @@ export default async function AccountPage() {
             membershipStatus={mirror?.status ?? null}
             currentPeriodEnd={mirror?.currentPeriodEnd ? mirror.currentPeriodEnd.toISOString().slice(0, 10) : null}
             membershipPriceLabel="£50 / month"
-            ecoursePriceLabel="£1,000 one-time"
           />
         </Card>
       </BlurFade>

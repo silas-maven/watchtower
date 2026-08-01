@@ -11,6 +11,30 @@ link to each change. Per-round detail lives in the dated folders in this directo
 Read this bit first. Everything here is either an action only you can take, or a
 judgement call worth knowing about before beta.
 
+**0000. Missed payments now remove access on their own. Read this before it happens to someone.**
+This is a change of policy, not a bug fix, so it is worth being precise about what
+it does.
+
+A failed payment no longer just raises an alert for you. After ten days unpaid,
+the account moves to the free plan automatically. Ten days rather than
+immediately, because cards fail for ordinary reasons and Stripe keeps retrying
+for about a fortnight; cutting someone off on day one would punish a payment that
+was about to go through. A cancelled or ended subscription steps down straight
+away, because there is nothing left to retry. Someone who has cancelled but is
+still inside a period they paid for keeps everything until that period ends.
+
+What "removed" means: they drop to the free plan. They keep their login, their
+holdings, their lists and their history, and they lose the watchlist, the buy and
+sell alerts, the indicators and the paid tools. They are NOT locked out of the
+app. That is deliberate: locking them out would also stop them reaching the page
+where they could pay you.
+
+Paying puts everything back on its own, with no action needed from you. You can
+also reinstate anyone by hand from the Members page, and nothing overrides that.
+
+If you would rather a missed payment locked the account entirely, say so and it
+can be changed, but I would advise against it for the reason above.
+
 **000. Sell alerts were missing cases, and 17 of them were live.**
 The buy rule fires either when the price crosses your buy target during the day,
 or when the whole day trades below it. The sell rule only ever had the first half.

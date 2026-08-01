@@ -1,15 +1,18 @@
 import Link from 'next/link';
 import { auth } from '@clerk/nextjs/server';
 import { SignUpButton } from '@clerk/nextjs';
-import { Check, ArrowRight } from 'lucide-react';
+import { Check, ArrowRight, ArrowUpRight } from 'lucide-react';
 
 import { MarketingNav } from '@/components/marketing/MarketingNav';
 import { MarketingFooter } from '@/components/marketing/MarketingFooter';
 import { Reveal } from '@/components/marketing/Reveal';
+import { ACADEMY_OFFERS } from '@/lib/academyOffers';
+
+const ECOURSE = ACADEMY_OFFERS.find((o) => o.id === 'ecourse')!;
 
 export const metadata = {
   title: 'Pricing — Stock Pickers Academy',
-  description: 'Membership is £50 a month. The SPArtan Investing eCourse is a one-time purchase. Checkout opens inside the members area.',
+  description: 'Membership is £50 a month, with checkout inside the members area. The SPArtan Investing eCourse is a separate one-time purchase.',
 };
 
 const membershipFeatures = [
@@ -32,9 +35,12 @@ const ecourseFeatures = [
 const faqs = [
   ['Do I need the eCourse to use the membership?', 'No. Membership gives you the live watchlist, signals and tools on its own. The eCourse is a separate, deeper dive into the method for those who want it.'],
   ['How do the buy and sell signals work?', 'The academy sets a target entry and exit level for each asset. When the live price meets a level, the asset moves into a buy or sell zone. The logic is fixed, so the same inputs always give the same signal.'],
-  ['Will my access be cut if a payment fails?', 'No. A failed payment raises an alert for the academy to review. A person decides what happens next. Your access is never removed automatically.'],
+  [
+    'What happens if a payment fails?',
+    'Nothing straight away. Cards fail for ordinary reasons and most go through on a retry, so your membership carries on while that happens. If it is still unpaid after ten days the account moves to the free plan, which means you keep your login and your data but lose the watchlist, the alerts and the paid tools. Paying restores everything on its own, and the academy can put it back sooner.',
+  ],
   ['Is this financial advice?', 'No. The platform organises information and surfaces signals from rules the academy sets. It does not tell you what to buy or sell, and it never promises a result.'],
-  ['How do I pay?', 'Billing is handled securely by Stripe. Once you join, checkout for both membership and the eCourse opens inside the members area.'],
+  ['How do I pay?', 'Membership is billed monthly through Stripe, and checkout opens inside the members area once you join. The eCourse is sold separately on Whop.'],
 ];
 
 function JoinButton({ signedIn, label }: { signedIn: boolean; label: string }) {
@@ -110,7 +116,18 @@ export default async function PricingPage() {
                   </li>
                 ))}
               </ul>
-              <div className="mt-8"><JoinButton signedIn={signedIn} label={signedIn ? 'Buy the eCourse' : 'Join to purchase'} /></div>
+              {/* Sold on Whop, not through this app's Stripe account. */}
+              <div className="mt-8">
+                <a
+                  href={ECOURSE.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card px-6 py-3.5 text-sm font-bold text-foreground transition hover:bg-muted/40"
+                >
+                  {ECOURSE.cta} <ArrowUpRight className="h-4 w-4" />
+                </a>
+                <div className="mt-2 text-center text-xs text-muted-foreground">Opens {ECOURSE.destination}</div>
+              </div>
             </div>
           </Reveal>
         </div>

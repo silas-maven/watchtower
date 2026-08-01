@@ -22,15 +22,27 @@ export const FREE_PITCH_LIMIT = 1;
 // or a shared login cannot turn into an unbounded API bill at universe scale.
 export const PAID_PITCH_DAILY_LIMIT = 25;
 
-export function isPaidUser(user: Pick<SessionUser, 'role' | 'tier'>): boolean {
+export function isPaidUser(user: Pick<SessionUser, 'role' | 'tier'> & { previewFreeTier?: boolean }): boolean {
+  // An admin previewing the free experience is treated as free everywhere, which
+  // is the whole point: the paywalls they are checking are the ones a real free
+  // member hits. This is checked FIRST so it also applies to owners and admins,
+  // who would otherwise short-circuit to paid on the next line.
+  if (user.previewFreeTier) return false;
   if (user.role === Role.OWNER || user.role === Role.ADMIN) return true;
   return user.tier === MemberTier.MEMBER;
 }
 
 export async function getEntitlements() {
   const user = await getSessionUser();
-  if (!user) return { user: null, paid: false, tier: MemberTier.FREE as MemberTier };
-  return { user, paid: isPaidUser(user), tier: user.tier };
+  if (!user) return { user: null, paid: false, tier: MemberTier.FREE as MemberTier, previewing: false };
+  return {
+    user,
+    paid: isPaidUser(user),
+    // The tier a free preview is standing in for, so the UI shows what the
+    // member would see rather than the admin's own stored tier.
+    tier: user.previewFreeTier ? MemberTier.FREE : user.tier,
+    previewing: user.previewFreeTier === true,
+  };
 }
 
 // API-route guard. Mirrors requireRole: returns the user or throws a coded error

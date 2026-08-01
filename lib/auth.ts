@@ -1,4 +1,5 @@
 import { cache } from 'react';
+import { cookies } from 'next/headers';
 import { AccessState, Role, type Profile } from '@prisma/client';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
@@ -6,7 +7,17 @@ import { trackEvent } from '@/lib/server/trackEvent';
 
 export type SessionUser = Pick<Profile, 'id' | 'email' | 'name' | 'role' | 'tier' | 'accessState'> & {
   clerkUserId: string;
+  /**
+   * Set when an owner or admin has asked to see the app as a free member would.
+   * It only ever REMOVES entitlement, never grants it, so it cannot be used to
+   * escalate. Role is deliberately left alone so the admin pages, and the switch
+   * back out of the preview, stay reachable.
+   */
+  previewFreeTier?: boolean;
 };
+
+/** Cookie that puts an admin into the free-member view. Server-read only. */
+export const VIEW_AS_FREE_COOKIE = 'spa_view_as_free';
 
 type ClaimBag = Record<string, unknown>;
 
@@ -87,7 +98,7 @@ async function reconcileProfile(profile: Profile): Promise<Profile> {
   }
 }
 
-function sessionUser(profile: Profile): SessionUser {
+function sessionUser(profile: Profile, previewFreeTier = false): SessionUser {
   return {
     id: profile.id,
     clerkUserId: profile.clerkUserId,
@@ -96,7 +107,26 @@ function sessionUser(profile: Profile): SessionUser {
     role: profile.role,
     tier: profile.tier,
     accessState: profile.accessState,
+    ...(previewFreeTier ? { previewFreeTier: true } : {}),
   };
+}
+
+/**
+ * Is this request asking to be shown the free-member experience?
+ *
+ * Only honoured for owners and admins. A member setting the cookie by hand would
+ * be choosing to see less of what they pay for, which is harmless, but there is
+ * no reason to let it happen either.
+ */
+async function wantsFreePreview(role: Role): Promise<boolean> {
+  if (role !== Role.OWNER && role !== Role.ADMIN) return false;
+  try {
+    const jar = await cookies();
+    return jar.get(VIEW_AS_FREE_COOKIE)?.value === '1';
+  } catch {
+    // cookies() throws outside a request scope (jobs, scripts): no preview there.
+    return false;
+  }
 }
 
 async function fallbackClerkIdentity(): Promise<{ email: string | null; name: string | null }> {
@@ -116,7 +146,10 @@ async function resolveSessionUser(): Promise<SessionUser | null> {
   if (!userId) return null;
 
   const byClerk = await prisma.profile.findUnique({ where: { clerkUserId: userId } });
-  if (byClerk) return sessionUser(await reconcileProfile(byClerk));
+  if (byClerk) {
+    const profile = await reconcileProfile(byClerk);
+    return sessionUser(profile, await wantsFreePreview(profile.role));
+  }
 
   const claims = (authState.sessionClaims ?? {}) as ClaimBag;
   const fallback = await fallbackClerkIdentity();

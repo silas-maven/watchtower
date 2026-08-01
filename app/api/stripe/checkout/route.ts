@@ -8,15 +8,16 @@ import { getStripe } from '@/lib/stripe';
 
 export const runtime = 'nodejs';
 
+// Membership is the only thing bought inside the app. The eCourse used to have a
+// one-off Stripe price here as well, but it is sold on Whop now (see
+// lib/academyOffers.ts) and two purchase routes for one product is how people
+// end up paying twice. STRIPE_ECOURSE_PRICE_ID is no longer read anywhere.
 const Schema = z.object({
-  product: z.enum(['membership', 'ecourse']).default('membership'),
+  product: z.literal('membership').default('membership'),
 });
 
-function priceForProduct(product: 'membership' | 'ecourse'): { priceId: string | undefined; mode: 'subscription' | 'payment' } {
-  if (product === 'ecourse') {
-    return { priceId: optionalEnv('STRIPE_ECOURSE_PRICE_ID'), mode: 'payment' };
-  }
-  // Membership: prefer the explicit membership price, fall back to the legacy STRIPE_PRICE_ID.
+function membershipPrice(): { priceId: string | undefined; mode: 'subscription' } {
+  // Prefer the explicit membership price, fall back to the legacy STRIPE_PRICE_ID.
   return { priceId: optionalEnv('STRIPE_MEMBERSHIP_PRICE_ID') ?? optionalEnv('STRIPE_PRICE_ID'), mode: 'subscription' };
 }
 
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
     const parsed = Schema.safeParse(body);
     if (!parsed.success) return fail('Invalid payload', 400, 'INVALID_PAYLOAD');
 
-    const { priceId, mode } = priceForProduct(parsed.data.product);
+    const { priceId, mode } = membershipPrice();
     if (!priceId) return fail('This product is not configured for checkout', 503, 'PRICE_NOT_CONFIGURED');
 
     const origin = new URL(req.url).origin;

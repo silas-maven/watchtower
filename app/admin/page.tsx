@@ -5,12 +5,15 @@ import { Badge } from '@/components/Badge';
 import { prisma } from '@/lib/prisma';
 import { requirePageRole } from '@/lib/server/pageAuth';
 import { BlurFade } from '@/components/ui/blur-fade';
+import { ViewAsSwitch } from '@/components/ViewAsSwitch';
+import { getEntitlements } from '@/lib/entitlements';
 
 export const dynamic = 'force-dynamic';
 export const preferredRegion = 'fra1';
 
 export default async function AdminOverviewPage() {
   await requirePageRole([Role.OWNER, Role.ADMIN], '/admin');
+  const { previewing } = await getEntitlements();
   const [assetCount, profileCount, activeAccess, billingAlerts, signalCount, usageCount] = await Promise.all([
     prisma.asset.count({ where: { isActive: true } }).catch(() => 0),
     prisma.profile.count({ where: { role: 'MEMBER' } }).catch(() => 0),
@@ -37,6 +40,12 @@ export default async function AdminOverviewPage() {
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">Operational Overview</h1>
           <p className="mt-2 text-sm text-muted-foreground">Assets, customers, billing, access and analytics are deliberately separated.</p>
         </div>
+      </BlurFade>
+
+      <BlurFade delay={0.12}>
+        <Card title="View as a member">
+          <ViewAsSwitch previewing={previewing} />
+        </Card>
       </BlurFade>
 
       <BlurFade delay={0.15}>

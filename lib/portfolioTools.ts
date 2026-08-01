@@ -1,4 +1,4 @@
-import { Calculator, CheckSquare, History, Wallet, Briefcase, ShieldAlert, PiggyBank } from 'lucide-react';
+import { Calculator, CheckSquare, History, Wallet, Briefcase, ShieldAlert, PiggyBank, Percent, TrendingUp } from 'lucide-react';
 
 // SINGLE SOURCE OF TRUTH for the Portfolio Tools.
 //
@@ -71,6 +71,26 @@ export const PORTFOLIO_TOOLS: PortfolioTool[] = [
     description:
       'Your CFO-style check-up. Enter income, expenses, savings, debts and goals, then simulate thousands of financial futures to see your emergency runway, biggest risks and the changes that matter most.',
     short: 'CFO-style check-up on your money.',
+  },
+  {
+    href: '/app/portfolio-tools/compound-interest',
+    icon: TrendingUp,
+    iconBg: 'bg-primary/10',
+    iconColor: 'text-primary',
+    title: 'Compound Interest',
+    description:
+      'What a pot becomes over time, with or without regular top-ups. Set the rate, how often it compounds, and how often you pay in, then read the year-by-year breakdown of what came from your money and what came from growth.',
+    short: 'Grow a pot over time, year by year.',
+  },
+  {
+    href: '/app/portfolio-tools/cagr',
+    icon: Percent,
+    iconBg: 'bg-amber-500/10',
+    iconColor: 'text-amber-500',
+    title: 'CAGR Calculator',
+    description:
+      'The annual growth rate behind a result. Give a starting value, an ending value and a number of years, and get the compound annual rate, the total return, and how long the same rate would take to reach a target.',
+    short: 'The yearly rate behind a result.',
   },
   {
     href: '/app/portfolio-tools/due-diligence',

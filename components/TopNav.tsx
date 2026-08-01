@@ -7,8 +7,9 @@ import { usePathname } from 'next/navigation';
 import type { SessionUser } from '@/lib/auth';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { TickerStrip } from '@/components/market/TickerStrip';
+import { ViewAsBanner } from '@/components/ViewAsSwitch';
 
-type NavUser = Pick<SessionUser, 'name' | 'email' | 'role' | 'accessState'> | null;
+type NavUser = (Pick<SessionUser, 'name' | 'email' | 'role' | 'accessState'> & { previewFreeTier?: boolean }) | null;
 
 type NavItem = { href: string; label: string; icon: typeof LayoutDashboard };
 
@@ -130,6 +131,7 @@ export function TopNav({ children, initialUser }: { children: React.ReactNode; i
       </aside>
 
       <header className="sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur-xl lg:pl-72">
+        {initialUser?.previewFreeTier && <ViewAsBanner />}
         <div className="flex min-h-14 items-center justify-between gap-3 px-4 lg:px-6">
           <div className="lg:hidden">
             <Link href="/app" className="flex items-center gap-2">

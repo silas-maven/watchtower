@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { CandleChart, type OverlaySeries } from '@/components/charts/CandleChart';
 import { bollinger, sma, stochastic, type Ohlc } from '@/lib/indicators';
 
@@ -42,6 +43,7 @@ export function IndicatorView({ assetId }: { assetId: string }) {
   const [points, setPoints] = useState<Ohlc[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCandles, setShowCandles] = useState(true);
+  const [locked, setLocked] = useState(false);
   const [showBollinger, setShowBollinger] = useState(true);
   const [showMa50, setShowMa50] = useState(false);
   const [showMa200, setShowMa200] = useState(false);
@@ -52,6 +54,13 @@ export function IndicatorView({ assetId }: { assetId: string }) {
       const range = timeframe === '1d' ? '1y' : '5y';
       const res = await fetch(`/api/assets/${assetId}/history?range=${range}&interval=${timeframe}&full=1`, { cache: 'no-store' });
       const j = await res.json();
+      // The deep series behind the indicators is a paid feature. Say so plainly
+      // rather than rendering an empty chart that reads as broken.
+      if (res.status === 402 || j.error?.code === 'PAYWALL') {
+        setLocked(true);
+        return;
+      }
+      setLocked(false);
       if (j.ok) setPoints(j.data.points ?? []);
     } catch {
       /* keep previous points */
@@ -104,6 +113,24 @@ export function IndicatorView({ assetId }: { assetId: string }) {
     const d = lowerPane.series[1].points.at(-1)?.value ?? null;
     return k == null || d == null ? null : { k, d };
   }, [lowerPane]);
+
+  if (locked) {
+    return (
+      <div className="rounded-2xl border border-border bg-muted/20 p-8 text-center">
+        <div className="font-bold text-foreground">Indicators are a members feature</div>
+        <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+          Bollinger bands, moving averages and stochastics come with the paid membership, alongside the master watchlist,
+          buy and sell alerts and the portfolio tools.
+        </p>
+        <Link
+          href="/pricing"
+          className="mt-5 inline-flex rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition hover:brightness-110"
+        >
+          See what membership includes
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

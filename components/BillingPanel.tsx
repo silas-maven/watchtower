@@ -1,21 +1,24 @@
 'use client';
 
 import { useState } from 'react';
+import { ArrowUpRight } from 'lucide-react';
 import { useToast } from '@/components/ui/ToastProvider';
+import { ACADEMY_OFFERS } from '@/lib/academyOffers';
+
+const ECOURSE = ACADEMY_OFFERS.find((o) => o.id === 'ecourse')!;
 
 type Props = {
   hasCustomer: boolean;
   membershipStatus: string | null;
   currentPeriodEnd: string | null;
   membershipPriceLabel: string;
-  ecoursePriceLabel: string;
 };
 
-export function BillingPanel({ hasCustomer, membershipStatus, currentPeriodEnd, membershipPriceLabel, ecoursePriceLabel }: Props) {
+export function BillingPanel({ hasCustomer, membershipStatus, currentPeriodEnd, membershipPriceLabel }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
   const { pushToast } = useToast();
 
-  async function startCheckout(product: 'membership' | 'ecourse') {
+  async function startCheckout(product: 'membership') {
     setBusy(product);
     try {
       const res = await fetch('/api/stripe/checkout', {
@@ -90,21 +93,22 @@ export function BillingPanel({ hasCustomer, membershipStatus, currentPeriodEnd, 
           )}
         </div>
 
+        {/* The eCourse is sold on Whop, not here. It used to have its own Stripe
+            price in this panel; two ways to buy one product is how somebody ends
+            up paying twice. This links out instead. */}
         <div className="rounded-2xl border border-border bg-muted/20 p-5">
-          <div className="flex items-center justify-between">
-            <div className="text-sm font-semibold text-foreground">SPArtan Investing eCourse</div>
-            <div className="text-sm font-bold text-foreground">{ecoursePriceLabel}</div>
-          </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            One-time purchase. The full course covering the SPA method end to end.
-          </p>
-          <button
-            onClick={() => startCheckout('ecourse')}
-            disabled={busy != null}
-            className="mt-4 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground transition hover:bg-muted/40 disabled:opacity-60"
+          <div className="text-sm font-semibold text-foreground">{ECOURSE.title}</div>
+          <p className="mt-2 text-xs text-muted-foreground">{ECOURSE.blurb}</p>
+          <a
+            href={ECOURSE.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground transition hover:bg-muted/40"
           >
-            {busy === 'ecourse' ? 'Starting…' : 'Buy the eCourse'}
-          </button>
+            {ECOURSE.cta}
+            <ArrowUpRight className="h-4 w-4" />
+          </a>
+          <div className="mt-1 text-center text-[11px] text-muted-foreground">Opens {ECOURSE.destination}</div>
         </div>
       </div>
 

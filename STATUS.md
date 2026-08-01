@@ -157,6 +157,57 @@ Phase 1 market data engine (everything depends on real prices) → Phase 2 summa
 
 ## Session Log
 
+### 2026-08-03
+- **POLICY CHANGE, owner's decision: access now follows payment automatically.** The
+  long-standing "never auto-cut access" rule is retired. New rule lives in one pure,
+  tested place, `lib/subscriptions/access.ts`, so the Stripe webhook and the nightly
+  overdue sweep cannot disagree. `decideFromSubscriptionEvent` GRANTs on
+  active/trialing, REVOKEs on deleted/canceled/unpaid/incomplete_expired, HOLDs on
+  past_due (Stripe is still retrying). `decideFromOverdueStage` REVOKEs at stage 3,
+  which is 10+ days past due, deliberately past the bulk of Stripe's retry window.
+  `cancel_at_period_end` reads as active, so a member who has cancelled keeps access
+  through the period they paid for.
+- **"Revoke" means tier → FREE, NOT accessState → PAUSED/REMOVED.** Judgement call,
+  stated to the user: a full lockout would also block the member from reaching the
+  page where they could pay. Ejecting somebody stays a manual act on Members.
+  `applyAccessDecision` never touches OWNER/ADMIN, is idempotent (no-ops when the
+  tier already matches, so the nightly sweep does not re-alert), and writes an
+  `access_withdrawn` / `access_restored` BillingAlert. 7 new tests.
+- Pricing-page FAQ said "your access is never removed automatically". Rewritten, it
+  would have been a false promise the moment this shipped.
+- **Housekeeping.** 24 stale `payment_overdue` alerts closed via
+  `scripts/resolve-stale-billing-alerts.ts` (they came from the local sweep against
+  period-end dates that are now null, so nothing would ever have closed them; the
+  script only closes alerts for members not currently overdue). **In-app Stripe
+  eCourse checkout removed** now that the eCourse is sold on Whop: the `ecourse`
+  branch is gone from `/api/stripe/checkout`, the BillingPanel and pricing page link
+  out instead, and the webhook's one-off branch is deleted. `STRIPE_ECOURSE_PRICE_ID`
+  is now unread.
+- **Freemium preview.** `VIEW_AS_FREE_COOKIE` + `previewFreeTier` on SessionUser;
+  `isPaidUser` checks it FIRST so it also applies to owners and admins. Role is
+  deliberately left intact so `/admin` and the way back out stay reachable. Amber
+  banner while active. All existing gates inherit it because they all route through
+  `isPaidUser` / `requirePaid` / `getEntitlements`.
+- **Real gap found while checking the owner's four items: the indicator view was not
+  gated at all.** `/api/assets/[id]/history` only called `requireUser()`, and the
+  asset page rendered `<IndicatorView>` unconditionally, so free members had
+  Bollinger, MAs and stochastics. Now `requirePaid()` when `full=1` (the deep series
+  only the indicator view asks for), leaving the plain price chart open as the
+  taster. IndicatorView renders an upgrade panel on 402 rather than an empty chart.
+- **Two calculators** in the Portfolio Toolkit, not as new tabs (nav length was the
+  other complaint): `/app/portfolio-tools/compound-interest` and `/cagr`, backed by
+  `lib/growth.ts`. Stepped period-by-period on the LCM grid of the compounding and
+  contribution frequencies, so monthly deposits against quarterly compounding are
+  exact rather than approximated. 13 tests including textbook cases, the annuity-due
+  relationship, and a CAGR/compounding round trip. `cagr()` returns null rather than
+  a meaningless number for a zero start or zero years, and the UI explains why.
+- **Browser-verified** via harnesses (dev Clerk session is signed out). Caught and
+  fixed real clipping: currency figures were cut off in the result tiles because the
+  `xl:` breakpoint fires at 1280px while the 288px sidebar leaves far less content
+  width. Moved to `2xl:`. Re-checked at 375px: 83 numeric elements, none clipped, no
+  page overflow.
+- Typecheck and lint clean, 112 tests passing (was 92). Harnesses deleted.
+
 ### 2026-08-02
 - **Sell-signal asymmetry fixed (`lib/signals/engine.ts`).** `entryHit` had two clauses
   (range crosses the target, or the whole day traded below it, the second giving

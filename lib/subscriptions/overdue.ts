@@ -1,5 +1,6 @@
 import { Role, SubscriptionStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { applyAccessDecision, decideFromOverdueStage } from '@/lib/subscriptions/access';
 import { daysBetween } from '@/lib/time';
 
 export function computeOverdueStage(dueAt: Date, now = new Date()): number {
@@ -26,6 +27,7 @@ export async function runOverdueCheck(now = new Date()) {
 
   let flagged = 0;
   let notifications = 0;
+  let revoked = 0;
 
   for (const sub of subs) {
     const dueAt = sub.currentPeriodEnd;
@@ -35,11 +37,26 @@ export async function runOverdueCheck(now = new Date()) {
     if (stage === 0) {
       if (sub.status === SubscriptionStatus.OVERDUE) {
         await prisma.subscriptionMirror.update({ where: { id: sub.id }, data: { status: SubscriptionStatus.ACTIVE } });
+        // Paid up again, so give the membership back without waiting for a
+        // human. The Stripe webhook normally gets here first; this covers a
+        // renewal we only learned about from the period end moving.
+        await applyAccessDecision(sub.profileId, 'GRANT', 'The subscription is paid up to date again.').catch(() => undefined);
       }
       continue;
     }
 
     flagged += 1;
+
+    // Withdraw the paid tier once the account is far enough past due that
+    // Stripe's retries have had their run. Idempotent: applyAccessDecision does
+    // nothing if the profile is already on the free tier, so the sweep can run
+    // nightly without repeatedly alerting about the same person.
+    const outcome = await applyAccessDecision(
+      sub.profileId,
+      decideFromOverdueStage(stage),
+      `Payment has been outstanding for ${daysBetween(dueAt, now)} days.`,
+    ).catch(() => 'unchanged' as const);
+    if (outcome === 'revoked') revoked += 1;
     const previous = await prisma.billingAlert.findFirst({
       where: { profileId: sub.profileId, type: 'payment_overdue' },
       orderBy: { createdAt: 'desc' },
@@ -55,7 +72,10 @@ export async function runOverdueCheck(now = new Date()) {
 
     const days = daysBetween(dueAt, now);
     const title = `Payment overdue: ${sub.profile.email}`;
-    const body = `${sub.profile.email} is overdue by ${days} day(s). Admin review required; access is not changed automatically.`;
+    const body =
+      decideFromOverdueStage(stage) === 'REVOKE'
+        ? `${sub.profile.email} is overdue by ${days} day(s) and has been moved to the free tier automatically. They can still sign in and pay; paying restores the membership on its own.`
+        : `${sub.profile.email} is overdue by ${days} day(s). Access is unchanged for now and will be withdrawn automatically if it stays unpaid.`;
 
     await prisma.billingAlert.create({
       data: {
@@ -80,5 +100,5 @@ export async function runOverdueCheck(now = new Date()) {
     notifications += 1;
   }
 
-  return { scanned: subs.length, flagged, notifications };
+  return { scanned: subs.length, flagged, notifications, revoked };
 }

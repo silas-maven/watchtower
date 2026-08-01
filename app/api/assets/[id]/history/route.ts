@@ -1,5 +1,6 @@
 import { ok, fail } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
+import { requirePaid } from '@/lib/entitlements';
 import { prisma } from '@/lib/prisma';
 import { fromCaughtError } from '@/lib/route';
 import { fetchYahooOhlc, type ChartInterval, type ChartRange } from '@/lib/market/yahoo';
@@ -35,8 +36,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       : '1d';
 
     // `full=1` requests enough history for 200-period indicators regardless of
-    // the display range; the client slices what it shows.
+    // the display range; the client slices what it shows. That deeper series is
+    // only ever asked for by the indicator view, which is a paid feature, so the
+    // gate goes here rather than on the whole endpoint: the plain price chart on
+    // the asset page stays part of the free taster.
     const wantFull = search.get('full') === '1';
+    if (wantFull) await requirePaid();
     const fetchRange = wantFull
       ? RANGE_ORDER[Math.max(RANGE_ORDER.indexOf(range), RANGE_ORDER.indexOf(MIN_RANGE_FOR_INTERVAL[interval]))]
       : range;

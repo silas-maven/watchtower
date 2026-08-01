@@ -25,6 +25,87 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: '2026.08.03',
+    date: '2026-08-03',
+    title: 'Unpaid accounts now step down on their own, and two new calculators',
+    summary:
+      'Access follows payment automatically in both directions, after a ten day grace period. Admins can preview exactly what a free member sees. Compound Interest and CAGR calculators added, and indicators are now properly behind the membership.',
+    feedbackDoc: '2026-08-02 verbal feedback',
+    groups: [
+      {
+        heading: 'Payment and access',
+        items: [
+          {
+            title: 'An unpaid account steps down to the free plan by itself',
+            body: 'Until now a failed payment only raised an alert and a person had to act. Access now follows the payment. Nothing happens straight away, because cards fail for ordinary reasons and most go through on a retry, so the membership carries on while Stripe tries again. After ten days unpaid the account moves to the free plan: they keep their login, their holdings and their lists, but lose the watchlist, the alerts and the paid tools. A cancelled or ended subscription steps down at once, since there is nothing left to retry. A subscription merely set to cancel at the end of the period keeps everything until that date, because it has been paid for.',
+            feedback: 'Payment policy (2 August)',
+            href: '/admin/members',
+            linkLabel: 'Open Members',
+          },
+          {
+            title: 'Paying puts it straight back',
+            body: 'A successful payment restores the membership on its own, with no action needed from you. You can also reinstate anyone by hand from the Members page if you want them back sooner, and that decision is never overridden.',
+            feedback: 'Payment policy (2 August)',
+            href: '/admin/members',
+            linkLabel: 'Open Members',
+          },
+          {
+            title: 'Twenty four stale billing alerts cleared',
+            body: 'These were left over from earlier testing, raised against subscription dates that no longer exist, so nothing would ever have closed them. Twenty four open alerts across four members buries anything real. Only alerts for members who are not currently overdue were closed.',
+            feedback: 'Housekeeping (2 August)',
+            href: '/admin',
+            linkLabel: 'Open Admin',
+          },
+        ],
+      },
+      {
+        heading: 'Seeing what a free member sees',
+        items: [
+          {
+            title: 'Preview the free plan from Admin',
+            body: 'Admin now has a switch that shows you the members area exactly as somebody on the free plan sees it: no averaging planner, no buy and sell alerts, no indicators, no stress test. Your own account is not changed. A band across the top reminds you the preview is on, so missing features are never mistaken for a fault.',
+            feedback: 'Freemium preview (2 August)',
+            href: '/admin',
+            linkLabel: 'Open Admin',
+          },
+          {
+            title: 'Indicators are now actually behind the membership',
+            body: 'Checking the four things you named turned up a real gap: the indicator view, with the Bollinger bands, moving averages and stochastics, was open to anyone signed in, free plan included. It is now a paid feature, and free members see an explanation rather than an empty chart. The plain price chart on an asset page stays open to everyone as part of the taster.',
+            feedback: 'Freemium preview (2 August)',
+            href: '/app/assets',
+            linkLabel: 'Open Asset Centre',
+          },
+        ],
+      },
+      {
+        heading: 'New tools',
+        items: [
+          {
+            title: 'Compound Interest calculator',
+            body: 'What a pot becomes over time, with or without regular top-ups. Set the rate, how often it compounds and how often you pay in, and see the year by year breakdown of what came from your money and what came from growth. Monthly deposits against quarterly compounding are handled exactly rather than approximated.',
+            feedback: 'New calculators (2 August)',
+            href: '/app/portfolio-tools/compound-interest',
+            linkLabel: 'Open Compound Interest',
+          },
+          {
+            title: 'CAGR calculator',
+            body: 'The annual growth rate behind a result, plus the total return and how long the same rate would take to reach a target. Where the maths has no honest answer, such as growth from a starting value of zero, it says so instead of printing a number.',
+            feedback: 'New calculators (2 August)',
+            href: '/app/portfolio-tools/cagr',
+            linkLabel: 'Open CAGR',
+          },
+          {
+            title: 'Both sit in the Portfolio Toolkit, not as new tabs',
+            body: 'The navigation was already too long, which is the other thing you raised. Adding two more top-level tabs would have made that worse, so both calculators join the existing toolkit, which now lists nine tools from one shared list.',
+            feedback: 'New calculators (2 August)',
+            href: '/app/portfolio-tools',
+            linkLabel: 'Open Portfolio',
+          },
+        ],
+      },
+    ],
+  },
+  {
     version: '2026.08.02',
     date: '2026-08-02',
     title: 'Sell alerts now fire properly, and members can ask for any security',
