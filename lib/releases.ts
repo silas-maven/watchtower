@@ -106,6 +106,66 @@ export const RELEASES: Release[] = [
     ],
   },
   {
+    version: '2026.08.02b',
+    date: '2026-08-02',
+    title: 'Your other products on the Dashboard, and a shorter tab bar',
+    summary:
+      'The mentoring club, the eCourse, one to one mentoring, the one off discussion and the newsletter now sit on the member Dashboard, with links straight out to Whop, Acuity and Linktree. You can hide the two bookable services. The phone tab bar is two rows for admins instead of one very long one.',
+    feedbackDoc: '2026-08-01 verbal feedback',
+    groups: [
+      {
+        heading: 'Your products and services',
+        items: [
+          {
+            title: 'All five now appear on the member Dashboard',
+            body: 'The Spartan Mentoring Club and the eCourse link straight to Whop, one to one mentoring and the one off discussion to your Acuity booking pages, and the newsletter to your Linktree. The club and the course are marked as the pair most people take together, which is what you said the usual route is. Every card says where it is sending you, so leaving the app is never a surprise. These are shown to everyone including people on the free plan, because this is your shop front rather than a member benefit.',
+            feedback: 'Products and services (1 August)',
+            href: '/app',
+            linkLabel: 'Open Dashboard',
+          },
+          {
+            title: 'There is a newsletter button now',
+            body: 'There was no newsletter link anywhere in the app before. It now points at linktr.ee/stockpickers.',
+            feedback: 'Products and services (1 August)',
+            href: '/app',
+            linkLabel: 'Open Dashboard',
+          },
+          {
+            title: 'You can hide the two bookable services',
+            body: 'Admin, then Assets, has a Products and services panel where the one to one mentoring, the one off discussion and the newsletter can each be switched off when you have no capacity for them. The club and the course cannot be hidden, so the panel can never be emptied by accident.',
+            feedback: 'Products and services (1 August)',
+            href: '/admin/assets',
+            linkLabel: 'Open Admin Assets',
+          },
+        ],
+      },
+      {
+        heading: 'Getting around on a phone',
+        items: [
+          {
+            title: 'The tab bar is two rows for admins, not one long one',
+            body: 'As soon as you were given admin, your phone tab strip became a single scrolling line of fourteen tabs: the seven member ones, then the seven admin ones several swipes past the end with nothing to show they were there. It is now two labelled rows, Member and Admin, which matches how the sidebar already groups them on a laptop.',
+            feedback: 'Navigation (1 August)',
+            href: '/app',
+            linkLabel: 'Open Dashboard',
+          },
+        ],
+      },
+      {
+        heading: 'Adding assets',
+        items: [
+          {
+            title: 'Stronger protection against adding the same thing twice',
+            body: 'An exact ticker clash was always caught, but two other ways to end up with a duplicate were not. A deactivated asset still holds its ticker, so adding one back failed with "already exists" while it was nowhere on the watchlist and you were given no way forward; 61 assets are currently in that state. It now tells you the asset is deactivated and to reactivate it instead. Separately, two different tickers could point at the same underlying instrument, tracking one thing twice under two rows. That is now refused, naming the row that already has it. Checked against the live watchlist: there are no duplicates today.',
+            feedback: 'Duplication check (1 August)',
+            href: '/admin/assets',
+            linkLabel: 'Open Admin Assets',
+          },
+        ],
+      },
+    ],
+  },
+  {
     version: '2026.08.02',
     date: '2026-08-02',
     title: 'Sell alerts now fire properly, and members can ask for any security',

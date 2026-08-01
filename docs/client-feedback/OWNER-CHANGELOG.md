@@ -130,6 +130,107 @@ metered because each one costs a real AI call.
 
 ---
 
+## Payment now controls access, and two calculators (2 to 3 August)
+
+**An unpaid account steps down on its own.** See note 0000 at the top for the full
+explanation, including why it waits ten days and what "removed" actually means.
+
+**Preview the free plan from Admin.** There is a switch on the Admin overview that shows
+you the members area exactly as somebody on the free plan sees it: no averaging planner,
+no buy and sell alerts, no indicators, no stress test. Your own account is not changed. A
+band runs across the top while it is on, so a missing feature is never mistaken for a
+fault.
+
+**Indicators were not actually behind the membership.** Checking your four items turned
+this up. The indicator view, with the Bollinger bands, moving averages and stochastics,
+was open to anyone signed in, free plan included. It is a paid feature now, and free
+members see an explanation rather than an empty chart. The plain price chart on an asset
+page stays open to everyone.
+
+**Compound Interest calculator.** What a pot becomes over time, with or without regular
+top-ups, and a year by year breakdown of what came from your money and what came from
+growth.
+
+**CAGR calculator.** The annual growth rate behind a result, the total return, and how
+long the same rate would take to reach a target. Where the maths has no honest answer,
+such as growth from a starting value of zero, it says so rather than printing a number.
+
+**Both live in the Portfolio Toolkit, not as new tabs.** The navigation was already too
+long, which was the other thing you raised, so adding two more top level tabs would have
+made that worse. The toolkit now lists nine tools.
+
+**The in-app eCourse checkout is gone.** The eCourse sells on Whop now, and two ways to
+buy one thing is how somebody ends up paying twice. The pricing page and the billing
+panel link out instead.
+
+---
+
+## Your products on the Dashboard, and a shorter tab bar (1 to 2 August)
+
+**Your five products and services now appear on the member Dashboard.** The Spartan
+Mentoring Club and the eCourse link to Whop, the one to one mentoring and the one off
+discussion to your Acuity booking pages, and the newsletter to your Linktree. There was
+no newsletter link anywhere in the app before. The club and the course carry a note that
+most people take them together, which is what you said the usual route is. Each card says
+where it is sending you. These are shown to everyone including people on the free plan,
+because this is your shop front rather than a member benefit. Admin, then Assets, lets
+you hide the two bookable services and the newsletter; the club and the course cannot be
+hidden so the panel can never be emptied by accident.
+
+**The phone tab bar is two rows for admins.** As soon as you were given admin it became a
+single scrolling line of fourteen tabs, with the admin ones several swipes past the end
+and nothing to show they were there. Two labelled rows now, Member and Admin.
+
+**Stronger duplicate protection when adding an asset.** An exact ticker clash was always
+caught. Two other routes to a duplicate were not: a deactivated asset still holds its
+ticker, so adding one back failed with "already exists" while it was nowhere on the
+watchlist and gave you no way forward, and two different tickers could point at the same
+underlying instrument. Both are handled now. Checked against the live watchlist: there
+are no duplicates today.
+
+---
+
+## Sell alerts fixed, and requesting any security (1 to 2 August)
+
+**Sell alerts were missing cases.** See note 000 at the top. Seventeen securities should
+have been showing a sell and were silent.
+
+**Members can request any security, not just a stock.** The form asks what kind of thing
+it is, and optionally its name and where it trades. Those two extras matter more than
+they look: a ticker on its own is ambiguous across exchanges, and guessing wrong is how
+an asset ends up priced as a completely different instrument. The form is on the Master
+Watchlist as well as the Asset Centre, because asking for something missing belongs next
+to the list you just searched. Members can now see what happened to their own requests
+instead of them vanishing on send.
+
+**The admin request queue was rebuilt.** It shows how many are outstanding and who is
+asking, a table of requests per member with open and total counts, and a one click filter
+to see just that person's. The queue itself carries the ticker, name, market, type, who
+asked, why, and how long it has been waiting, and filters by status, type or member.
+Anything asked for by more than one member is pulled to the top, since that is the
+strongest signal for what to add next. Decisions record who and why, and the reason goes
+back to the member.
+
+---
+
+## Admin access fixed, and multi-select filters (1 August)
+
+**Being added as an admin now actually grants admin.** See note 00 at the top.
+
+**The market cap filter takes several sizes at once**, as tick boxes rather than one
+choice, with a count against each option.
+
+**A new filter for what kind of thing it is**: stocks, ETFs, crypto or commodities, and
+you can tick more than one. Stocks means stocks only, so ETFs are left out.
+
+**Assets with no market cap are findable instead of hidden.** Picking a cap size used to
+quietly drop every asset the price provider gives no market cap for. That is 264 of the
+814 on the watchlist; 76 are ETFs, which genuinely have none, but 188 are ordinary shares
+where the figure is simply missing on our side. There is a "No cap data" tick box now, and
+a count next to the filters showing how many of the total are on screen.
+
+---
+
 ## Mobile holdings, and every tool reachable (26 July)
 
 **Holdings read as cards on a phone.** The holdings list has thirteen columns, which is
@@ -349,16 +450,19 @@ These are known and tracked, not forgotten:
 - **Stress test coverage.** Overexposure is reported by stock, currency, cash and beta, but not
   yet by sector or country (country needs a new data field).
 - **Official logo file.** To be dropped in by the owner.
-- **The ~1,000-stock universe: ready to load, not yet loaded.** Your SPArtans watchlist
-  (1,067 tickers) has been checked against the live price provider. **866 resolve and
-  can be priced today** (702 shares, 83 crypto, 81 ETFs), including the London listings
-  and the crypto pairs. 199 do not resolve, and **158 of those are the rows your own
-  sheet shows as `#N/A`**, which means they have been delisted or renamed (for example
-  Activision, taken over by Microsoft). So roughly 95% of the names your sheet still
-  recognises are covered. The full unresolved list is saved to
-  `reference/universe-unresolved.csv` for you to review or correct. The load itself is
-  one command and is being held until you say go, because it adds those assets to the
-  live Asset Centre immediately.
+- **Stochastic and the 200 day moving average in the watchlist table.** You asked for
+  these alongside the range against yesterday's close. The maths already exists and is
+  tested, and they are already on the indicator view for a single asset. Putting them in
+  the table for all 814 assets is the part that needs a decision, because the price
+  history behind them is not stored: it is fetched from the provider per asset, so this
+  has to become a nightly job that computes and saves them, not something worked out as
+  the page loads. Some assets will also show "not enough history" for a 200 day average.
+  Waiting on your go-ahead.
+- **The Spartan Readiness Score and the Portfolio Health Check.** The larger piece from
+  your 27 July notes: the path dependent Spartan simulation, the readiness score, and
+  renaming the Stress Test to Portfolio Health Check with the report rebuilt and sent by
+  email. Designed and agreed, not yet built. The email part depends on the provider key
+  below.
 - **Email provider key.** The daily brief email is built and tested but cannot actually
   send until `RESEND_API_KEY` and a from-address on a domain you own are set. Until then
   every attempt is recorded as "no provider configured" rather than failing silently.
@@ -370,6 +474,12 @@ These are known and tracked, not forgotten:
   hard cap on the free watchlist size are still to add. Admins can now edit the
   reviewed RSS sources, fallback X account, and optional curated X List under
   Admin → Assets → Market Pulse sources.
+- **Stripe is still in test mode.** The keys in production are test keys, so no real
+  money has ever moved and no payment webhook has ever been received. Going live is more
+  than swapping the secret key: the product and prices have to be recreated in live mode
+  because test-mode prices do not exist there, a live webhook endpoint has to be created
+  with its own signing secret, and the site has to be redeployed for any of it to take
+  effect. Worth testing end to end in test mode first, since that path has never run.
 
 ---
 
