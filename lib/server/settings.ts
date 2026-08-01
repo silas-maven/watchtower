@@ -29,6 +29,9 @@ export const SETTING_DEFAULTS = {
   // Auto-fetched BOE rate (from the BoE IADB feed). The admin's manual
   // macro_boe_base_rate value, when set, overrides this.
   macro_boe_base_rate_auto: EMPTY_MACRO,
+  // Ids from lib/academyOffers.ts the owner has switched off. Only offers marked
+  // canHide can actually be hidden, enforced in visibleOffers().
+  academy_offers_hidden: [] as string[],
 } as const;
 
 export type SettingKey = keyof typeof SETTING_DEFAULTS;

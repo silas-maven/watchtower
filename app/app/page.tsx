@@ -9,6 +9,7 @@ import { BorderBeam } from '@/components/ui/border-beam';
 import { BlurFade } from '@/components/ui/blur-fade';
 import { TrendingDown } from 'lucide-react';
 import { PORTFOLIO_TOOLS } from '@/lib/portfolioTools';
+import { AcademyOffers } from '@/components/AcademyOffers';
 import { MarketPulseRail } from '@/components/news/MarketPulseRail';
 import { WeatherSnapshotBoard } from '@/components/market/WeatherSnapshotBoard';
 import { getMacroTiles, weatherInputsFromTiles } from '@/lib/market/macro';
@@ -187,6 +188,10 @@ export default async function MemberDashboard() {
           {/* Collapsible Market Pulse rail */}
           <MarketPulseRail xHandle={xHandle || 'StockTwits'} xListUrl={xListUrl || ''} />
         </div>
+      </BlurFade>
+
+      <BlurFade delay={0.35}>
+        <AcademyOffers />
       </BlurFade>
     </div>
   );

@@ -66,6 +66,23 @@ function NavLink({ href, label, icon: Icon, siblings }: NavItem & { siblings: Na
   );
 }
 
+/** One horizontally scrolling row of tabs, with a fade showing it scrolls. */
+function NavRow({ items, label }: { items: NavItem[]; label?: string }) {
+  return (
+    <div className="relative">
+      {label && (
+        <div className="px-4 pb-1 text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">{label}</div>
+      )}
+      <div className="flex gap-2 overflow-x-auto px-4 pb-2">
+        {items.map((item) => (
+          <NavLink key={item.href} {...item} siblings={items} />
+        ))}
+      </div>
+      <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent" />
+    </div>
+  );
+}
+
 export function TopNav({ children, initialUser }: { children: React.ReactNode; initialUser: NavUser }) {
   const pathname = usePathname();
   const { isSignedIn } = useUser();
@@ -138,13 +155,16 @@ export function TopNav({ children, initialUser }: { children: React.ReactNode; i
         </div>
         {/* The tab strip scrolls sideways on phones. The right-edge fade is the
             affordance that tells members there are more tabs than fit, which is
-            how Portfolio and Personal Finance were being missed entirely. */}
-        <div className="relative lg:hidden">
-          <div className="flex gap-2 overflow-x-auto px-4 pb-3">
-            {memberItems.map((item) => <NavLink key={item.href} {...item} siblings={memberItems} />)}
-            {canAdmin && adminItems.map((item) => <NavLink key={item.href} {...item} siblings={adminItems} />)}
-          </div>
-          <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent" />
+            how Portfolio and Personal Finance were being missed entirely.
+
+            Admins get a SECOND row rather than one strip of fourteen. Chaining
+            both sets into a single line meant the admin tabs sat several swipes
+            past the end of the member ones, with no sign they were there. Two
+            labelled rows also make it obvious which workspace a tab belongs to,
+            which matches how the desktop sidebar already groups them. */}
+        <div className="lg:hidden">
+          <NavRow items={memberItems} label={canAdmin ? 'Member' : undefined} />
+          {canAdmin && <NavRow items={adminItems} label="Admin" />}
         </div>
         {initialUser && <TickerStrip />}
       </header>

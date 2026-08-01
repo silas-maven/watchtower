@@ -51,8 +51,41 @@ export async function POST(req: Request) {
     const input = parsed.data;
     const symbol = input.symbol.trim().toUpperCase();
 
+    // Duplicate protection. The symbol column is unique, so an exact clash was
+    // always caught, but two OTHER routes to a duplicate were not:
+    //
+    //   1. A deactivated asset still holds its symbol. The old check rejected
+    //      the add with "already exists" while the asset was nowhere on the
+    //      watchlist, leaving no way forward from the UI. 61 assets are
+    //      currently inactive, so this was reachable. Now it says so and offers
+    //      reactivation as the fix.
+    //   2. Two different symbols can point at the same quoteSymbol, which is
+    //      the same instrument priced twice under two rows. Nothing stopped it.
     const existing = await prisma.asset.findUnique({ where: { symbol } });
-    if (existing) return fail('Asset symbol already exists', 409, 'SYMBOL_EXISTS');
+    if (existing) {
+      return existing.isActive
+        ? fail(`${symbol} is already on the watchlist as ${existing.name}.`, 409, 'SYMBOL_EXISTS')
+        : fail(
+            `${symbol} exists but is deactivated (${existing.name}). Reactivate it from the catalogue instead of adding it again.`,
+            409,
+            'SYMBOL_INACTIVE',
+          );
+    }
+
+    const quoteSymbol = input.quoteSymbol?.trim().toUpperCase() || null;
+    if (quoteSymbol) {
+      const sameInstrument = await prisma.asset.findFirst({
+        where: { quoteSymbol, isActive: true },
+        select: { symbol: true, name: true },
+      });
+      if (sameInstrument) {
+        return fail(
+          `${quoteSymbol} is already priced under ${sameInstrument.symbol} (${sameInstrument.name}). Adding it again would track the same instrument twice.`,
+          409,
+          'INSTRUMENT_EXISTS',
+        );
+      }
+    }
 
     const created = await prisma.asset.create({
       data: {
@@ -61,7 +94,7 @@ export async function POST(req: Request) {
         reason: input.reason?.trim() || null,
         assetType: input.assetType,
         currency: input.currency.trim().toUpperCase(),
-        quoteSymbol: input.quoteSymbol?.trim().toUpperCase() || null,
+        quoteSymbol,
         isActive: true,
         rule: {
           create: {

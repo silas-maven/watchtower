@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { fail, ok } from '@/lib/api';
 import { requireRole } from '@/lib/auth';
 import { fromCaughtError } from '@/lib/route';
+import { ACADEMY_OFFERS } from '@/lib/academyOffers';
 import { getSettings, setSetting, SETTING_DEFAULTS, type SettingKey } from '@/lib/server/settings';
 
 export const runtime = 'nodejs';
@@ -20,6 +21,15 @@ const MACRO_KEYS: SettingKey[] = ['macro_boe_base_rate', 'macro_uk_10y_gilt', 'm
 const NEWS_FEED_KEY: SettingKey = 'news_feed_urls';
 const NEWS_X_HANDLE_KEY: SettingKey = 'news_x_handle';
 const NEWS_X_LIST_KEY: SettingKey = 'news_x_list_url';
+const OFFERS_HIDDEN_KEY: SettingKey = 'academy_offers_hidden';
+
+// Only offers the registry marks as hideable may be switched off, so the
+// membership, the course and the newsletter cannot be hidden by a bad payload.
+const HIDEABLE_OFFER_IDS = ACADEMY_OFFERS.filter((o) => o.canHide).map((o) => o.id);
+const HiddenOffers = z.array(z.string()).max(20).refine(
+  (ids) => ids.every((id) => HIDEABLE_OFFER_IDS.includes(id)),
+  'Only the bookable services can be hidden',
+);
 
 const MacroValue = z.object({
   value: z.number().nullable(),
@@ -87,6 +97,10 @@ export async function PATCH(req: Request) {
       const listUrl = XListUrl.safeParse(value);
       if (!listUrl.success) return fail(listUrl.error.issues[0]?.message ?? 'Invalid X List URL', 400, 'INVALID_VALUE');
       await setSetting(key, listUrl.data as never, actor.id);
+    } else if (key === OFFERS_HIDDEN_KEY) {
+      const hidden = HiddenOffers.safeParse(value);
+      if (!hidden.success) return fail('Expected a list of hideable offer ids', 400, 'INVALID_VALUE');
+      await setSetting(key, hidden.data as never, actor.id);
     } else {
       return fail('Setting is not editable here', 400, 'NOT_EDITABLE');
     }
