@@ -25,6 +25,54 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: '2026.08.01',
+    date: '2026-08-01',
+    title: 'Admin access fixed, and the watchlist filters take more than one choice',
+    summary:
+      'Admin rights now apply on the next sign-in instead of only at sign-up, which is why the owner had been left without them. The Master Watchlist gains tick-box filters: several market caps at once, and a filter for stocks, ETFs, crypto or commodities.',
+    feedbackDoc: '2026-08-01 verbal feedback',
+    groups: [
+      {
+        heading: 'Admin access',
+        items: [
+          {
+            title: 'Being added as an admin now actually grants admin',
+            body: 'Admins are listed in an environment setting. That list was only ever read at the moment an account was first created, so anyone added to it afterwards kept the role they already had, permanently. The academy owner signed up on 14 June and was added to the admin list on 27 July, six weeks later, so the change could never reach him and signing out and back in would not have helped. The list is now re-checked every time someone signs in. Being taken off the list does not remove admin on its own, which stays a deliberate manual action, in line with how member access is handled.',
+            feedback: 'Admin configuration (1 August)',
+            href: '/admin',
+            linkLabel: 'Open Admin',
+          },
+        ],
+      },
+      {
+        heading: 'Master Watchlist',
+        items: [
+          {
+            title: 'Market cap filter takes several sizes at once',
+            body: 'The cap filter was a single choice, so Small and Mid could not be looked at together. It is now a tick-box list. Each option shows how many assets it covers, and only sizes that something in the list actually has are offered.',
+            feedback: 'Watchlist filters (1 August)',
+            href: '/app/watchlists#master-watchlist',
+            linkLabel: 'Open Master Watchlist',
+          },
+          {
+            title: 'A new filter for what kind of thing it is',
+            body: 'You can now narrow the list to stocks, ETFs, crypto or commodities, and tick more than one. Stocks means stocks only, so ETFs are left out rather than counted in with them.',
+            feedback: 'Watchlist filters (1 August)',
+            href: '/app/watchlists#master-watchlist',
+            linkLabel: 'Open Master Watchlist',
+          },
+          {
+            title: 'Assets with no market cap are findable instead of hidden',
+            body: 'Picking a cap size used to quietly drop every asset the price provider gives no market cap for. That is 264 of the 814 assets on the watchlist. 76 are ETFs, which genuinely have no market cap, but 188 are ordinary shares where the figure is simply missing on our side. There is now a "No cap data" tick box so those can be seen and worked through, and a count next to the filters showing how many of the total are on screen.',
+            feedback: 'Watchlist filters (1 August)',
+            href: '/app/watchlists#master-watchlist',
+            linkLabel: 'Open Master Watchlist',
+          },
+        ],
+      },
+    ],
+  },
+  {
     version: '2026.07.26',
     date: '2026-07-26',
     title: 'Holdings readable on a phone, and every tool reachable',

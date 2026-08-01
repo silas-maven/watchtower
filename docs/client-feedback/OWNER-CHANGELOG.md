@@ -11,6 +11,27 @@ link to each change. Per-round detail lives in the dated folders in this directo
 Read this bit first. Everything here is either an action only you can take, or a
 judgement call worth knowing about before beta.
 
+**00. Why the admin panel was not showing for you, plainly.**
+Admins are named in a setting on the server. That setting was only ever read at the
+moment an account was first created. Your account was created on 14 June. Your email
+was added to the admin list on 27 July, six weeks later. Because the list was never
+looked at again after sign-up, the change could not reach your account, and nothing
+you did at your end, signing out, signing back in, clearing the browser, would have
+made any difference. It was not a problem with your email address or the sign-in
+check on it.
+
+Two things have been done. Your account has been set to admin directly, so the panel
+is available to you now. And the code has been changed so the admin list is re-read
+every time anyone signs in, meaning anyone added in future gets access on their next
+sign-in rather than never. Taking someone off the list does not strip their admin on
+its own; that stays a deliberate manual step, the same way member access works.
+
+One thing worth knowing: there are 188 ordinary shares on the watchlist where our
+price provider gives us no market cap figure at all, out of 814. They are not broken,
+we just have no size for them. They used to disappear from the list whenever you
+picked a cap size, with nothing to say so. There is now a "No cap data" option in the
+filter so you can see exactly which ones they are.
+
 **0. The stress test was never removed. Straight answer, since you asked for one.**
 The Portfolio Stress Test and its Monte Carlo simulation were added on 19 July and
 have not been edited or deleted since. They were in the code and on the live site

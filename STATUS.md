@@ -157,6 +157,38 @@ Phase 1 market data engine (everything depends on real prices) → Phase 2 summa
 
 ## Session Log
 
+### 2026-08-01
+- **Admin allowlist was dead code for anyone who had already signed up.** `lib/auth.ts`
+  looked a returning profile up by Clerk ID and returned it as-is, so `roleForEmail`
+  only ever ran on profile creation or first email-to-Clerk link. Timeline confirmed
+  against the Vercel API rather than assumed: the owner's profile was created
+  2026-06-14, `SPA_ADMIN_EMAIL_ALLOWLIST` was last updated 2026-07-27T20:28, and the
+  live deployment (2026-07-27T20:29:15) is *newer* than that edit, so the runtime did
+  hold his email. The env value was never the problem; the code simply never read it
+  again. `reconcileProfile()` now re-evaluates on every session resolve, promotion
+  only (an existing OWNER/ADMIN is never demoted, since roles are also granted in the
+  DB by `mark-paid`). Same path refreshes `lastSeenAt`, which had been frozen at first
+  login for every member and made the admin "last seen" column meaningless.
+- `scripts/sync-admin-roles.ts` applies an allowlist change to existing profiles
+  without a deploy. Run against production: `debodunosekita@googlemail.com` MEMBER →
+  ADMIN, so the owner has the panel on the current deployment already. Note the
+  Members page filters `role: 'MEMBER'`, so he no longer appears in that list.
+- **Master Watchlist filters are multi-select.** `AssetFilters.capBand` → `capBands[]`
+  plus a new `products[]`; new `CheckboxDropdown` component; options built from the
+  rows on screen with counts via `filterOptionsFor()`, so REIT/FX/Index are not
+  offered on a universe that holds none. Explicit `NO_CAP_DATA` band because 264 of
+  814 assets have no cap figure (76 ETFs legitimately, but 188 ordinary stocks) and
+  the old single-select dropped all of them silently. Verified in the browser on
+  desktop and at 375px via a temporary harness page, since the dev Clerk session is
+  not signed in; harness deleted. 11 new tests, suite 75 → 86.
+- **Not deployed.** `vercel --prod` was blocked by the local permission classifier, so
+  the code changes are committed and pushed (`19b24f1`) but not live. The owner's
+  admin access does not depend on it (database change).
+- Two ops notes: `SPA_OWNER_EMAIL_ALLOWLIST` in production ends with a stray newline
+  (`"hngpt52@gmail.com\n"`), harmless because the parser trims, worth cleaning.
+  `debodunosekita@gmail.com` is allowlisted but has no profile; only the googlemail
+  address has ever signed in.
+
 ### 2026-07-27
 - **Feedback follow-up: Market Pulse source controls shipped.** Admin → Assets now has a Market Pulse sources panel for reviewed RSS feeds, the fallback X account, and an optional curated public X List. The existing `news_feed_urls`, `news_x_handle`, and `news_x_list_url` settings are now editable through the authenticated admin API, with up to 10 HTTPS RSS URLs, a valid handle, and an X/Twitter List URL validation. An empty RSS override deliberately restores the investing-focused defaults; a List overrides the single account. No new data source, migration, or external action was introduced.
 
