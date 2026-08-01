@@ -8,7 +8,7 @@ import { Badge } from '@/components/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/ToastProvider';
 import { AssetFilterBar } from '@/components/assets/AssetFilterBar';
-import { DEFAULT_ASSET_FILTERS, assetClassLabel, matchesAssetFilters, productLabel, type AssetFilters } from '@/lib/assetClass';
+import { DEFAULT_ASSET_FILTERS, assetClassLabel, filterOptionsFor, matchesAssetFilters, productLabel, type AssetFilters, type FilterableAssetRow } from '@/lib/assetClass';
 import type { WatchlistAssetRow, WatchlistRow } from '@/lib/server/watchlists';
 
 function fmt(n: number) {
@@ -52,21 +52,22 @@ export function WatchlistsClient({
   const activeAssetIds = useMemo(() => new Set(activeList?.assetIds ?? []), [activeList]);
   const listAssets = useMemo(() => assets.filter((a) => activeAssetIds.has(a.id)), [assets, activeAssetIds]);
   const currencies = useMemo(() => [...new Set(assets.map((a) => a.currency.toUpperCase()))].sort(), [assets]);
-  const filteredMaster = useMemo(
+  const filterRows = useMemo<FilterableAssetRow[]>(
     () =>
-      assets.filter((a) =>
-        matchesAssetFilters(
-          {
-            symbol: a.symbol,
-            name: a.name,
-            currency: a.currency,
-            signalState: a.latestSnapshot?.signalState ?? 'NONE',
-            marketCap: a.marketCap,
-          },
-          filters,
-        ),
-      ),
-    [assets, filters],
+      assets.map((a) => ({
+        symbol: a.symbol,
+        name: a.name,
+        currency: a.currency,
+        assetType: a.assetType,
+        signalState: a.latestSnapshot?.signalState ?? 'NONE',
+        marketCap: a.marketCap,
+      })),
+    [assets],
+  );
+  const options = useMemo(() => filterOptionsFor(filterRows), [filterRows]);
+  const filteredMaster = useMemo(
+    () => assets.filter((_, i) => matchesAssetFilters(filterRows[i], filters)),
+    [assets, filterRows, filters],
   );
 
   async function toggleItem(asset: WatchlistAssetRow) {
@@ -300,7 +301,15 @@ export function WatchlistsClient({
       <div id="master-watchlist" className="scroll-mt-20">
       <Card title="Master watchlist">
         <div className="mb-4">
-          <AssetFilterBar filters={filters} onChange={setFilters} currencies={currencies} />
+          <AssetFilterBar
+            filters={filters}
+            onChange={setFilters}
+            currencies={currencies}
+            capBandOptions={options.capBands}
+            productOptions={options.products}
+            matchCount={filteredMaster.length}
+            totalCount={assets.length}
+          />
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">

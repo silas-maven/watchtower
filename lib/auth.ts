@@ -49,6 +49,44 @@ function nameFromClaims(claims: ClaimBag, fallback?: string | null): string {
   return joined || fallback || 'SPA Member';
 }
 
+/** How stale lastSeenAt may get before we spend a write refreshing it. */
+const LAST_SEEN_REFRESH_MS = 60 * 60 * 1000;
+
+/**
+ * Bring a returning profile back in step with the environment allowlists.
+ *
+ * The allowlists used to be read only when a profile was CREATED, or when an
+ * existing email was first linked to a Clerk account. Adding an email after that
+ * therefore did nothing at all, ever: the profile row already existed, the
+ * lookup below returned it untouched, and roleForEmail was never consulted
+ * again. That is exactly how the academy owner stayed a MEMBER after being added
+ * to SPA_ADMIN_EMAIL_ALLOWLIST, and why no amount of signing out and back in
+ * fixed it.
+ *
+ * Promotion only, deliberately. roleForEmail never demotes an existing
+ * OWNER/ADMIN, so a role granted directly in the database is not wiped by an
+ * allowlist that happens to omit it. Taking admin away stays a manual act, in
+ * line with the academy rule that access is only ever changed on purpose.
+ */
+async function reconcileProfile(profile: Profile): Promise<Profile> {
+  const role = roleForEmail(profile.email, profile.role);
+  // lastSeenAt was also never updated on this path, so it read as the first
+  // login date for every member. Refresh it at most hourly rather than paying a
+  // write on every request.
+  const seenStale = !profile.lastSeenAt || Date.now() - profile.lastSeenAt.getTime() > LAST_SEEN_REFRESH_MS;
+  if (role === profile.role && !seenStale) return profile;
+
+  try {
+    return await prisma.profile.update({
+      where: { id: profile.id },
+      data: { ...(role === profile.role ? {} : { role }), lastSeenAt: new Date() },
+    });
+  } catch {
+    // Bookkeeping must never cost someone their session.
+    return profile;
+  }
+}
+
 function sessionUser(profile: Profile): SessionUser {
   return {
     id: profile.id,
@@ -78,7 +116,7 @@ async function resolveSessionUser(): Promise<SessionUser | null> {
   if (!userId) return null;
 
   const byClerk = await prisma.profile.findUnique({ where: { clerkUserId: userId } });
-  if (byClerk) return sessionUser(byClerk);
+  if (byClerk) return sessionUser(await reconcileProfile(byClerk));
 
   const claims = (authState.sessionClaims ?? {}) as ClaimBag;
   const fallback = await fallbackClerkIdentity();

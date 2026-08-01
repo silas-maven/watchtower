@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 import { Badge } from '@/components/Badge';
 import { AssetFilterBar } from '@/components/assets/AssetFilterBar';
 import { GeneratePitchButton } from '@/components/assets/GeneratePitch';
-import { DEFAULT_ASSET_FILTERS, assetClassLabel, matchesAssetFilters, productLabel, type AssetFilters } from '@/lib/assetClass';
+import { DEFAULT_ASSET_FILTERS, assetClassLabel, filterOptionsFor, matchesAssetFilters, productLabel, type AssetFilters } from '@/lib/assetClass';
 import { formatMarketCap } from '@/lib/marketCap';
 
 export type LibraryRow = {
@@ -42,11 +42,20 @@ export function AssetLibraryTable({ rows }: { rows: LibraryRow[] }) {
   const [filters, setFilters] = useState<AssetFilters>(DEFAULT_ASSET_FILTERS);
 
   const currencies = useMemo(() => [...new Set(rows.map((r) => r.currency.toUpperCase()))].sort(), [rows]);
+  const options = useMemo(() => filterOptionsFor(rows), [rows]);
   const filtered = useMemo(() => rows.filter((r) => matchesAssetFilters(r, filters)), [rows, filters]);
 
   return (
     <div className="space-y-4">
-      <AssetFilterBar filters={filters} onChange={setFilters} currencies={currencies} />
+      <AssetFilterBar
+        filters={filters}
+        onChange={setFilters}
+        currencies={currencies}
+        capBandOptions={options.capBands}
+        productOptions={options.products}
+        matchCount={filtered.length}
+        totalCount={rows.length}
+      />
 
       {filtered.length === 0 ? (
         <div className="py-8 text-center text-sm text-muted-foreground">No assets match the current filters.</div>

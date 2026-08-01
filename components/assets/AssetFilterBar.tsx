@@ -1,7 +1,8 @@
 'use client';
 
 import { Search } from 'lucide-react';
-import type { AssetFilters, SignalFilter } from '@/lib/assetClass';
+import { CheckboxDropdown, type CheckboxOption } from '@/components/ui/CheckboxDropdown';
+import { DEFAULT_ASSET_FILTERS, type AssetFilters, type CapBandFilter, type SignalFilter } from '@/lib/assetClass';
 
 const SIGNAL_OPTIONS: Array<{ value: SignalFilter; label: string }> = [
   { value: 'ALL', label: 'All' },
@@ -11,19 +12,31 @@ const SIGNAL_OPTIONS: Array<{ value: SignalFilter; label: string }> = [
   { value: 'ANY_ALERT', label: 'Any alert' },
 ];
 
-const CAP_BANDS = ['ALL', 'Small', 'Mid', 'Large', 'Mega'] as const;
-
 export function AssetFilterBar({
   filters,
   onChange,
   currencies,
+  capBandOptions,
+  productOptions,
+  matchCount,
+  totalCount,
   showSearch = true,
 }: {
   filters: AssetFilters;
   onChange: (next: AssetFilters) => void;
   currencies: string[];
+  capBandOptions: CheckboxOption[];
+  productOptions: CheckboxOption[];
+  matchCount?: number;
+  totalCount?: number;
   showSearch?: boolean;
 }) {
+  const narrowed =
+    filters.signal !== 'ALL' ||
+    filters.currency !== 'ALL' ||
+    filters.capBands.length > 0 ||
+    filters.products.length > 0 ||
+    filters.query.trim() !== '';
   const selectClass =
     'rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground focus:border-primary focus:outline-none';
 
@@ -50,16 +63,19 @@ export function AssetFilterBar({
         ))}
       </select>
 
-      <select
-        value={filters.capBand}
-        onChange={(e) => onChange({ ...filters, capBand: e.target.value as AssetFilters['capBand'] })}
-        className={selectClass}
-        aria-label="Market cap filter"
-      >
-        {CAP_BANDS.map((b) => (
-          <option key={b} value={b}>{b === 'ALL' ? 'All caps' : `${b} cap`}</option>
-        ))}
-      </select>
+      <CheckboxDropdown
+        label="All caps"
+        options={capBandOptions}
+        selected={filters.capBands}
+        onChange={(next) => onChange({ ...filters, capBands: next as CapBandFilter[] })}
+      />
+
+      <CheckboxDropdown
+        label="All types"
+        options={productOptions}
+        selected={filters.products}
+        onChange={(next) => onChange({ ...filters, products: next })}
+      />
 
       {showSearch && (
         <div className="flex min-w-40 items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-1.5">
@@ -71,6 +87,22 @@ export function AssetFilterBar({
             className="w-full bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
           />
         </div>
+      )}
+
+      {matchCount != null && totalCount != null && (
+        <span className="text-xs text-muted-foreground">
+          {narrowed ? `${matchCount.toLocaleString()} of ${totalCount.toLocaleString()}` : `${totalCount.toLocaleString()} assets`}
+        </span>
+      )}
+
+      {narrowed && (
+        <button
+          type="button"
+          onClick={() => onChange({ ...DEFAULT_ASSET_FILTERS })}
+          className="text-xs font-semibold text-muted-foreground transition hover:text-foreground"
+        >
+          Reset
+        </button>
       )}
     </div>
   );
