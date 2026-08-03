@@ -1,7 +1,12 @@
 # Watchtower (SPA - Stock Pickers Academy) — Status
 
 ## Current State
-Deployed at watchtower-virid.vercel.app (Next.js 16 + Prisma + Supabase `watchtower` schema + Clerk + Stripe). Member app (`/app/*`) and admin console (`/admin/*`) functional. Major pushes: Product v2 (2026-06-12/13), Spartan portfolio (2026-06-16), client-feedback round (2026-07-21). Typecheck clean, 57 unit tests pass.
+Deployed at watchtower-virid.vercel.app (Next.js 16 + Prisma + Supabase `watchtower` schema + Clerk + Stripe). Member app (`/app/*`) and admin console (`/admin/*`) functional. Major pushes: Product v2 (2026-06-12/13), Spartan portfolio (2026-06-16), client-feedback round (2026-07-21), 2-Aug owner round (2026-08-03). Typecheck clean, 132 unit tests pass across 18 files.
+
+**⚠ OPEN: the app is slow, and it is measured, not guessed.** Three separate causes, see `docs/HANDOVER-2026-08-03-AGENT.md` §2 and tasks #44-#47. Short version: (1) the Supabase transaction pooler medians **667ms** for `SELECT 1` while the direct connection medians **26ms** over the same network, which distance cannot explain and which looks like connection queuing (`connection_limit=1` is missing from the pooled URL); (2) functions run in **iad1** while the database is in **eu-central-2**, worth ~80-90ms per round trip, real but the smaller effect; (3) `getAssetsForDashboard()` pulls **815 rows / 207 KB in 2980ms** on every dashboard load and filters to a handful in JS. Nothing has been changed. `scripts/perf-probe.ts` reproduces all of it. Also found: production is serving Clerk **test keys** (`pk_test_...`), which is a go-live blocker alongside Stripe test mode.
+
+## 2026-08-03 — HANDOVER (weekly limit reached, work continues on another account)
+`docs/HANDOVER-2026-08-03-AGENT.md` is the agent-to-agent handover: state, the performance investigation with its evidence and its caveats, the conventions that are easy to get wrong, and the one bulk-script failure not to repeat. Read it before picking anything up.
 
 ## 2026-07-25 — SHIPPED ✅ commit `60d2d09`, pushed to `silas-maven/watchtower` main, deployed `vercel --prod`
 The whole batch below (freemium + live feed + all 9 sections of the 24-Jul feedback) is COMMITTED, PUSHED and LIVE. Prod smoke green: `/` 200, `/pricing` 200, `/app` + `/admin/releases` 404 unauth (normal Clerk protection), **new `/api/email/unsubscribe` 200 serving the right page (proves the new code is live)**, `/api/cron/send-daily-brief-email` 403 without the cron secret (correctly protected). All 3 migrations were already applied to the shared DB, and the 869-asset universe was loaded before the deploy.
