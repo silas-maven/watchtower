@@ -38,6 +38,11 @@ export const MEMBER_FEATURES = {
     title: 'Trade pitches are a members feature',
     message: 'The free plan includes one trade pitch a month. Paid members generate them on demand.',
   },
+  communityPost: {
+    title: 'Posting is a members feature',
+    message:
+      'The community feed is open for you to read. Posting, replying and liking come with the paid membership.',
+  },
 } as const;
 
 export type MemberFeature = keyof typeof MEMBER_FEATURES;

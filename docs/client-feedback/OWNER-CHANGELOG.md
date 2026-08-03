@@ -26,12 +26,20 @@ are the readings behind the view you have asked me never to describe publicly.
 The plain fundamentals, price, market cap, P/E, 52 week range and the rest, stay
 open to everyone.
 
-**00001. Requesting a security is still members only, and I think that is worth revisiting.**
-The request form sits on the watchlist page, which free members can now see. The
-form is hidden for them, because the request itself is gated and showing a form
-that gets refused on submit is worse than not showing it. But a free member
-asking you to cover something is a genuinely useful signal about what they want,
-and it costs you nothing beyond a queue entry. Say the word and I will open it.
+**00001. The community feed moderates after the fact, and that has a real window in it.**
+You chose no approval queue, which is the right call for how the feed feels to
+use. It does mean that between a member posting something defamatory, or a scam,
+and an admin seeing it, the post is live under your brand. Three things reduce
+that: the feed is invisible to anyone not signed in, so nothing leaks to Google;
+the report button is on every post for every member including free ones, since
+they do most of the reading; and links are refused outright, which removes the
+most common way a post does actual harm.
+
+If the window ever feels too wide, holding a member's first post for approval is
+a small change and only affects each person once.
+
+Also settled: free members do not get to request a security. No change was
+needed, that is how it already worked.
 
 **0000. Missed payments now remove access on their own. Read this before it happens to someone.**
 This is a change of policy, not a bug fix, so it is worth being precise about what
@@ -149,6 +157,42 @@ price-history back-fill: both good post-beta additions.
 **6. Free and paid is enforced on the server, not just hidden.** A free account cannot
 reach a members-only page or its data even by going straight to it. Trade pitches are
 metered because each one costs a real AI call.
+
+---
+
+## The community feed (3 August)
+
+Built, and the database is already migrated, so this goes live with the next
+deploy. Full detail in `docs/specs/COMMUNITY-FEED.md`.
+
+**What members get.** A Community Feed tab, fourth in the menu. Paying members
+write short posts under a display name of their own choosing, reply to each
+other, and like posts. Free members read the feed and can report a post, but do
+not post, reply or like. Signed-out visitors see nothing at all.
+
+**The display name is set once.** After that only the academy can change it.
+Free renaming would let someone shed a reputation whenever it suited them, and an
+old post would stop matching the person who wrote it.
+
+**The Dashboard slot.** Feature any post from the moderation page and it joins a
+rotation that changes every five seconds. With nothing featured it shows the
+newest posts instead, so it is never an empty box. It stops rotating while
+somebody is hovering or reading it, and while the tab is in the background.
+
+**Moderation is any admin.** A Community page under Admin lists everything
+posted, reported first, with the real name and email behind each alias. Hiding
+takes a post out of the feed but leaves it visible to its author, marked, so they
+know what happened rather than wondering. Removing takes it from everyone.
+Neither deletes anything, so both can be undone. Both need a reason, which is
+kept on file so there is an answer if it is ever queried.
+
+**What the feed refuses.** Links of any kind, because a feed on an investing
+platform where anyone can post a URL is a route for referral schemes and scams,
+and allowing them later is far easier than cleaning up after them. No images.
+Twenty posts per member per day, replies included. Every post sits under a line
+saying these are members' own views, not the academy's, and not advice.
+
+See note 00001 at the top about the one real limitation.
 
 ---
 

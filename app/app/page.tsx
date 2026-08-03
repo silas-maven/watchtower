@@ -11,6 +11,8 @@ import { Lock, TrendingDown } from 'lucide-react';
 import { PORTFOLIO_TOOLS } from '@/lib/portfolioTools';
 import { canUse } from '@/lib/entitlements';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
+import { FeaturedPost } from '@/components/community/FeaturedPost';
+import { getFeaturedPosts } from '@/lib/server/community';
 import { AcademyOffers } from '@/components/AcademyOffers';
 import { MarketPulseRail } from '@/components/news/MarketPulseRail';
 import { WeatherSnapshotBoard } from '@/components/market/WeatherSnapshotBoard';
@@ -43,7 +45,7 @@ export default async function MemberDashboard() {
   const paidSignals = canUse(profile, 'signals');
   const paidTools = canUse(profile, 'portfolio');
 
-  const [live, rows, watchItems, xHandle, xListUrl, macroTiles] = await Promise.all([
+  const [live, rows, watchItems, xHandle, xListUrl, macroTiles, featured] = await Promise.all([
     getLivePortfolioView(profile.id).catch(() => null),
     getAssetsForDashboard().catch(() => []),
     prisma.userWatchlistItem.findMany({
@@ -53,6 +55,7 @@ export default async function MemberDashboard() {
     getSetting('news_x_handle').catch(() => 'StockTwits'),
     getSetting('news_x_list_url').catch(() => ''),
     getMacroTiles().catch(() => new Map()),
+    getFeaturedPosts().catch(() => []),
   ]);
 
   const weather = classifyWeather(weatherInputsFromTiles(macroTiles));
@@ -179,6 +182,9 @@ export default async function MemberDashboard() {
                 </div>
               )}
             </div>
+
+            {/* The rotating community slot. Free to read, like the feed itself. */}
+            {featured.length > 0 && <FeaturedPost items={featured} />}
 
             {/* Portfolio Tools. Rendered from the shared registry, never hand-listed:
                 a hand-written subset here is what hid the Stress Test and Personal

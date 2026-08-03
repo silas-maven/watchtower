@@ -1,7 +1,8 @@
 # Community Feed: specification
 
-Status: **spec, not built.** Written 3 August 2026 from the owner's 2 August
-messages plus his 3 August answer on moderation.
+Status: **BUILT and migrated, 3 August 2026.** Written from the owner's 2 August
+messages, then settled and implemented after his 3 August answers. The open
+questions in section 5 are all answered; his decisions are recorded there.
 
 ## What the owner asked for
 
@@ -184,27 +185,53 @@ It should redirect to `/app/community` instead, or be deleted.
 
 ---
 
-## 5. Open questions for the owner
+## 5. Decisions, 3 August 2026
 
-These change what gets built, so they are worth a minute of his time.
+All four questions answered by the owner. Recorded here because the reasoning
+matters more than the answer if any of it is revisited.
 
-1. **Is the feed public to signed-out visitors, or members only?** He said
-   "public feed", which alongside "alias" suggests genuinely public, and that
-   would make it lead generation like the watchlist. But a public feed is
-   indexed by Google, which raises the stakes on moderation considerably.
-   Recommendation: **members only in v1**, public later once moderation has a
-   rhythm.
-2. **Can free-plan members post, or only read?** Recommendation: read only.
-   Posting rights being part of the membership is both a reason to pay and a
-   natural spam filter.
-3. **Should the first post from a new member be held for approval?** See the
-   honest limit above. Recommendation: yes, first post only.
-4. **Does he want a reply or like control at all?** The spec assumes neither.
+1. **Visibility: signed-in only.** Not public. He accepted the recommendation
+   once the indexing point was explained: a page reachable without signing in is
+   crawled and stored by search engines, so a member's post would appear in
+   search results against the academy's domain, and would linger in caches after
+   deletion. Sign-in only means a bad post is a problem inside the app rather
+   than a public record.
+2. **Free members read, they do not post.** "We may change that later." So the
+   feed has three levels: signed out sees nothing, free reads and can report,
+   paying posts, replies and likes.
+3. **No approval queue.** "If posting is for paying members, then once they pay,
+   they should just get access." Moderation is entirely after the fact. The
+   window described under "the honest limit" is therefore real and accepted:
+   between someone posting something bad and an admin seeing it, it is live.
+4. **Likes and replies are in.** "Engagement is good for them." Replies are one
+   level deep; a reply cannot be replied to.
+
+Also settled the same day: free members do **not** get to request a security
+either. That stays a paid feature.
 
 ---
 
-## 6. Deliberately out of scope for v1
+## 6. What was actually built
 
-Replies and threads, likes, following, notifications on activity, images, links,
-editing a published post, member profile pages, and search. Each is a reasonable
-v2 candidate; none is needed for the thing he described.
+- `CommunityPost` (posts and replies in one table) and `CommunityPostLike`,
+  plus `Profile.communityAlias`. Migration `20260803000000_community_feed`,
+  applied.
+- Rules in `lib/community.ts`, covered by `tests/community.test.ts`.
+- Reads in `lib/server/community.ts`; hidden and removed posts are filtered in
+  SQL for everyone but their author, so nothing withheld reaches the browser.
+- `/app/community` with the feed, composer, alias setup, likes and replies.
+- The rotating slot on the Dashboard, pausing on hover, on focus, when the tab
+  is hidden, and entirely under `prefers-reduced-motion`.
+- `/admin/community` for moderation, with a required reason on every takedown.
+- Nav: Community Feed fourth for members, Community in the admin row.
+
+Rate limit: 20 posts per member per rolling 24 hours, replies included.
+Links are stripped at both ends; images are not supported.
+
+---
+
+## 7. Deliberately out of scope
+
+Threads deeper than one reply, following, notifications on activity, images,
+links, editing a published post, member profile pages, and search. Each is a
+reasonable candidate later; none is needed for what he described.

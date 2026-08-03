@@ -25,6 +25,68 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: '2026.08.03c',
+    date: '2026-08-03',
+    title: 'The community feed is live',
+    summary:
+      'Members post under a name of their choosing, reply to each other and like posts, and a featured post rotates on the Dashboard every five seconds. Signed-out visitors see none of it. Any admin can moderate.',
+    feedbackDoc: '2026-08-02 WhatsApp feedback, scope settled 3 August',
+    groups: [
+      {
+        heading: 'The feed',
+        items: [
+          {
+            title: 'Members post, reply and like, under an alias',
+            body: 'A new Community Feed tab, fourth in the menu. Paying members write short posts under a display name they choose once, reply to each other one level deep, and like what they rate. A free member reads the feed and can report a post, but does not post, reply or like: posting is part of what the membership buys. The display name is set once and only the academy can change it afterwards, because a member who could rename themselves at will could shed a reputation whenever it suited them.',
+            feedback: 'Community feed (2 August)',
+            href: '/app/community',
+            linkLabel: 'Open the feed',
+          },
+          {
+            title: 'Nobody outside the academy can see it',
+            body: 'The feed sits behind sign-in, so a signed-out visitor sees nothing at all. That was a deliberate choice over making it public: anything reachable without signing in gets crawled and stored by search engines, so a member post would turn up in Google results against your domain, and would sit in caches even after it was deleted. This way a bad post is a problem inside your app, not a public record with your name on it.',
+            feedback: 'Community feed (3 August)',
+            href: '/app/community',
+            linkLabel: 'Open the feed',
+          },
+          {
+            title: 'A featured post rotates on the Dashboard every five seconds',
+            body: 'Feature any post from the moderation page and it joins the rotation. Nothing featured yet? The slot shows the newest posts instead, so it never sits empty. It stops rotating while someone is hovering or reading it with a keyboard, and while the tab is in the background, because a five second auto-advance is punishing for anyone reading at their own pace.',
+            feedback: 'Community feed (2 August)',
+            href: '/app',
+            linkLabel: 'Open Dashboard',
+          },
+        ],
+      },
+      {
+        heading: 'Moderation',
+        items: [
+          {
+            title: 'Any admin is a moderator',
+            body: 'No separate role to grant. Anyone with admin access sees a Community page listing everything posted, reported items first, with the real name and email behind each alias so you know who you are dealing with. Hiding takes a post out of the feed but leaves it visible to whoever wrote it, marked, so they are told what happened. Removing takes it from everyone. Neither deletes anything, so both can be undone, and both require a reason that is kept on file.',
+            feedback: 'Community feed (3 August)',
+            href: '/admin/community',
+            linkLabel: 'Open moderation',
+          },
+          {
+            title: 'What the feed will not accept',
+            body: 'No links, of any shape: a feed on an investing platform where anyone can post a URL is a route for referral schemes and scams, and it is far easier to allow them later than to clean up after them. No images. Twenty posts per member per day, replies included, so one person cannot flood it. Every post carries a standing line that these are members own views and not the academy, and not financial advice.',
+            feedback: 'Community feed (3 August)',
+            href: '/app/community',
+            linkLabel: 'Open the feed',
+          },
+          {
+            title: 'Worth knowing: moderation happens after the fact',
+            body: 'You chose no approval queue, so a paying member posts straight to the feed. That is the right call for how it feels to use, but it means there is a window between someone posting something bad and an admin seeing it. The report button is on every post for every member, including free ones, since they do most of the reading. If that window ever feels too wide, holding first posts for approval is a small change.',
+            feedback: 'Community feed (3 August)',
+            href: '/admin/community',
+            linkLabel: 'Open moderation',
+          },
+        ],
+      },
+    ],
+  },
+  {
     version: '2026.08.03b',
     date: '2026-08-03',
     title: 'The free plan opens up, and the signals become the thing you pay for',

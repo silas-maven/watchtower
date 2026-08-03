@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { SignInButton, UserButton, useUser } from '@clerk/nextjs';
-import { Activity, Bell, BriefcaseBusiness, Calculator, ChartCandlestick, Gauge, LayoutDashboard, Megaphone, Newspaper, PiggyBank, Settings, ShieldCheck, UsersRound } from 'lucide-react';
+import { Activity, Bell, BriefcaseBusiness, Calculator, ChartCandlestick, Gauge, LayoutDashboard, Megaphone, MessagesSquare, Newspaper, PiggyBank, Settings, ShieldCheck, UsersRound } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import type { SessionUser } from '@/lib/auth';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -13,13 +13,12 @@ type NavUser = (Pick<SessionUser, 'name' | 'email' | 'role' | 'accessState'> & {
 
 type NavItem = { href: string; label: string; icon: typeof LayoutDashboard };
 
-// Order set by the academy owner, 2 Aug 2026. Community Feed belongs between
-// Portfolio and Daily Checks; it is left out until the feed itself ships, since
-// a tab that leads nowhere is worse than a tab that arrives late.
+// Order set by the academy owner, 2 Aug 2026.
 const memberItems: NavItem[] = [
   { href: '/app', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/app/watchlists', label: 'Watchlists', icon: Bell },
   { href: '/app/portfolio-tools', label: 'Portfolio', icon: Calculator },
+  { href: '/app/community', label: 'Community Feed', icon: MessagesSquare },
   { href: '/app/daily-checks', label: 'Daily Checks', icon: Activity },
   // Personal Finance is a destination in its own right, not a sub-tool (24 Jul feedback).
   { href: '/app/portfolio-tools/personal-finance', label: 'Personal Finance', icon: PiggyBank },
@@ -34,6 +33,7 @@ const adminItems: NavItem[] = [
   { href: '/admin/analytics', label: 'Analytics', icon: Activity },
   { href: '/admin/ai-briefs', label: 'AI Briefs', icon: Newspaper },
   { href: '/admin/system-jobs', label: 'System Jobs', icon: ShieldCheck },
+  { href: '/admin/community', label: 'Community', icon: MessagesSquare },
   { href: '/admin/releases', label: "What's New", icon: Megaphone },
 ];
 

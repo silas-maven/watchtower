@@ -155,6 +155,11 @@ model Profile {
   // token so one-click unsubscribe works without signing in.
   dailyBriefEmail      Boolean     @default(false)
   emailUnsubToken      String?     @unique
+  /// Display name in the community feed. Null until the member picks one.
+  /// Unique so nobody can pose as another member; the API compares lowercased,
+  /// because a Postgres unique index is case sensitive and "Kyser" and "kyser"
+  /// would otherwise both be allowed.
+  communityAlias       String?     @unique
   createdAt            DateTime    @default(now())
   updatedAt            DateTime    @updatedAt
 
@@ -177,6 +182,9 @@ model Profile {
   stockRequests          StockRequest[]       @relation("StockRequestAuthor")
   decidedStockRequests   StockRequest[]       @relation("StockRequestDecider")
   emailDeliveries        EmailDelivery[]
+  communityPosts         CommunityPost[]      @relation("CommunityPostAuthor")
+  moderatedPosts         CommunityPost[]      @relation("CommunityPostModerator")
+  communityLikes         CommunityPostLike[]  @relation("CommunityPostLiker")
 
   @@index([role, accessState])
   @@index([lastSeenAt(sort: Desc)])
@@ -748,6 +756,76 @@ model StockRequest {
   @@index([profileId])
   @@index([symbol])
   @@map("watchtower_spa_stock_requests")
+}
+
+/// A member post in the community feed, and its replies.
+///
+/// Replies are the same model with a parent, not a separate table, so a
+/// moderator hides or removes one exactly as they do a post and no second code
+/// path can drift. Depth is capped at one in the API: a reply may not have a
+/// parent of its own.
+model CommunityPost {
+  id        String  @id @default(cuid())
+  profileId String
+
+  /// The alias in force when this was written, denormalised on purpose. A later
+  /// alias change must not silently rewrite what a member said last month.
+  alias String
+  body  String
+
+  /// Null for a top-level post; set for a reply.
+  parentId String?
+
+  /// PUBLISHED | HIDDEN | REMOVED. Never hard-deleted, so a moderation call can
+  /// be reviewed and reversed, and so a thread does not lose its shape.
+  status String @default("PUBLISHED")
+
+  /// Owner-chosen highlight, drives the rotating slot on the Dashboard.
+  featured Boolean @default(false)
+
+  /// Denormalised counters. The rows in CommunityPostLike are the truth; these
+  /// exist so the feed does not need an aggregate per row to render.
+  likeCount  Int @default(0)
+  replyCount Int @default(0)
+
+  /// Set when members report it, cleared when an admin resolves it.
+  reportCount Int @default(0)
+
+  /// The moderation trail. The reason has to survive the status flip, or nobody
+  /// can answer "why was my post taken down".
+  moderationNote String?
+  moderatedAt    DateTime?
+  moderatedById  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile     Profile             @relation("CommunityPostAuthor", fields: [profileId], references: [id], onDelete: Cascade)
+  moderatedBy Profile?            @relation("CommunityPostModerator", fields: [moderatedById], references: [id], onDelete: SetNull)
+  parent      CommunityPost?      @relation("CommunityPostThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     CommunityPost[]     @relation("CommunityPostThread")
+  likes       CommunityPostLike[]
+
+  @@index([parentId, status, createdAt])
+  @@index([status, createdAt(sort: Desc)])
+  @@index([featured, status, createdAt(sort: Desc)])
+  @@index([profileId, createdAt(sort: Desc)])
+  @@map("watchtower_spa_community_posts")
+}
+
+/// One like, by one member, on one post. The unique pair is what makes liking
+/// idempotent without the API having to check first.
+model CommunityPostLike {
+  postId    String
+  profileId String
+  createdAt DateTime @default(now())
+
+  post    CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  profile Profile       @relation("CommunityPostLiker", fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@id([postId, profileId])
+  @@index([profileId])
+  @@map("watchtower_spa_community_post_likes")
 }
 
 model PlatformSetting {
