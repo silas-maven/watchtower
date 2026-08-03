@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Copy, FileText, ChevronUp, ChevronDown } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
 import { useToast } from '@/components/ui/ToastProvider';
 
 type Rating = 'green' | 'amber' | 'red';
@@ -94,12 +95,15 @@ export function GeneratePitchButton({ assetId, symbol, compact = false }: { asse
   const [loading, setLoading] = useState(false);
   const [pitch, setPitch] = useState<Pitch | null>(null);
   const [order, setOrder] = useState<number[]>([]);
+  /** Set to the server's reason when the pitch is refused for entitlement. */
+  const [locked, setLocked] = useState<string | null>(null);
 
   async function generate() {
     setOpen(true);
     if (loading) return;
     setLoading(true);
     setPitch(null);
+    setLocked(null);
     setOrder([]);
     try {
       const res = await fetch('/api/ai/pitch', {
@@ -109,8 +113,14 @@ export function GeneratePitchButton({ assetId, symbol, compact = false }: { asse
       });
       const j = await res.json();
       if (j.ok && j.data?.pitch) {
+        setLocked(null);
         setPitch(j.data.pitch);
         setOrder(j.data.pitch.sections.map((_: unknown, i: number) => i));
+      } else if (res.status === 402 || j.error?.code === 'PAYWALL') {
+        // Deliberate: the button stays visible to free members and explains
+        // itself here, on click, rather than being hidden or greyed out. That is
+        // the owner's call (2 Aug 2026) and it is how the free plan gets sold.
+        setLocked(j.error?.message ?? null);
       } else {
         pushToast(j.error?.message ?? 'Could not generate the pitch', 'error');
         setOpen(false);
@@ -182,6 +192,14 @@ export function GeneratePitchButton({ assetId, symbol, compact = false }: { asse
         }
       >
         {loading && <PitchLoading />}
+        {locked && !loading && (
+          <div className="py-2">
+            <UpgradePrompt feature="pitch" />
+            {/* The server's own words underneath, so a member who has simply used
+                this month's pitch is told that, not sold a plan they already have. */}
+            <p className="mt-3 text-center text-xs text-muted-foreground">{locked}</p>
+          </div>
+        )}
         {pitch && !loading && (
           <div className="max-h-[60vh] space-y-4 overflow-y-auto pr-1">
             <div className="flex items-center justify-between gap-2">

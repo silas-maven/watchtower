@@ -1,11 +1,15 @@
 import Link from 'next/link';
 import { requirePageUser } from '@/lib/server/pageAuth';
+import { canUse } from '@/lib/entitlements';
 import { BlurFade } from '@/components/ui/blur-fade';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Lock } from 'lucide-react';
 import { PORTFOLIO_TOOLS } from '@/lib/portfolioTools';
 
 export default async function PortfolioToolsPage() {
-  await requirePageUser('/app/portfolio-tools');
+  const profile = await requirePageUser('/app/portfolio-tools');
+  // Locked tools stay on the page with a lock rather than disappearing: a free
+  // member should be able to see what the membership buys.
+  const paid = canUse(profile, 'portfolio');
 
   const tools = PORTFOLIO_TOOLS;
 
@@ -27,25 +31,35 @@ export default async function PortfolioToolsPage() {
       </BlurFade>
 
       <div className="grid gap-6">
-        {tools.map((tool, idx) => (
-          <BlurFade key={tool.href} delay={0.15 + idx * 0.1}>
-            <Link
-              href={tool.href}
-              className="group flex items-start gap-6 rounded-2xl border border-border bg-card p-6 transition-all duration-300 hover:bg-muted/50 hover:shadow-lg hover:border-primary/30"
-            >
-              <div className={`shrink-0 rounded-xl ${tool.iconBg} p-4`}>
-                <tool.icon className={`h-7 w-7 ${tool.iconColor}`} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-4">
-                  <h2 className="text-xl font-bold text-foreground">{tool.title}</h2>
-                  <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 -translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0" />
+        {tools.map((tool, idx) => {
+          const locked = !paid && !tool.free;
+          return (
+            <BlurFade key={tool.href} delay={0.15 + idx * 0.1}>
+              <Link
+                href={locked ? '/pricing' : tool.href}
+                className="group flex items-start gap-6 rounded-2xl border border-border bg-card p-6 transition-all duration-300 hover:bg-muted/50 hover:shadow-lg hover:border-primary/30"
+              >
+                <div className={`shrink-0 rounded-xl ${tool.iconBg} p-4`}>
+                  <tool.icon className={`h-7 w-7 ${tool.iconColor}`} />
                 </div>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{tool.description}</p>
-              </div>
-            </Link>
-          </BlurFade>
-        ))}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-4">
+                    <h2 className="flex items-center gap-2 text-xl font-bold text-foreground">
+                      {tool.title}
+                      {locked && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                          <Lock className="h-2.5 w-2.5" /> Members
+                        </span>
+                      )}
+                    </h2>
+                    <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 -translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0" />
+                  </div>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{tool.description}</p>
+                </div>
+              </Link>
+            </BlurFade>
+          );
+        })}
       </div>
     </div>
   );

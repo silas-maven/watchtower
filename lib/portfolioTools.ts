@@ -19,6 +19,13 @@ export type PortfolioTool = {
   description: string;
   /** One-line copy for compact grids (Dashboard). */
   short: string;
+  /**
+   * True for the tools the academy gives away (owner's instruction, 2 Aug 2026):
+   * personal finance and the two calculators are lead generation, not product.
+   * Everything else in this list needs a paid membership, and each of those has
+   * its own layout.tsx gate so the route cannot be reached by typing the URL.
+   */
+  free?: true;
 };
 
 export const PORTFOLIO_TOOLS: PortfolioTool[] = [
@@ -71,6 +78,7 @@ export const PORTFOLIO_TOOLS: PortfolioTool[] = [
     description:
       'Your CFO-style check-up. Enter income, expenses, savings, debts and goals, then simulate thousands of financial futures to see your emergency runway, biggest risks and the changes that matter most.',
     short: 'CFO-style check-up on your money.',
+    free: true,
   },
   {
     href: '/app/portfolio-tools/compound-interest',
@@ -81,6 +89,7 @@ export const PORTFOLIO_TOOLS: PortfolioTool[] = [
     description:
       'What a pot becomes over time, with or without regular top-ups. Set the rate, how often it compounds, and how often you pay in, then read the year-by-year breakdown of what came from your money and what came from growth.',
     short: 'Grow a pot over time, year by year.',
+    free: true,
   },
   {
     href: '/app/portfolio-tools/cagr',
@@ -91,6 +100,7 @@ export const PORTFOLIO_TOOLS: PortfolioTool[] = [
     description:
       'The annual growth rate behind a result. Give a starting value, an ending value and a number of years, and get the compound annual rate, the total return, and how long the same rate would take to reach a target.',
     short: 'The yearly rate behind a result.',
+    free: true,
   },
   {
     href: '/app/portfolio-tools/due-diligence',

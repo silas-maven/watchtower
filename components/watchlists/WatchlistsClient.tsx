@@ -9,6 +9,7 @@ import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/ToastProvider';
 import { AssetFilterBar } from '@/components/assets/AssetFilterBar';
 import { RequestSecurity } from '@/components/assets/RequestSecurity';
+import { UpgradePrompt, LockedValue } from '@/components/UpgradePrompt';
 import { DEFAULT_ASSET_FILTERS, assetClassLabel, filterOptionsFor, matchesAssetFilters, productLabel, type AssetFilters, type FilterableAssetRow } from '@/lib/assetClass';
 import type { WatchlistAssetRow, WatchlistRow } from '@/lib/server/watchlists';
 
@@ -26,9 +27,12 @@ function toneForSignal(state: string) {
 export function WatchlistsClient({
   initialAssets,
   initialLists,
+  paid,
 }: {
   initialAssets: WatchlistAssetRow[];
   initialLists: WatchlistRow[];
+  /** Free profiles see the master list, but not the academy's call on it. */
+  paid: boolean;
 }) {
   const [assets] = useState<WatchlistAssetRow[]>(initialAssets);
   const [lists, setLists] = useState<WatchlistRow[]>(initialLists);
@@ -61,6 +65,9 @@ export function WatchlistsClient({
         currency: a.currency,
         assetType: a.assetType,
         signalState: a.latestSnapshot?.signalState ?? 'NONE',
+        // NB: on a free profile every row reads NONE because the server sent no
+        // signal. The signal filter is hidden in that case, so nothing filters
+        // on this; it is only here to satisfy the shared row shape.
         marketCap: a.marketCap,
       })),
     [assets],
@@ -184,14 +191,21 @@ export function WatchlistsClient({
       <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
         <div>
           <div className="text-xs font-bold uppercase tracking-[0.28em] text-primary">Watchlists</div>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">Master list and your sublists</h1>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">
+            {paid ? 'Master list and your sublists' : 'Master watchlist'}
+          </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            The academy curates the master watchlist. You cannot change it, but you can build as many personal sublists from it as you like.
+            {paid
+              ? 'The academy curates the master watchlist. You cannot change it, but you can build as many personal sublists from it as you like.'
+              : 'The academy curates this list. Every asset it tracks is here, priced live, and free to browse.'}
           </p>
         </div>
       </div>
 
+      {!paid && <UpgradePrompt feature="watchlistTools" />}
+
       {/* Sublist switcher */}
+      {paid && (
       <div className="flex flex-wrap items-center gap-2">
         {lists.map((l) => (
           <div
@@ -246,8 +260,10 @@ export function WatchlistsClient({
           <Plus className="h-3.5 w-3.5" /> New list
         </button>
       </div>
+      )}
 
       {/* Active sublist */}
+      {paid && (
       <Card title={activeList ? `${activeList.name} (${listAssets.length})` : 'Your list'}>
         {listAssets.length === 0 ? (
           <div className="text-sm text-muted-foreground">This list is empty. Add assets from the master watchlist below.</div>
@@ -297,6 +313,7 @@ export function WatchlistsClient({
           </div>
         )}
       </Card>
+      )}
 
       {/* Master list */}
       <div id="master-watchlist" className="scroll-mt-20">
@@ -310,6 +327,7 @@ export function WatchlistsClient({
             productOptions={options.products}
             matchCount={filteredMaster.length}
             totalCount={assets.length}
+            showSignalFilter={paid}
           />
         </div>
         <div className="overflow-x-auto">
@@ -322,12 +340,12 @@ export function WatchlistsClient({
                 <th className="py-2 pr-3">Signal</th>
                 <th className="py-2 pr-3">Price</th>
                 <th className="py-2 pr-3">Change</th>
-                <th className="py-2 pr-3">{activeList ? `In ${activeList.name}` : 'Add'}</th>
+                {paid && <th className="py-2 pr-3">{activeList ? `In ${activeList.name}` : 'Add'}</th>}
               </tr>
             </thead>
             <tbody>
               {filteredMaster.map((asset) => {
-                const signal = asset.latestSnapshot?.signalState ?? 'NONE';
+                const signal = asset.latestSnapshot?.signalState;
                 const inList = activeAssetIds.has(asset.id);
                 return (
                   <tr key={asset.id} className="border-b border-border/50 align-top">
@@ -337,23 +355,27 @@ export function WatchlistsClient({
                     </td>
                     <td className="py-2 pr-3 text-xs text-muted-foreground">{assetClassLabel(asset.assetType)}</td>
                     <td className="py-2 pr-3 text-xs text-muted-foreground">{productLabel(asset.assetType)}</td>
-                    <td className="py-2 pr-3"><Badge tone={toneForSignal(signal)}>{signal}</Badge></td>
+                    <td className="py-2 pr-3">
+                      {signal == null ? <LockedValue /> : <Badge tone={toneForSignal(signal)}>{signal}</Badge>}
+                    </td>
                     <td className="py-2 pr-3 font-mono">{asset.latestSnapshot?.currentPrice == null ? '—' : `${fmt(asset.latestSnapshot.currentPrice)} ${asset.currency}`}</td>
                     <td className={`py-2 pr-3 font-mono ${asset.latestSnapshot?.dailyChangePct == null ? 'text-muted-foreground' : asset.latestSnapshot.dailyChangePct >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                       {asset.latestSnapshot?.dailyChangePct == null ? '—' : `${asset.latestSnapshot.dailyChangePct >= 0 ? '+' : ''}${fmt(asset.latestSnapshot.dailyChangePct)}%`}
                     </td>
-                    <td className="py-2 pr-3">
-                      <button
-                        onClick={() => toggleItem(asset)}
-                        disabled={busyAssetId === asset.id || !activeList}
-                        className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-semibold transition disabled:opacity-60 ${
-                          inList ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:bg-muted/40'
-                        }`}
-                      >
-                        <Star className={`h-3 w-3 ${inList ? 'fill-primary' : ''}`} />
-                        {inList ? 'Added' : 'Add'}
-                      </button>
-                    </td>
+                    {paid && (
+                      <td className="py-2 pr-3">
+                        <button
+                          onClick={() => toggleItem(asset)}
+                          disabled={busyAssetId === asset.id || !activeList}
+                          className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-semibold transition disabled:opacity-60 ${
+                            inList ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:bg-muted/40'
+                          }`}
+                        >
+                          <Star className={`h-3 w-3 ${inList ? 'fill-primary' : ''}`} />
+                          {inList ? 'Added' : 'Add'}
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 );
               })}
@@ -365,13 +387,20 @@ export function WatchlistsClient({
 
       {/* Asking for something missing belongs next to the list you searched.
           It previously only existed on the Asset Centre, which is not the route
-          most members take to look for a security. */}
+          most members take to look for a security.
+
+          Members only, unchanged from before this round: the request API is
+          gated, and showing a free profile a form that will be refused on submit
+          is worse than not showing it. Worth revisiting with the owner, since a
+          free member asking for coverage is a useful signal. */}
+      {paid && (
       <Card title="Not on the list?">
         <p className="mb-4 text-sm text-muted-foreground">
           Ask the academy to add it. Stocks, ETFs, crypto and commodities are all welcome.
         </p>
         <RequestSecurity />
       </Card>
+      )}
 
       {/* Create-list dialog */}
       <Modal

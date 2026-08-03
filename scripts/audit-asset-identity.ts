@@ -56,12 +56,18 @@ const MATCH_THRESHOLD = 0.34;
 type Row = { symbol: string; ours: string; theirs: string; price: number | null; score: number };
 
 async function main() {
+  // Macro rows are excluded on purpose. They carry an internal symbol (BTCUSD,
+  // SPX500, GOLD) and keep the provider ticker in quoteSymbol, but this audit
+  // quotes by symbol. On 27 July that mismatch put BTCUSD in the "provider will
+  // not quote it" bucket and --deactivate switched it off, which is why Bitcoin
+  // showed a dash on the member Dashboard for a week. The others survived only
+  // because their internal symbols happen to be real tickers of other things.
   const assets = await prisma.asset.findMany({
-    where: { isActive: true },
+    where: { isActive: true, isMacro: false },
     select: { id: true, symbol: true, name: true, assetType: true },
     orderBy: { symbol: 'asc' },
   });
-  console.log(`auditing ${assets.length} active assets against the price provider...`);
+  console.log(`auditing ${assets.length} active member-facing assets against the price provider...`);
 
   const mismatches: Row[] = [];
   const unpriced: string[] = [];

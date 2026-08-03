@@ -41,7 +41,7 @@ export type BriefHighlights = {
   stillActiveSell: BriefAssetRef[];
   /** Prior-day intraday range wider than 40% of the previous close. */
   extremeRange: ExtremeRangeRow[];
-  /** Reporting earnings during the current week. */
+  /** Reporting earnings in the next EARNINGS_WINDOW_DAYS days, from today. */
   earningsThisWeek: EarningsRow[];
   /** Requested but not derivable from current data; never fabricated. */
   unavailable: string[];
@@ -51,6 +51,9 @@ export type BriefHighlights = {
 
 /** Threshold from the feedback: (high - low) / previous close x 100. */
 export const EXTREME_RANGE_PCT = 40;
+
+/** How far ahead "reporting earnings" looks. Forward only, never backwards. */
+export const EARNINGS_WINDOW_DAYS = 7;
 
 // Upper sanity bound. Delisted and sub-penny names come back from the provider
 // with meaningless prices (a previous close of 3.9e-14 produced a "553,400,848%
@@ -69,6 +72,17 @@ export const UNAVAILABLE_REASONS = [
   'Rights-issue ex-dates: no dependable feed on the current data provider.',
   'All-time lows: needs complete adjusted history, so only "lowest on record here" is knowable today.',
 ];
+
+/**
+ * The forward window for "reporting earnings": from the start of today in the
+ * app timezone, to EARNINGS_WINDOW_DAYS later. Exported so it can be tested
+ * without a database, and so the "never look backwards" property is provable
+ * rather than asserted in a comment.
+ */
+export function earningsWindow(forDate: Date, timeZone: string): { from: Date; to: Date } {
+  const from = startOfDayInTimeZone(forDate, timeZone);
+  return { from, to: new Date(from.getTime() + EARNINGS_WINDOW_DAYS * 24 * 60 * 60 * 1000) };
+}
 
 function ref(asset: { symbol: string; name: string }): BriefAssetRef {
   return { symbol: asset.symbol, name: asset.name };
@@ -90,11 +104,14 @@ export async function getBriefHighlights(
   const todayStart = startOfDayInTimeZone(forDate, APP_TIMEZONE);
   const since = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
 
-  // The current week runs from the most recent Monday, in app-timezone terms.
-  const weekStart = new Date(todayStart);
-  const dow = (weekStart.getUTCDay() + 6) % 7; // Monday = 0
-  weekStart.setUTCDate(weekStart.getUTCDate() - dow);
-  const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+  // Earnings are a FORWARD window: today, plus the next seven days.
+  //
+  // This used to run from the most recent Monday, which meant a brief read on a
+  // Sunday listed the earnings of the Monday and Tuesday just gone. The
+  // 2 August brief showed 27 and 28 July, both already reported. "Reporting
+  // this week" only ever means something a member can still act on, so the
+  // window now starts today and never looks backwards.
+  const { from: earningsFrom, to: earningsTo } = earningsWindow(forDate, APP_TIMEZONE);
 
   const scope = assetIds ? { id: { in: assetIds } } : {};
 
@@ -169,7 +186,7 @@ export async function getBriefHighlights(
     }
 
     const earnings = asset.nextEarningsDate;
-    if (earnings && earnings >= weekStart && earnings < weekEnd) {
+    if (earnings && earnings >= earningsFrom && earnings < earningsTo) {
       earningsThisWeek.push({ ...ref(asset), date: earnings.toISOString().slice(0, 10) });
     }
   }

@@ -128,7 +128,7 @@ async function main() {
 
   // ---- Pass 1: the coins the academy lists must be the -USD pair -------------
   const cryptoCandidates = await prisma.asset.findMany({
-    where: { isActive: true, symbol: { in: [...INTENDED_CRYPTO] } },
+    where: { isActive: true, isMacro: false, symbol: { in: [...INTENDED_CRYPTO] } },
     select: { symbol: true, name: true },
   });
   for (const a of cryptoCandidates) {
@@ -159,8 +159,14 @@ async function main() {
   // The repair is to drop the bad override and price the bare ticker, which is
   // usually the listing the academy meant. Only if that fails do we try London,
   // and only if THAT fails is the row genuinely a token nobody asked for.
+  // isMacro is excluded here and in every other pass. The macro instruments
+  // behind the Weather / Market Snapshot tiles legitimately carry an internal
+  // symbol with the provider ticker in quoteSymbol, and Bitcoin's is BTC-USD.
+  // Without this filter, this pass tried to price the bare symbol "BTCUSD",
+  // failed, concluded the row was a stray token and deactivated it on 27 July.
+  // The tile then read as a dash on the member Dashboard until 3 August.
   const tokenPriced = await prisma.asset.findMany({
-    where: { isActive: true, quoteSymbol: { endsWith: '-USD' } },
+    where: { isActive: true, isMacro: false, quoteSymbol: { endsWith: '-USD' } },
     select: { symbol: true, name: true },
   });
   for (const a of tokenPriced) {

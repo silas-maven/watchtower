@@ -21,6 +21,7 @@ export function AssetFilterBar({
   matchCount,
   totalCount,
   showSearch = true,
+  showSignalFilter = true,
 }: {
   filters: AssetFilters;
   onChange: (next: AssetFilters) => void;
@@ -30,9 +31,15 @@ export function AssetFilterBar({
   matchCount?: number;
   totalCount?: number;
   showSearch?: boolean;
+  /**
+   * Off for free profiles. Withholding the signal column but leaving a "show me
+   * only the BUYs" filter would hand back the same information one click later,
+   * so the filter has to go wherever the column does.
+   */
+  showSignalFilter?: boolean;
 }) {
   const narrowed =
-    filters.signal !== 'ALL' ||
+    (showSignalFilter && filters.signal !== 'ALL') ||
     filters.currency !== 'ALL' ||
     filters.capBands.length > 0 ||
     filters.products.length > 0 ||
@@ -42,19 +49,21 @@ export function AssetFilterBar({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <div className="flex items-center gap-1 rounded-lg border border-border bg-background p-0.5">
-        {SIGNAL_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            onClick={() => onChange({ ...filters, signal: opt.value })}
-            className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${
-              filters.signal === opt.value ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
+      {showSignalFilter && (
+        <div className="flex items-center gap-1 rounded-lg border border-border bg-background p-0.5">
+          {SIGNAL_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => onChange({ ...filters, signal: opt.value })}
+              className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${
+                filters.signal === opt.value ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <select value={filters.currency} onChange={(e) => onChange({ ...filters, currency: e.target.value })} className={selectClass} aria-label="Currency filter">
         <option value="ALL">All currencies</option>
@@ -91,7 +100,9 @@ export function AssetFilterBar({
 
       {matchCount != null && totalCount != null && (
         <span className="text-xs text-muted-foreground">
-          {narrowed ? `${matchCount.toLocaleString()} of ${totalCount.toLocaleString()}` : `${totalCount.toLocaleString()} assets`}
+          {narrowed
+            ? `${matchCount.toLocaleString()} of ${totalCount.toLocaleString()}`
+            : `${totalCount.toLocaleString()} ${totalCount === 1 ? 'asset' : 'assets'}`}
         </span>
       )}
 

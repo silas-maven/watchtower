@@ -13,16 +13,26 @@ const WEATHER_STYLES = {
   FROSTY: { icon: Snowflake, accent: 'text-blue-500', chip: 'border-blue-500/30 bg-blue-500/10' },
 } as const;
 
+/**
+ * One market tile. Deliberately dense (owner, 2 Aug 2026: "can we make this
+ * smaller to fit more"): label on its own line, then value and change side by
+ * side rather than stacked, which is what buys back the vertical space.
+ */
 function Tile({ tile }: { tile: MacroTile }) {
   const up = tile.changePct != null && tile.changePct >= 0;
   const isStatic = tile.kind === 'static';
   const body = (
-    <div className="rounded-2xl border border-border bg-card p-3 text-center shadow-sm transition hover:bg-muted/40">
-      <div className="truncate text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{tile.label}</div>
-      <div className="mt-1 font-mono text-sm font-bold text-foreground">{formatMacroValue(tile)}</div>
-      <div className={`mt-0.5 font-mono text-[11px] ${isStatic || tile.changePct == null ? 'text-muted-foreground' : up ? 'text-emerald-500' : 'text-rose-500'}`}>
-        {tile.changePct == null ? '—' : `${isStatic ? '' : up ? '▲ ' : '▼ '}${Math.abs(tile.changePct).toFixed(2)}%`}
+    <div className="rounded-xl border border-border bg-card px-2 py-1.5 shadow-sm transition hover:bg-muted/40">
+      {/* Label and change share the top line, both short. The value then gets
+          the full width of the tile, which is what keeps a price like 4,127.60
+          from truncating once ten tiles sit across the panel. */}
+      <div className="flex items-baseline justify-between gap-1">
+        <span className="truncate text-[9px] font-bold uppercase tracking-wide text-muted-foreground">{tile.label}</span>
+        <span className={`shrink-0 font-mono text-[9px] ${isStatic || tile.changePct == null ? 'text-muted-foreground' : up ? 'text-emerald-500' : 'text-rose-500'}`}>
+          {tile.changePct == null ? '—' : `${isStatic ? '' : up ? '▲' : '▼'}${Math.abs(tile.changePct).toFixed(2)}%`}
+        </span>
       </div>
+      <div className="mt-0.5 font-mono text-xs font-bold tabular-nums text-foreground">{formatMacroValue(tile)}</div>
     </div>
   );
   return tile.assetId ? <Link href={`/assets/${tile.assetId}`}>{body}</Link> : body;
@@ -79,15 +89,15 @@ export function WeatherSnapshotBoard({
         </button>
       </div>
 
-      <div className="mt-4 space-y-3">
-        {visibleRows.map((row, i) => (
-          <div key={i} className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            {row.map((key) => {
-              const tile = tiles[key];
-              return tile ? <Tile key={key} tile={tile} /> : null;
-            })}
-          </div>
-        ))}
+      {/* One flat grid rather than one grid per row of five. The rows are only a
+          fixed ordering, not a grouping, so flattening lets a wide screen fit
+          ten across instead of five and keeps the panel short. Breakpoints
+          allow for the 288px sidebar: xl is ~1000px of usable width, not 1280. */}
+      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8">
+        {visibleRows.flat().map((key) => {
+          const tile = tiles[key];
+          return tile ? <Tile key={key} tile={tile} /> : null;
+        })}
       </div>
 
       <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">

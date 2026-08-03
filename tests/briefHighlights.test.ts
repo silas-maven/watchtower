@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EXTREME_RANGE_PCT, UNAVAILABLE_REASONS } from '@/lib/server/briefHighlights';
+import { EARNINGS_WINDOW_DAYS, EXTREME_RANGE_PCT, UNAVAILABLE_REASONS, earningsWindow } from '@/lib/server/briefHighlights';
 
 // The extreme-range rule from the 2026-07-24 feedback:
 //   intraday range % = (high - low) / previous close x 100
@@ -48,5 +48,38 @@ describe('extreme daily range detection', () => {
     expect(joined).toContain('dividend');
     expect(joined).toContain('rights');
     expect(joined).toContain('all-time low');
+  });
+});
+
+// The earnings window used to run from the most recent Monday, so a brief read
+// on a Sunday listed the Monday and Tuesday just gone. The 2 August 2026 brief
+// showed earnings dated 27 and 28 July, both already reported. The window is
+// now forward-only.
+describe('earnings window', () => {
+  const TZ = 'Europe/London';
+
+  it('starts today and never looks backwards', () => {
+    // A Sunday: the old rule would have started six days earlier, on the Monday.
+    const sunday = new Date('2026-08-02T09:00:00Z');
+    const { from, to } = earningsWindow(sunday, TZ);
+    expect(from.getTime()).toBeLessThanOrEqual(sunday.getTime());
+    // Nothing before today can fall inside it.
+    const lastMonday = new Date('2026-07-27T12:00:00Z');
+    expect(lastMonday >= from).toBe(false);
+    expect(to.getTime()).toBeGreaterThan(from.getTime());
+  });
+
+  it('spans exactly the configured number of days', () => {
+    const { from, to } = earningsWindow(new Date('2026-08-02T09:00:00Z'), TZ);
+    expect((to.getTime() - from.getTime()) / (24 * 60 * 60 * 1000)).toBe(EARNINGS_WINDOW_DAYS);
+  });
+
+  it('includes a date later today and excludes one just past the end', () => {
+    const now = new Date('2026-08-02T09:00:00Z');
+    const { from, to } = earningsWindow(now, TZ);
+    const laterToday = new Date('2026-08-02T20:00:00Z');
+    const justPast = new Date(to.getTime() + 60 * 1000);
+    expect(laterToday >= from && laterToday < to).toBe(true);
+    expect(justPast >= from && justPast < to).toBe(false);
   });
 });

@@ -4,6 +4,7 @@ import { BlurFade } from '@/components/ui/blur-fade';
 import { AssetLibraryTable, type LibraryRow } from '@/components/assets/AssetLibraryTable';
 import { RequestSecurity } from '@/components/assets/RequestSecurity';
 import { requirePageUser } from '@/lib/server/pageAuth';
+import { canUse } from '@/lib/entitlements';
 import { prisma } from '@/lib/prisma';
 import { computeSignalState, effectiveSignalState } from '@/lib/signals/engine';
 import { ensureFreshMarketData } from '@/lib/server/marketFreshness';
@@ -12,7 +13,10 @@ export const dynamic = 'force-dynamic';
 export const preferredRegion = 'fra1';
 
 export default async function AssetsPage() {
-  await requirePageUser('/app/assets');
+  const profile = await requirePageUser('/app/assets');
+  // Free profiles see the assets, not the academy's call on them. The signal and
+  // its price targets are withheld from the payload, not just from the markup.
+  const paid = canUse(profile, 'signals');
   await ensureFreshMarketData();
 
   const assets = await prisma.asset
@@ -37,14 +41,14 @@ export default async function AssetsPage() {
       name: asset.name,
       assetType: asset.assetType,
       currency: asset.currency,
-      signalState: effectiveSignalState(computed, asset.rule?.signalOverride),
-      ownerCall: asset.rule?.signalOverride != null,
+      signalState: paid ? effectiveSignalState(computed, asset.rule?.signalOverride) : null,
+      ownerCall: paid && asset.rule?.signalOverride != null,
       currentPrice: latest?.currentPrice ?? null,
       dailyChangePct: latest?.dailyChangePct ?? null,
       dailyLow: latest?.dailyLow ?? null,
       dailyHigh: latest?.dailyHigh ?? null,
-      targetEntry: asset.rule?.targetEntry ?? null,
-      targetExit: asset.rule?.targetExit ?? null,
+      targetEntry: paid ? asset.rule?.targetEntry ?? null : null,
+      targetExit: paid ? asset.rule?.targetExit ?? null : null,
       low52: latest?.low52 ?? asset.low52,
       high52: latest?.high52 ?? asset.high52,
       marketCap: latest?.marketCap ?? asset.marketCap,
@@ -76,17 +80,21 @@ export default async function AssetsPage() {
           {rows.length === 0 ? (
             <div className="text-sm text-muted-foreground">No assets are active yet.</div>
           ) : (
-            <AssetLibraryTable rows={rows} />
+            <AssetLibraryTable rows={rows} paid={paid} />
           )}
         </Card>
       </BlurFade>
 
+      {/* Members only: the request API is gated, so a free profile would meet a
+          402 on submit. See the note on the same panel in WatchlistsClient. */}
+      {paid && (
       <BlurFade delay={0.15}>
         <Card title="Request a security">
           <p className="mb-4 text-sm text-muted-foreground">Not tracking something you follow? Ask the academy to add it. Stocks, ETFs, crypto and commodities are all welcome.</p>
           <RequestSecurity />
         </Card>
       </BlurFade>
+      )}
     </div>
   );
 }

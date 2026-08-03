@@ -7,8 +7,10 @@ import { getLivePortfolioView } from '@/lib/server/livePortfolio';
 import { prisma } from '@/lib/prisma';
 import { BorderBeam } from '@/components/ui/border-beam';
 import { BlurFade } from '@/components/ui/blur-fade';
-import { TrendingDown } from 'lucide-react';
+import { Lock, TrendingDown } from 'lucide-react';
 import { PORTFOLIO_TOOLS } from '@/lib/portfolioTools';
+import { canUse } from '@/lib/entitlements';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
 import { AcademyOffers } from '@/components/AcademyOffers';
 import { MarketPulseRail } from '@/components/news/MarketPulseRail';
 import { WeatherSnapshotBoard } from '@/components/market/WeatherSnapshotBoard';
@@ -35,6 +37,11 @@ function toneForState(state: string) {
 
 export default async function MemberDashboard() {
   const profile = await requirePageUser('/app');
+  // The dashboard is mostly free: market weather, the member's own portfolio,
+  // the tool grid, the news rail. What is paid is the academy's call on assets,
+  // which is why Market Opportunities and the tracked-asset badges gate below.
+  const paidSignals = canUse(profile, 'signals');
+  const paidTools = canUse(profile, 'portfolio');
 
   const [live, rows, watchItems, xHandle, xListUrl, macroTiles] = await Promise.all([
     getLivePortfolioView(profile.id).catch(() => null),
@@ -118,7 +125,7 @@ export default async function MemberDashboard() {
                   myTrackedAssets.map((r) => (
                     <Link key={r.id} href={`/assets/${r.id}`} className="flex items-center justify-between gap-4 px-6 py-4 transition hover:bg-muted/50">
                       <div>
-                        <div className="flex items-center gap-2"><span className="font-bold text-foreground">{r.symbol}</span>{r.signalState !== 'NONE' && <Badge tone={toneForState(r.signalState)}>{r.signalState}</Badge>}</div>
+                        <div className="flex items-center gap-2"><span className="font-bold text-foreground">{r.symbol}</span>{paidSignals && r.signalState !== 'NONE' && <Badge tone={toneForState(r.signalState)}>{r.signalState}</Badge>}</div>
                         <div className="mt-1 text-sm text-muted-foreground">{r.name}</div>
                       </div>
                       <div className="text-right text-sm">
@@ -138,10 +145,18 @@ export default async function MemberDashboard() {
               <BorderBeam size={250} duration={12} delay={9} colorFrom="var(--primary)" colorTo="var(--background)" />
               <div className="border-b border-border bg-primary/5 px-6 py-4 flex items-center justify-between">
                 <h2 className="text-lg font-bold text-foreground flex items-center gap-2"><TrendingDown className="h-5 w-5 text-primary" /> Market Opportunities</h2>
-                <Badge tone="emerald">Buy Zones Active</Badge>
+                {paidSignals ? <Badge tone="emerald">Buy Zones Active</Badge> : <Badge tone="zinc">Members only</Badge>}
               </div>
               <div className="divide-y divide-border">
-                {marketOpportunities.length === 0 ? (
+                {/* This panel IS the signal: a live list of what is in the buy
+                    zone, with the academy's entry price beside it. It is the
+                    single most valuable thing on the page, so free profiles get
+                    the offer here rather than the answer. */}
+                {!paidSignals ? (
+                  <div className="p-6">
+                    <UpgradePrompt feature="signals" />
+                  </div>
+                ) : marketOpportunities.length === 0 ? (
                   <div className="p-8 text-center text-sm text-muted-foreground">No new opportunities in the buy zone right now.</div>
                 ) : (
                   marketOpportunities.slice(0, 5).map((r) => (
@@ -158,7 +173,7 @@ export default async function MemberDashboard() {
                   ))
                 )}
               </div>
-              {marketOpportunities.length > 5 && (
+              {paidSignals && marketOpportunities.length > 5 && (
                 <div className="border-t border-border bg-muted/30 px-6 py-3 text-center">
                   <Link href="/app/assets" className="text-sm font-semibold text-primary hover:underline">View all {marketOpportunities.length} opportunities</Link>
                 </div>
@@ -174,13 +189,19 @@ export default async function MemberDashboard() {
                 <Link href="/app/portfolio-tools" className="text-xs font-semibold text-primary hover:underline">Open Portfolio</Link>
               </div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {PORTFOLIO_TOOLS.map((tool) => (
-                  <Link key={tool.href} href={tool.href} className="rounded-2xl border border-border bg-card p-5 transition hover:bg-muted/50 hover:shadow-md">
-                    <div className={`w-fit rounded-xl ${tool.iconBg} p-3`}><tool.icon className={`h-6 w-6 ${tool.iconColor}`} /></div>
-                    <div className="mt-3 font-bold text-foreground">{tool.title}</div>
-                    <div className="mt-1 text-sm text-muted-foreground">{tool.short}</div>
-                  </Link>
-                ))}
+                {PORTFOLIO_TOOLS.map((tool) => {
+                  const locked = !paidTools && !tool.free;
+                  return (
+                    <Link key={tool.href} href={locked ? '/pricing' : tool.href} className="rounded-2xl border border-border bg-card p-5 transition hover:bg-muted/50 hover:shadow-md">
+                      <div className={`w-fit rounded-xl ${tool.iconBg} p-3`}><tool.icon className={`h-6 w-6 ${tool.iconColor}`} /></div>
+                      <div className="mt-3 flex items-center gap-2 font-bold text-foreground">
+                        {tool.title}
+                        {locked && <Lock className="h-3 w-3 shrink-0 text-muted-foreground" />}
+                      </div>
+                      <div className="mt-1 text-sm text-muted-foreground">{tool.short}</div>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           </div>

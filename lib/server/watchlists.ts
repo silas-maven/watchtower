@@ -18,7 +18,12 @@ export type WatchlistAssetRow = {
     dailyChangePct: number | null;
     dailyHigh: number | null;
     dailyLow: number | null;
-    signalState: WatchlistSignal;
+    /**
+     * Null for a free profile. The signal is the paid product, so it is left out
+     * of the payload rather than hidden in the markup: a value the browser never
+     * receives cannot be read out of the page source.
+     */
+    signalState: WatchlistSignal | null;
   } | null;
 };
 
@@ -30,9 +35,17 @@ export type WatchlistsPageData = { assets: WatchlistAssetRow[]; lists: Watchlist
  * Server-side loader for the watchlists page. Replaces the old client-side
  * waterfall (two no-store fetches, each re-running auth + getDefaultWatchlist).
  * One auth upstream, then assets + lists in parallel.
+ *
+ * `includeSignals` is the free/paid line: the master watchlist itself is open to
+ * everyone (the academy treats it as lead generation), the buy/sell state on it
+ * is not. Personal sublists are a paid tool, so a free profile gets none created
+ * and none returned.
  */
-export async function getWatchlistsPageData(profileId: string): Promise<WatchlistsPageData> {
-  await getDefaultWatchlist(profileId); // guarantee the member has at least one list
+export async function getWatchlistsPageData(
+  profileId: string,
+  { includeSignals = true }: { includeSignals?: boolean } = {},
+): Promise<WatchlistsPageData> {
+  if (includeSignals) await getDefaultWatchlist(profileId); // paying members get at least one list
 
   const [assets, lists] = await Promise.all([
     prisma.asset.findMany({
@@ -76,15 +89,18 @@ export async function getWatchlistsPageData(profileId: string): Promise<Watchlis
       assetType: a.assetType,
       currency: a.currency,
       marketCap: a.marketCap,
-      targetEntry: a.rule?.targetEntry ?? null,
-      targetExit: a.rule?.targetExit ?? null,
+      // The academy's entry and exit prices go with the signal. Withholding the
+      // BUY badge while still printing "Entry 41.20 / Exit 58.00" next to a live
+      // price gives the same call away by subtraction.
+      targetEntry: includeSignals ? a.rule?.targetEntry ?? null : null,
+      targetExit: includeSignals ? a.rule?.targetExit ?? null : null,
       latestSnapshot: snap
         ? {
             currentPrice: snap.currentPrice,
             dailyChangePct: snap.dailyChangePct,
             dailyHigh: snap.dailyHigh,
             dailyLow: snap.dailyLow,
-            signalState,
+            signalState: includeSignals ? signalState : null,
           }
         : null,
     };

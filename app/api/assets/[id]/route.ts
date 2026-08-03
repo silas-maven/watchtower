@@ -1,5 +1,6 @@
 import { ok, fail } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
+import { canUse } from '@/lib/entitlements';
 import { prisma } from '@/lib/prisma';
 import { fromCaughtError } from '@/lib/route';
 import { trackEvent } from '@/lib/server/trackEvent';
@@ -49,7 +50,14 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     });
     const signalState = effectiveSignalState(computed, asset.rule?.signalOverride);
 
+    // The asset itself is open to everyone: price, fundamentals, history. The
+    // academy's call on it (the signal, and the entry/exit prices the signal is
+    // derived from) is the paid product and is left out of the payload entirely
+    // rather than hidden in the UI, which would leave it readable in the JSON.
+    const paid = canUse(user, 'signals');
+
     return ok({
+      paid,
       asset: {
         id: asset.id,
         symbol: asset.symbol,
@@ -61,11 +69,11 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
         brokerEntryPrice: asset.brokerEntryPrice,
         averageEntryPrice: asset.averageEntryPrice,
         shares: asset.shares,
-        targetEntry: asset.rule?.targetEntry ?? null,
-        targetExit: asset.rule?.targetExit ?? null,
-        signalState,
-        signalOverride: asset.rule?.signalOverride ?? null,
-        snapshots: asset.snapshots,
+        targetEntry: paid ? asset.rule?.targetEntry ?? null : null,
+        targetExit: paid ? asset.rule?.targetExit ?? null : null,
+        signalState: paid ? signalState : null,
+        signalOverride: paid ? asset.rule?.signalOverride ?? null : null,
+        snapshots: asset.snapshots.map((s) => ({ ...s, signalState: paid ? s.signalState : null })),
         stats: {
           beta: asset.beta,
           low52: asset.low52,

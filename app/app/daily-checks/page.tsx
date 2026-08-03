@@ -7,9 +7,11 @@ import Link from 'next/link';
 import { getMemberBrief, type BriefScope, type MemberBriefAsset } from '@/lib/server/memberBrief';
 import { requirePageUser } from '@/lib/server/pageAuth';
 import { buildFallbackBrief, type DailyBriefStats } from '@/lib/ai/dailyBrief';
-import { getBriefHighlights, EXTREME_RANGE_PCT } from '@/lib/server/briefHighlights';
+import { getBriefHighlights, EARNINGS_WINDOW_DAYS, EXTREME_RANGE_PCT } from '@/lib/server/briefHighlights';
 import { ensureFreshMarketData } from '@/lib/server/marketFreshness';
 import { trackEvent } from '@/lib/server/trackEvent';
+import { canUse } from '@/lib/entitlements';
+import { BriefHeading } from '@/components/brief/BriefHeading';
 
 export const dynamic = 'force-dynamic';
 export const preferredRegion = 'fra1';
@@ -48,6 +50,9 @@ export default async function DailyChecksPage({
   searchParams: Promise<{ book?: string }>;
 }) {
   const profile = await requirePageUser('/app/daily-checks');
+  // Signals are the paid product; the earnings calendar and the market breadth
+  // are not (owner, 2 Aug 2026: "Earnings but is fine for freemium").
+  const paid = canUse(profile, 'signals');
   await ensureFreshMarketData();
 
   // Holdings default to the member's real book; the toggle switches to paper.
@@ -63,7 +68,14 @@ export default async function DailyChecksPage({
     getMemberBrief(profile.id, scope).catch(() => null),
     prisma.dailyBrief.findFirst({ orderBy: { briefDate: 'desc' } }).catch(() => null),
     getDailySignalSummary().catch(() => null),
-    trackedIds.length > 0 ? getBriefHighlights(new Date(), trackedIds).catch(() => null) : Promise.resolve(null),
+    // A free profile has no sublists to scope to, so the highlights are computed
+    // academy-wide. Only the earnings calendar out of that is shown to them; the
+    // signal counts are replaced by the upgrade prompt below.
+    paid
+      ? trackedIds.length > 0
+        ? getBriefHighlights(new Date(), trackedIds).catch(() => null)
+        : Promise.resolve(null)
+      : getBriefHighlights(new Date()).catch(() => null),
   ]);
 
   trackEvent(profile.id, 'PAGE_VIEW', undefined, '/app/daily-checks');
@@ -115,9 +127,44 @@ export default async function DailyChecksPage({
       <BlurFade delay={0.12}>
         <Card
           title="Your watchlist today"
-          right={<Badge tone="zinc">{memberBrief?.trackedCount ?? 0} tracked</Badge>}
+          right={paid ? <Badge tone="zinc">{memberBrief?.trackedCount ?? 0} tracked</Badge> : <Badge tone="zinc">Free plan</Badge>}
         >
-          {!memberBrief || memberBrief.trackedCount === 0 ? (
+          {!paid ? (
+            // The free view of this panel: the same headings in the same order,
+            // so a free member can see the shape of what a paid brief gives
+            // them, with the earnings calendar filled in for real.
+            <div className="space-y-5">
+              <p className="text-sm leading-6 text-muted-foreground">
+                Your morning brief reads the academy signals across the assets you track. The signal sections come with the
+                paid membership; the earnings calendar below is yours either way.
+              </p>
+              {/* Full width, one per line, so the upgrade button sits out on the
+                  right as the owner drew it. In two columns it wraps under the
+                  heading and stops reading as a call to action. */}
+              <div className="divide-y divide-border rounded-2xl border border-border">
+                {['Active buy signals', 'Active sell signals', 'New buy alerts since yesterday', 'New sell alerts since yesterday'].map(
+                  (heading) => (
+                    <div key={heading} className="px-4 py-3">
+                      <BriefHeading locked>{heading}</BriefHeading>
+                    </div>
+                  ),
+                )}
+              </div>
+              {highlights && highlights.earningsThisWeek.length > 0 && (
+                <div className="rounded-2xl border border-border p-4">
+                  <BriefHeading>Reporting earnings in the next {EARNINGS_WINDOW_DAYS} days</BriefHeading>
+                  <div className="mt-2 space-y-1 text-sm">
+                    {highlights.earningsThisWeek.slice(0, 8).map((r) => (
+                      <div key={r.symbol} className="flex justify-between gap-3">
+                        <span className="font-semibold text-foreground">{r.symbol}</span>
+                        <span className="font-mono text-muted-foreground">{r.date}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : !memberBrief || memberBrief.trackedCount === 0 ? (
             <div className="text-sm text-muted-foreground">
               You are not tracking any assets yet. Open the master watchlist and build a sublist to get a personal brief here.
             </div>
@@ -127,7 +174,7 @@ export default async function DailyChecksPage({
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Buy signals in your lists</div>
+                  <BriefHeading>Active buy signals</BriefHeading>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {memberBrief.buy.length > 0
                       ? memberBrief.buy.map((a) => <SignalChip key={a.symbol} asset={a} tone="emerald" />)
@@ -135,7 +182,7 @@ export default async function DailyChecksPage({
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Sell signals in your lists</div>
+                  <BriefHeading>Active sell signals</BriefHeading>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {memberBrief.sell.length > 0
                       ? memberBrief.sell.map((a) => <SignalChip key={a.symbol} asset={a} tone="rose" />)
@@ -147,7 +194,7 @@ export default async function DailyChecksPage({
               <div className="rounded-2xl border border-border bg-muted/20 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Your holdings</div>
+                    <div className="text-sm font-bold text-foreground">Your holdings</div>
                     {/* Live is the member's real book; Virtual is the paper portfolio. */}
                     <div className="inline-flex rounded-full border border-border p-0.5">
                       <Link
@@ -197,7 +244,7 @@ export default async function DailyChecksPage({
               {highlights && (
                 <div className="grid gap-4 rounded-2xl border border-border p-4 md:grid-cols-2">
                   <div>
-                    <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">New buy alerts since yesterday</div>
+                    <BriefHeading>New buy alerts since yesterday</BriefHeading>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {highlights.newBuy.length > 0
                         ? highlights.newBuy.map((a) => (
@@ -207,7 +254,7 @@ export default async function DailyChecksPage({
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">New sell alerts since yesterday</div>
+                    <BriefHeading>New sell alerts since yesterday</BriefHeading>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {highlights.newSell.length > 0
                         ? highlights.newSell.map((a) => (
@@ -219,9 +266,7 @@ export default async function DailyChecksPage({
 
                   {highlights.extremeRange.length > 0 && (
                     <div>
-                      <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                        Wide daily range (over {EXTREME_RANGE_PCT}% of previous close)
-                      </div>
+                      <BriefHeading>Wide daily range (over {EXTREME_RANGE_PCT}% of previous close)</BriefHeading>
                       <div className="mt-2 space-y-1 text-sm">
                         {highlights.extremeRange.slice(0, 5).map((r) => (
                           <div key={r.symbol} className="flex justify-between gap-3">
@@ -235,7 +280,7 @@ export default async function DailyChecksPage({
 
                   {highlights.earningsThisWeek.length > 0 && (
                     <div>
-                      <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Earnings this week</div>
+                      <BriefHeading>Reporting earnings in the next {EARNINGS_WINDOW_DAYS} days</BriefHeading>
                       <div className="mt-2 space-y-1 text-sm">
                         {highlights.earningsThisWeek.slice(0, 8).map((r) => (
                           <div key={r.symbol} className="flex justify-between gap-3">
@@ -312,7 +357,11 @@ export default async function DailyChecksPage({
                   {brief.insights.map((n) => <li key={n}>{n}</li>)}
                 </ul>
               )}
-              <div className="text-xs text-muted-foreground">Model: {brief.model}</div>
+              {/* The model identifier is engineering detail, and "Model:
+                  deterministic-fallback" reads to a member as though something
+                  broke. The badge in the header already says whether this brief
+                  was written by the AI or assembled from the rules, which is the
+                  part a member has any use for. */}
             </div>
           </Card>
         </BlurFade>

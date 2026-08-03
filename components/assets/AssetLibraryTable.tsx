@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { Badge } from '@/components/Badge';
 import { AssetFilterBar } from '@/components/assets/AssetFilterBar';
 import { GeneratePitchButton } from '@/components/assets/GeneratePitch';
+import { LockedValue } from '@/components/UpgradePrompt';
 import { DEFAULT_ASSET_FILTERS, assetClassLabel, filterOptionsFor, matchesAssetFilters, productLabel, type AssetFilters } from '@/lib/assetClass';
 import { formatMarketCap } from '@/lib/marketCap';
 
@@ -14,7 +15,8 @@ export type LibraryRow = {
   name: string;
   assetType: string;
   currency: string;
-  signalState: 'NONE' | 'BUY' | 'SELL' | 'BOTH';
+  /** Null for a free profile: the signal is the paid product, so it is never sent. */
+  signalState: 'NONE' | 'BUY' | 'SELL' | 'BOTH' | null;
   ownerCall: boolean;
   currentPrice: number | null;
   dailyChangePct: number | null;
@@ -38,12 +40,18 @@ function tone(state: string) {
   return 'zinc' as const;
 }
 
-export function AssetLibraryTable({ rows }: { rows: LibraryRow[] }) {
+export function AssetLibraryTable({ rows, paid }: { rows: LibraryRow[]; paid: boolean }) {
   const [filters, setFilters] = useState<AssetFilters>(DEFAULT_ASSET_FILTERS);
 
   const currencies = useMemo(() => [...new Set(rows.map((r) => r.currency.toUpperCase()))].sort(), [rows]);
-  const options = useMemo(() => filterOptionsFor(rows), [rows]);
-  const filtered = useMemo(() => rows.filter((r) => matchesAssetFilters(r, filters)), [rows, filters]);
+  const options = useMemo(
+    () => filterOptionsFor(rows.map((r) => ({ ...r, signalState: r.signalState ?? 'NONE' }))),
+    [rows],
+  );
+  const filtered = useMemo(
+    () => rows.filter((r) => matchesAssetFilters({ ...r, signalState: r.signalState ?? 'NONE' }, filters)),
+    [rows, filters],
+  );
 
   return (
     <div className="space-y-4">
@@ -55,6 +63,7 @@ export function AssetLibraryTable({ rows }: { rows: LibraryRow[] }) {
         productOptions={options.products}
         matchCount={filtered.length}
         totalCount={rows.length}
+        showSignalFilter={paid}
       />
 
       {filtered.length === 0 ? (
@@ -86,8 +95,14 @@ export function AssetLibraryTable({ rows }: { rows: LibraryRow[] }) {
                   <td className="py-3 pr-4 text-xs text-muted-foreground">{assetClassLabel(row.assetType)}</td>
                   <td className="py-3 pr-4 text-xs text-muted-foreground">{productLabel(row.assetType)}</td>
                   <td className="py-3 pr-4">
-                    <Badge tone={tone(row.signalState)}>{row.signalState}</Badge>
-                    {row.ownerCall && <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-amber-500">Owner call</div>}
+                    {row.signalState == null ? (
+                      <LockedValue />
+                    ) : (
+                      <>
+                        <Badge tone={tone(row.signalState)}>{row.signalState}</Badge>
+                        {row.ownerCall && <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-amber-500">Owner call</div>}
+                      </>
+                    )}
                   </td>
                   <td className="py-3 pr-4">
                     <div className="font-mono font-semibold text-foreground">{fmt(row.currentPrice)} {row.currency}</div>
@@ -97,7 +112,9 @@ export function AssetLibraryTable({ rows }: { rows: LibraryRow[] }) {
                   </td>
                   <td className="py-3 pr-4 font-mono text-xs text-muted-foreground">{formatMarketCap(row.marketCap, row.currency)}</td>
                   <td className="py-3 pr-4 font-mono text-xs text-muted-foreground">{fmt(row.dailyLow)} - {fmt(row.dailyHigh)}</td>
-                  <td className="py-3 pr-4 text-xs text-muted-foreground">Entry {fmt(row.targetEntry)} · Exit {fmt(row.targetExit)}</td>
+                  <td className="py-3 pr-4 text-xs text-muted-foreground">
+                    {paid ? <>Entry {fmt(row.targetEntry)} · Exit {fmt(row.targetExit)}</> : <LockedValue />}
+                  </td>
                   <td className="py-3 pr-4 font-mono text-xs text-muted-foreground">{fmt(row.low52)} / {fmt(row.high52)}</td>
                   <td className="py-3 pr-4">
                     <div className="flex items-center gap-3">

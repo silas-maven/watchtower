@@ -13,14 +13,17 @@ type NavUser = (Pick<SessionUser, 'name' | 'email' | 'role' | 'accessState'> & {
 
 type NavItem = { href: string; label: string; icon: typeof LayoutDashboard };
 
+// Order set by the academy owner, 2 Aug 2026. Community Feed belongs between
+// Portfolio and Daily Checks; it is left out until the feed itself ships, since
+// a tab that leads nowhere is worse than a tab that arrives late.
 const memberItems: NavItem[] = [
   { href: '/app', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/app/daily-checks', label: 'Daily Checks', icon: Activity },
   { href: '/app/watchlists', label: 'Watchlists', icon: Bell },
-  { href: '/app/assets', label: 'Asset Centre', icon: ChartCandlestick },
   { href: '/app/portfolio-tools', label: 'Portfolio', icon: Calculator },
+  { href: '/app/daily-checks', label: 'Daily Checks', icon: Activity },
   // Personal Finance is a destination in its own right, not a sub-tool (24 Jul feedback).
   { href: '/app/portfolio-tools/personal-finance', label: 'Personal Finance', icon: PiggyBank },
+  { href: '/app/assets', label: 'Asset Centre', icon: ChartCandlestick },
   { href: '/app/account', label: 'Account', icon: Settings },
 ];
 

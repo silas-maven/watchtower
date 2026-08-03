@@ -12,12 +12,14 @@ import { marketCapLabel } from '@/lib/marketCap';
 import { IndicatorView } from '@/components/assets/IndicatorView';
 import { PriceAlertsView, type PositionPayload } from '@/components/assets/PriceAlertsView';
 import { AssetActions } from '@/components/assets/AssetActions';
+import { CandleChart } from '@/components/charts/CandleChart';
+import { UpgradePrompt, LockedValue } from '@/components/UpgradePrompt';
 
 type Snapshot = {
   capturedAt: string;
   currentPrice: number | null;
   dailyChangePct: number | null;
-  signalState: 'NONE' | 'BUY' | 'SELL' | 'BOTH';
+  signalState: 'NONE' | 'BUY' | 'SELL' | 'BOTH' | null;
 };
 
 type AssetPayload = {
@@ -33,7 +35,8 @@ type AssetPayload = {
   shares: number | null;
   targetEntry: number | null;
   targetExit: number | null;
-  signalState: 'NONE' | 'BUY' | 'SELL' | 'BOTH';
+  /** Null when the viewer is on the free plan: the signal is a paid feature. */
+  signalState: 'NONE' | 'BUY' | 'SELL' | 'BOTH' | null;
   signalOverride: string | null;
   snapshots: Snapshot[];
   stats: {
@@ -65,9 +68,14 @@ type View = 'history' | 'indicator' | 'alerts';
 
 const VIEWS: Array<{ value: View; label: string; icon: typeof TrendingUp }> = [
   { value: 'history', label: 'Price history', icon: TrendingUp },
-  { value: 'indicator', label: 'Indicator view', icon: CandlestickChart },
+  // Named for the academy, not for the indicators behind it. The specific
+  // indicator set is treated as proprietary and is never listed in copy a
+  // non-paying member can read.
+  { value: 'indicator', label: 'SPArtan Indicator View', icon: CandlestickChart },
   { value: 'alerts', label: 'Price alerts', icon: Bell },
 ];
+
+type ChartStyle = 'line' | 'candles';
 
 function fmt(n: number | null | undefined) {
   return n == null ? '—' : n.toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -81,8 +89,10 @@ export default function AssetPage() {
   const { id } = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const [asset, setAsset] = useState<AssetPayload | null>(null);
+  const [paid, setPaid] = useState(false);
   const [position, setPosition] = useState<PositionPayload | null>(null);
   const [loadingAsset, setLoadingAsset] = useState(true);
+  const [chartStyle, setChartStyle] = useState<ChartStyle>('line');
   const [history, setHistory] = useState<ChartPoint[]>([]);
   const [range, setRange] = useState<Range>('3mo');
   const [loadingHistory, setLoadingHistory] = useState(true);
@@ -99,6 +109,7 @@ export default function AssetPage() {
         const json = await res.json();
         if (!cancelled && json.ok && json.data?.asset) {
           setAsset(json.data.asset);
+          setPaid(json.data.paid === true);
           setPosition(json.data.position ?? null);
         }
       } finally {
@@ -146,7 +157,7 @@ export default function AssetPage() {
     );
   }
 
-  const signalState = asset.signalState ?? latest?.signalState ?? 'NONE';
+  const signalState = asset.signalState ?? latest?.signalState ?? null;
   const signalTone = signalState === 'BUY' ? 'emerald' : signalState === 'SELL' ? 'rose' : signalState === 'BOTH' ? 'blue' : 'zinc';
   const change = latest?.dailyChangePct;
   const stochK = history.length >= 16 ? latestStochasticK(history) : null;
@@ -160,7 +171,7 @@ export default function AssetPage() {
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <Badge tone="zinc">{asset.assetType}</Badge>
             <Badge tone="blue">{asset.currency}</Badge>
-            {signalState !== 'NONE' && <Badge tone={signalTone}>{signalState}</Badge>}
+            {signalState == null ? <LockedValue label="Signal" /> : signalState !== 'NONE' && <Badge tone={signalTone}>{signalState}</Badge>}
             {asset.signalOverride && <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-500">Owner call</span>}
           </div>
           {asset.reason && <div className="mt-2 max-w-xl text-sm text-muted-foreground">{asset.reason}</div>}
@@ -200,10 +211,25 @@ export default function AssetPage() {
             <Card
               title="Price history"
               right={
-                <div className="flex flex-wrap gap-1">
-                  {RANGES.map((r) => (
-                    <button key={r} onClick={() => setRange(r)} className={`rounded-md px-2 py-1 text-xs font-semibold transition ${range === r ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>{RANGE_LABEL[r]}</button>
-                  ))}
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Line or candlesticks, and nothing else. Every plan gets this
+                      much; the overlays live in the SPArtan Indicator View. */}
+                  <div className="flex gap-0.5 rounded-lg border border-border bg-background p-0.5">
+                    {(['line', 'candles'] as const).map((style) => (
+                      <button
+                        key={style}
+                        onClick={() => setChartStyle(style)}
+                        className={`rounded-md px-2 py-1 text-xs font-semibold transition ${chartStyle === style ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                      >
+                        {style === 'line' ? 'Line' : 'Candles'}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {RANGES.map((r) => (
+                      <button key={r} onClick={() => setRange(r)} className={`rounded-md px-2 py-1 text-xs font-semibold transition ${range === r ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>{RANGE_LABEL[r]}</button>
+                    ))}
+                  </div>
                 </div>
               }
             >
@@ -212,6 +238,16 @@ export default function AssetPage() {
                   <div className="grid h-full place-items-center text-sm text-muted-foreground">Loading chart…</div>
                 ) : history.length === 0 ? (
                   <div className="grid h-full place-items-center text-sm text-muted-foreground">No price history available for this asset.</div>
+                ) : chartStyle === 'candles' ? (
+                  <CandleChart
+                    data={history}
+                    showCandles
+                    height={256}
+                    priceLines={[
+                      ...(asset.targetEntry != null ? [{ price: asset.targetEntry, color: '#10b981', title: 'Target entry', dashed: true }] : []),
+                      ...(asset.targetExit != null ? [{ price: asset.targetExit, color: '#f43f5e', title: 'Target exit', dashed: true }] : []),
+                    ]}
+                  />
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={history} margin={{ left: 8, right: 8, top: 10, bottom: 0 }}>
@@ -234,7 +270,9 @@ export default function AssetPage() {
                   </ResponsiveContainer>
                 )}
               </div>
-              <div className="mt-3 text-xs text-muted-foreground">Live daily closes from market data. Green line = target entry, red = target exit.</div>
+              <div className="mt-3 text-xs text-muted-foreground">
+                Live daily prices from market data.{paid ? ' Green line = target entry, red = target exit.' : ''}
+              </div>
             </Card>
           </div>
 
@@ -243,15 +281,26 @@ export default function AssetPage() {
               <Row label="Entry (broker)" value={fmt(asset.brokerEntryPrice)} />
               <Row label="Avg entry" value={fmt(asset.averageEntryPrice)} />
               <Row label="Shares" value={fmt(asset.shares)} />
-              <Row label="Target entry" value={fmt(asset.targetEntry)} />
-              <Row label="Target exit" value={fmt(asset.targetExit)} />
+              {paid ? (
+                <>
+                  <Row label="Target entry" value={fmt(asset.targetEntry)} />
+                  <Row label="Target exit" value={fmt(asset.targetExit)} />
+                </>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Academy targets</span>
+                  <LockedValue />
+                </div>
+              )}
               <Row label="52w low/high" value={`${fmt(asset.stats.low52)} / ${fmt(asset.stats.high52)}`} />
               <Row label="Beta" value={fmt(asset.stats.beta)} />
               <Row label="Market Cap" value={marketCapLabel(asset.stats.marketCap, asset.currency)} />
               <Row label="P/E Ratio" value={fmt(asset.stats.pe)} />
               <Row label="Sector P/E Ratio" value={fmt(asset.stats.sectorPE)} />
-              <Row label="50d moving average" value={fmt(asset.stats.ma50)} />
-              <Row label="200d moving average" value={fmt(asset.stats.ma200)} />
+              {/* Indicator-derived readings sit on the paid side with the
+                  SPArtan Indicator View. Fundamentals below stay open. */}
+              {paid && <Row label="50d moving average" value={fmt(asset.stats.ma50)} />}
+              {paid && <Row label="200d moving average" value={fmt(asset.stats.ma200)} />}
               <Row label="Quick ratio" value={fmt(asset.stats.quickRatio)} />
               <Row label="Current ratio" value={fmt(asset.stats.currentRatio)} />
               <Row label="D/E ratio" value={fmt(asset.stats.debtToEquity)} />
@@ -260,23 +309,27 @@ export default function AssetPage() {
                 value={asset.stats.nextEarningsDate ? new Date(asset.stats.nextEarningsDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
               />
               <Row label="Dividend yield" value={asset.stats.dividendYield == null ? '—' : `${fmt(asset.stats.dividendYield)}%`} />
-              <Row
-                label="Stochastic (8,5,5)"
-                value={stochK == null ? '—' : fmt(stochK)}
-                valueClass={stochK == null ? undefined : stochK >= 80 ? 'text-rose-500' : stochK <= 20 ? 'text-emerald-500' : undefined}
-              />
+              {paid && (
+                <Row
+                  label="Stochastic (8,5,5)"
+                  value={stochK == null ? '—' : fmt(stochK)}
+                  valueClass={stochK == null ? undefined : stochK >= 80 ? 'text-rose-500' : stochK <= 20 ? 'text-emerald-500' : undefined}
+                />
+              )}
             </div>
           </Card>
         </div>
       )}
 
       {view === 'indicator' && (
-        <Card title="Indicator view">
+        <Card title="SPArtan Indicator View">
           <IndicatorView assetId={asset.id} />
         </Card>
       )}
 
-      {view === 'alerts' && (
+      {view === 'alerts' && !paid && <UpgradePrompt feature="signals" />}
+
+      {view === 'alerts' && paid && (
         <PriceAlertsView
           assetId={asset.id}
           symbol={asset.symbol}
@@ -284,7 +337,7 @@ export default function AssetPage() {
           currentPrice={latest?.currentPrice ?? null}
           targetEntry={asset.targetEntry}
           targetExit={asset.targetExit}
-          signalState={signalState}
+          signalState={signalState ?? 'NONE'}
           position={position}
         />
       )}

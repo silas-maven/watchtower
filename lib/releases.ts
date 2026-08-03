@@ -25,6 +25,115 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: '2026.08.03b',
+    date: '2026-08-03',
+    title: 'The free plan opens up, and the signals become the thing you pay for',
+    summary:
+      'The watchlist, the asset pages, personal finance and both calculators are now free. What the membership buys is the academy call on each asset: the signals, the levels behind them, the alerts and the SPArtan Indicator View. The daily brief headings lead properly, and Bitcoin is back on the Dashboard.',
+    feedbackDoc: '2026-08-02 WhatsApp feedback',
+    groups: [
+      {
+        heading: 'Where the free line now sits',
+        items: [
+          {
+            title: 'The master watchlist is open to everyone',
+            body: 'A free account now sees the full curated list, priced live, with asset class, product and market cap filters. What it does not see is the signal on each row or the entry and exit levels, both of which are withheld before the page is built rather than hidden in the markup. Personal sublists and the tools around the list stay with the membership. The reasoning is yours: the list is what brings people in, the call on it is what they pay for.',
+            feedback: 'Freemium boundary (2 August)',
+            href: '/app/watchlists',
+            linkLabel: 'Open Watchlists',
+          },
+          {
+            title: 'Entry and exit levels moved to the paid side with the signal',
+            body: 'This is a judgement call worth knowing about. Withholding the BUY badge while still printing "Entry 41.20, Exit 58.00" next to a live price gives the same call away by subtraction, so the levels now travel with the signal everywhere they appear: the watchlist, the Asset Centre and the asset page. Say the word if you would rather the levels stayed visible.',
+            feedback: 'Freemium boundary (2 August)',
+            href: '/app/assets',
+            linkLabel: 'Open Asset Centre',
+          },
+          {
+            title: 'Personal Finance and both calculators are free',
+            body: 'Personal Finance, Compound Interest and CAGR no longer ask for a membership. The Portfolio section itself is open too, with each members-only tool marked and gated individually, so a free member can see what the membership includes rather than meeting a wall. Personal Finance runs a real AI analysis each time, so free accounts get three a day and members twenty five, which stops the giveaway turning into an open bill.',
+            feedback: 'Freemium boundary (2 August)',
+            href: '/app/portfolio-tools',
+            linkLabel: 'Open Portfolio',
+          },
+          {
+            title: 'One trade pitch a month, and the button stays visible',
+            body: 'The free allowance was one pitch ever; it is now one a calendar month. The Generate pitch button is deliberately still shown to free members, and tells them it is a members feature when they click it, which is how you asked for it. A member who has simply used this month’s pitch is told that instead of being sold a plan they already have.',
+            feedback: 'Freemium boundary (2 August)',
+            href: '/assets/{assetId}',
+            linkLabel: 'Open an asset',
+          },
+          {
+            title: 'Charts: line or candlesticks, on every plan',
+            body: 'The price history chart now switches between a line and candlesticks, for everyone. Overlays stay in the SPArtan Indicator View.',
+            feedback: 'Freemium boundary (2 August)',
+            href: '/assets/{assetId}',
+            linkLabel: 'Open an asset',
+          },
+        ],
+      },
+      {
+        heading: 'Naming and presentation',
+        items: [
+          {
+            title: 'The SPArtan Indicator View, and no naming of what is inside it',
+            body: 'Renamed everywhere. More importantly, the locked message no longer lists the indicators. The upgrade copy I shipped on 3 August named all three, which was exactly what you asked me not to do, so it is gone. Every upgrade message now comes from one place in the code, which is what makes that rule enforceable rather than a habit. The indicator readings on the asset page are on the paid side with it.',
+            feedback: 'Naming (2 August)',
+            href: '/assets/{assetId}?view=indicator',
+            linkLabel: 'Open the Indicator View',
+          },
+          {
+            title: 'The brief headings lead, with an upgrade button on the right',
+            body: 'Active buy signals, Active sell signals, and the new alert sections are now bold headings rather than small grey labels. On a free account each one carries "(members only)" with an Upgrade to paid button out on the right, and the earnings calendar underneath is filled in for real, because you were happy for earnings to be free.',
+            feedback: 'Daily brief (2 August)',
+            href: '/app/daily-checks',
+            linkLabel: 'Open Daily Checks',
+          },
+          {
+            title: 'The market cards are about half the height',
+            body: 'The Weather Outside tiles are tighter and the panel now fits six across on a laptop and eight on a wide screen, instead of five, without truncating a single price. The label and the change share the top line so the number gets the full width of the tile.',
+            feedback: 'Dashboard (2 August)',
+            href: '/app',
+            linkLabel: 'Open Dashboard',
+          },
+          {
+            title: 'The member menu is in your order',
+            body: 'Dashboard, Watchlists, Portfolio, Daily Checks, Personal Finance, Asset Centre, Account. Community Feed slots in fourth once the feed itself is built; a tab that leads nowhere is worse than a tab that arrives late.',
+            feedback: 'Navigation (2 August)',
+            href: '/app',
+            linkLabel: 'Open Dashboard',
+          },
+        ],
+      },
+      {
+        heading: 'Fixed',
+        items: [
+          {
+            title: 'Bitcoin was showing a dash on the Dashboard',
+            body: 'You did not report this, but it was in your screenshot, on the first panel a member sees. The Bitcoin row had been switched off on 27 July by the clean-up that repaired the wrong-instrument prices. That job looked up every asset by its ticker, but the market instruments behind the Weather panel deliberately use an internal name with the real ticker stored separately, so it decided the provider could not price Bitcoin and deactivated it. The row is back on, and the clean-up now leaves those instruments alone. Bitcoin was the only one affected; the other eleven were checked.',
+            feedback: 'Spotted in the 2 August screenshots',
+            href: '/app',
+            linkLabel: 'Open Dashboard',
+          },
+          {
+            title: 'The brief listed earnings that had already happened',
+            body: 'The 2 August brief showed earnings dated 27 and 28 July. "This week" was being read as the calendar week, so on a Sunday it looked back at the Monday and Tuesday just gone. It is now a forward window: today plus the next seven days, and it can never look backwards. Covered by a test that fails against the old behaviour.',
+            feedback: 'Daily brief (27 July review)',
+            href: '/app/daily-checks',
+            linkLabel: 'Open Daily Checks',
+          },
+          {
+            title: 'The technical model line is gone from the member brief',
+            body: 'Members were being shown "Model: deterministic-fallback" at the foot of the academy brief, which reads as though something has broken. The badge in the header already says whether the brief was written by the AI or assembled from the rules, which is the part a member has any use for.',
+            feedback: 'Daily brief (27 July review)',
+            href: '/app/daily-checks',
+            linkLabel: 'Open Daily Checks',
+          },
+        ],
+      },
+    ],
+  },
+  {
     version: '2026.08.03',
     date: '2026-08-03',
     title: 'Unpaid accounts now step down on their own, and two new calculators',

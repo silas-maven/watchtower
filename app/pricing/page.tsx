@@ -15,13 +15,27 @@ export const metadata = {
   description: 'Membership is £50 a month, with checkout inside the members area. The SPArtan Investing eCourse is a separate one-time purchase.',
 };
 
+// What the membership adds on top of the free plan. Keep this list to things a
+// free profile genuinely cannot do: the master watchlist itself, the price data
+// and the calculators are all open, so listing them here would be untrue.
 const membershipFeatures = [
-  'The full curated master watchlist, priced live',
-  'Deterministic buy and sell signals',
-  'Unlimited personal sublists',
-  'Daily brief tailored to what you track',
-  'Virtual portfolio, averaging planner, due diligence and trade journal',
-  'Markets news feed and academy updates',
+  'Deterministic buy and sell signals on every asset',
+  'The academy entry and exit level behind each one',
+  'Alerts when an asset moves into a zone',
+  'The SPArtan Indicator View',
+  'Unlimited personal sublists off the master watchlist',
+  'Trade pitches on demand, instead of one a month',
+  'Portfolio, averaging planner, stress test, due diligence and trade journal',
+];
+
+// Deliberately explicit, because the free plan is now generous enough that people
+// will ask what the money is for.
+const freeFeatures = [
+  'The full master watchlist, priced live',
+  'Every asset page: price, fundamentals, and line or candlestick charts',
+  'Personal Finance, the compound interest and CAGR calculators',
+  'The earnings section of the daily brief',
+  'One trade pitch a month',
 ];
 
 const ecourseFeatures = [
@@ -33,11 +47,12 @@ const ecourseFeatures = [
 ];
 
 const faqs = [
-  ['Do I need the eCourse to use the membership?', 'No. Membership gives you the live watchlist, signals and tools on its own. The eCourse is a separate, deeper dive into the method for those who want it.'],
+  ['What do I get without paying?', 'A free account gets the full master watchlist priced live, every asset page with its price history and fundamentals, the personal finance tool and both calculators, the earnings part of the daily brief, and one trade pitch a month. What it does not include is the academy call on each asset: the buy and sell signals, the levels behind them, and the alerts.'],
+  ['Do I need the eCourse to use the membership?', 'No. Membership gives you the signals, the levels and the tools on its own. The eCourse is a separate, deeper dive into the method for those who want it.'],
   ['How do the buy and sell signals work?', 'The academy sets a target entry and exit level for each asset. When the live price meets a level, the asset moves into a buy or sell zone. The logic is fixed, so the same inputs always give the same signal.'],
   [
     'What happens if a payment fails?',
-    'Nothing straight away. Cards fail for ordinary reasons and most go through on a retry, so your membership carries on while that happens. If it is still unpaid after ten days the account moves to the free plan, which means you keep your login and your data but lose the watchlist, the alerts and the paid tools. Paying restores everything on its own, and the academy can put it back sooner.',
+    'Nothing straight away. Cards fail for ordinary reasons and most go through on a retry, so your membership carries on while that happens. If it is still unpaid after ten days the account moves to the free plan, which means you keep your login, your data and everything on the free list above, but lose the signals, the alerts and the paid tools. Paying restores everything on its own, and the academy can put it back sooner.',
   ],
   ['Is this financial advice?', 'No. The platform organises information and surfaces signals from rules the academy sets. It does not tell you what to buy or sell, and it never promises a result.'],
   ['How do I pay?', 'Membership is billed monthly through Stripe, and checkout opens inside the members area once you join. The eCourse is sold separately on Whop.'],
@@ -89,7 +104,7 @@ export default async function PricingPage() {
                 <span className="text-5xl font-black tracking-tight text-foreground">£50</span>
                 <span className="mb-1.5 text-sm text-muted-foreground">/ month</span>
               </div>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">The live academy platform, in full.</p>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">Everything on the free plan, plus the academy&rsquo;s own calls.</p>
               <ul className="mt-6 flex-1 space-y-3">
                 {membershipFeatures.map((f) => (
                   <li key={f} className="flex items-start gap-3 text-sm text-foreground">
@@ -98,6 +113,17 @@ export default async function PricingPage() {
                 ))}
               </ul>
               <div className="mt-8"><JoinButton signedIn={signedIn} label={signedIn ? 'Start membership' : 'Join the academy'} /></div>
+
+              <div className="mt-8 border-t border-border pt-6">
+                <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Free, with an account</div>
+                <ul className="mt-3 space-y-2">
+                  {freeFeatures.map((f) => (
+                    <li key={f} className="flex items-start gap-3 text-sm text-muted-foreground">
+                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" /> {f}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </Reveal>
 

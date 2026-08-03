@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { CandleChart, type OverlaySeries } from '@/components/charts/CandleChart';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
 import { bollinger, sma, stochastic, type Ohlc } from '@/lib/indicators';
 
 type Timeframe = '1d' | '1wk' | '1mo';
@@ -34,9 +34,14 @@ function Toggle({ label, color, checked, onChange }: { label: string; color?: st
 }
 
 /**
- * Indicator view: candles + Bollinger(20,2) + 50/200 MA overlays with a
- * stochastics (8,5,5) lower pane. Defaults per client feedback: Bollinger and
- * Stochastics on entry; candlesticks on; MAs toggleable.
+ * The SPArtan Indicator View: candles + Bollinger(20,2) + 50/200 MA overlays
+ * with a stochastics (8,5,5) lower pane. Defaults per client feedback: Bollinger
+ * and Stochastics on entry; candlesticks on; MAs toggleable.
+ *
+ * The indicator names appear in this file and in the toggle labels because only
+ * paying members ever render them. Nothing a free profile can read may name
+ * them: the academy treats the set as proprietary. The locked branch below is
+ * the boundary.
  */
 export function IndicatorView({ assetId }: { assetId: string }) {
   const [timeframe, setTimeframe] = useState<Timeframe>('1d');
@@ -114,23 +119,10 @@ export function IndicatorView({ assetId }: { assetId: string }) {
     return k == null || d == null ? null : { k, d };
   }, [lowerPane]);
 
-  if (locked) {
-    return (
-      <div className="rounded-2xl border border-border bg-muted/20 p-8 text-center">
-        <div className="font-bold text-foreground">Indicators are a members feature</div>
-        <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-          Bollinger bands, moving averages and stochastics come with the paid membership, alongside the master watchlist,
-          buy and sell alerts and the portfolio tools.
-        </p>
-        <Link
-          href="/pricing"
-          className="mt-5 inline-flex rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition hover:brightness-110"
-        >
-          See what membership includes
-        </Link>
-      </div>
-    );
-  }
+  // The locked message deliberately says nothing about which indicators are in
+  // here. The academy treats the set as proprietary, so the copy comes from
+  // MEMBER_FEATURES and names the view, never its contents.
+  if (locked) return <UpgradePrompt feature="indicatorView" />;
 
   return (
     <div className="space-y-4">

@@ -11,6 +11,28 @@ link to each change. Per-round detail lives in the dated folders in this directo
 Read this bit first. Everything here is either an action only you can take, or a
 judgement call worth knowing about before beta.
 
+**00000. The entry and exit levels moved to the paid side along with the signal.**
+You said the signal column should be members only, and that is done. I also moved
+the academy's entry and exit prices with it, everywhere they appear, which you did
+not explicitly ask for. The reason: leaving "Entry 41.20, Exit 58.00" printed
+beside a live price while hiding the BUY badge gives the same call away by
+subtraction. Anyone who understands your method can read the signal off the
+levels in a second. If you would rather the levels stayed visible as a taste of
+the method, it is a one line change; I would advise against it.
+
+Related, and also my judgement rather than your instruction: the moving average
+and stochastic readings on the asset page are now members only too, since they
+are the readings behind the view you have asked me never to describe publicly.
+The plain fundamentals, price, market cap, P/E, 52 week range and the rest, stay
+open to everyone.
+
+**00001. Requesting a security is still members only, and I think that is worth revisiting.**
+The request form sits on the watchlist page, which free members can now see. The
+form is hidden for them, because the request itself is gated and showing a form
+that gets refused on submit is worse than not showing it. But a free member
+asking you to cover something is a genuinely useful signal about what they want,
+and it costs you nothing beyond a queue entry. Say the word and I will open it.
+
 **0000. Missed payments now remove access on their own. Read this before it happens to someone.**
 This is a change of policy, not a bug fix, so it is worth being precise about what
 it does.
@@ -127,6 +149,92 @@ price-history back-fill: both good post-beta additions.
 **6. Free and paid is enforced on the server, not just hidden.** A free account cannot
 reach a members-only page or its data even by going straight to it. Trade pitches are
 metered because each one costs a real AI call.
+
+---
+
+## The free plan opens up, and the signals become the product (3 August)
+
+This is the round from your WhatsApp messages on 2 August.
+
+**The master watchlist is free.** A free account now sees the whole curated list,
+priced live, with the filters. It does not see the signal on each row, or the entry
+and exit levels. Those are left out before the page is even built, so they are not
+sitting in the page source waiting to be found. Personal sublists and the tools
+around the list stay with the membership. See note 00000 at the top about the
+levels, which is my judgement rather than your instruction.
+
+**Personal Finance and both calculators are free.** So is the Portfolio section
+itself: a free member can now see the full list of tools, with the members-only
+ones marked, rather than meeting a wall. Each of those is gated on its own, so
+typing the address does not get anyone in. Personal Finance runs a real AI
+analysis every time, so free accounts get three a day and members twenty five.
+Without a limit, "free" would mean anyone could run up your API bill.
+
+**Asset pages are free, the call on them is not.** Price, market cap, P/E, 52 week
+range, dividend yield, earnings date and the price history are open to everyone,
+and the chart now switches between a line and candlesticks on every plan. The
+signal, the levels, the alerts and the SPArtan Indicator View are members only.
+
+**One trade pitch a month.** Up from one ever. The Generate pitch button stays
+visible to free members and tells them it is a members feature when they click it,
+exactly as you described. Someone who has simply used this month's pitch is told
+that, rather than being sold a plan they already pay for.
+
+**The SPArtan Indicator View, and silence about what is in it.** Renamed
+everywhere. The locked message I shipped on 3 August listed all three indicators
+by name, which is precisely what you asked me not to do, so that copy is gone.
+Every upgrade message across the app now comes from a single place in the code,
+which is what turns "do not name them" into a rule the code enforces rather than
+something I have to remember.
+
+**The brief headings now lead.** Active buy signals, Active sell signals and the
+alert sections are bold headings instead of small grey labels. On a free account
+each carries "(members only)" with an Upgrade to paid button on the right, and the
+earnings list underneath is filled in for real, since you were happy for earnings
+to be free.
+
+**The market cards are about half as tall.** Six across on a laptop, eight on a
+wide screen, up from five, and no price is cut off.
+
+**The menu is in your order.** Dashboard, Watchlists, Portfolio, Daily Checks,
+Personal Finance, Asset Centre, Account. Community Feed goes in fourth when the
+feed is built. I have not added the tab yet because a tab that leads nowhere is
+worse than one that arrives a few days late.
+
+**Community Feed is specified, not built.** Written up in full at
+`docs/specs/COMMUNITY-FEED.md`, including your answer that any admin can moderate.
+There are four questions in it I need from you before it is worth building, listed
+at the end of this section.
+
+**Two things fixed that you did not report.**
+
+Bitcoin was showing a dash on the Dashboard, in your own screenshot, on the first
+panel a member sees. The Bitcoin row had been switched off on 27 July by the job
+that repaired the wrong instrument prices. That job looks assets up by their
+ticker, but the market instruments behind the Weather panel deliberately use an
+internal name and store the real ticker separately, so it concluded Bitcoin could
+not be priced and deactivated it. It is back on, and that job now leaves those
+instruments alone. Bitcoin was the only casualty; I checked the other eleven.
+
+The brief was listing earnings that had already been reported. Your 2 August brief
+showed 27 and 28 July. "This week" was being read as the calendar week, so on a
+Sunday it looked back at the Monday and Tuesday just gone. It is now today plus
+the next seven days and can never look backwards.
+
+Also, members were being shown "Model: deterministic-fallback" at the foot of the
+academy brief. That is engineering detail that reads like a fault. Removed; the
+badge at the top already says whether the brief was written by the AI or built
+from the rules.
+
+**The four questions on the Community Feed.**
+1. Should the feed be visible to people who are not signed in, or members only? I
+   would start members only and open it later.
+2. Can free members post, or only read? I would say read only, so posting is part
+   of what the membership buys.
+3. Should a brand new member's first post wait for approval? Everything else is
+   moderated after the fact, which means there is a window where something bad is
+   live.
+4. Do you want likes or replies at all? The spec assumes neither for now.
 
 ---
 
