@@ -5,7 +5,29 @@ Deployed at watchtower-virid.vercel.app (Next.js 16 + Prisma + Supabase `watchto
 
 **PERFORMANCE: FIXED IN CODE 2026-08-03 (below), NOT YET DEPLOYED.** The cause was none of the three things previously suspected. See the session entry directly below. Still true and still outstanding: production serves Clerk **test keys** (`pk_test_...`) and Stripe is in **test mode**, both go-live blockers.
 
-## 2026-08-04 (c) — THE THREE THINGS KYSER REJECTED, ALL FIXED AND VERIFIED. Migration APPLIED, code uncommitted, NOT deployed.
+## 2026-08-04 (d) — DEPLOYED (`bca2c26`) AND MEASURED FROM PRODUCTION. First real numbers this project has ever had.
+Every performance figure before today came from a laptop in London against a database in Zurich, which is the wrong journey. `/api/diagnostics/perf` (cron-secret guarded) measures from **inside the deployed function**.
+
+**Region pin took effect.** `x-vercel-id` went `lhr1::iad1` (Washington) to **`lhr1::fra1`** (Frankfurt), next to the eu-central-2 database. Confirmed on the live host.
+
+**Production, warm steady state (5 consecutive samples):**
+
+| | before (laptop / uncached) | production warm |
+| --- | --- | --- |
+| DB round trip | ~130ms London, functions in iad1 | **41-45ms** |
+| Shared signal summary | 1327ms, recomputed per request | **5-8ms** |
+| Same summary, repeat | full recompute | **0ms** |
+| **50 concurrent summaries** | **3,089ms** | **2-3ms** |
+| Per-member dashboard query | 2505ms (pre-relationJoins) | **62-97ms** |
+| Whole diagnostic pass | — | **168-188ms** |
+
+**⚠ COLD START IS THE REMAINING ROUGH EDGE, and it is worse than I predicted.** First request into a fresh lambda: DB round trip 223-272ms, shared summary **1019ms**, whole pass **2007ms**. I predicted 300-600ms for that cold summary and was wrong by roughly double. Also note that on a cold instance even a cache HIT costs ~277ms, because Vercel's Data Cache is network-backed; only once the instance is warm does it drop to 0ms. So the honest shape is: **~1-2s for the first request into a new instance, ~170ms for every request after.** Under the expected load lambdas stay warm, so most members get the warm path, but the first visitor after a quiet spell pays the cold one.
+
+**Health check after deploy, all correct:** public pages 0.10-0.30s TTFB; `/app` and `/admin/releases` 404 unauth (Clerk protect-rewrite); `/api/me/watchlists` and `/api/community/posts` 401; cron route 403 without the secret; diagnostics 403 without the secret.
+
+**⚠ `vercel.json` TAKES NO COMMENTS — this blocked the first deploy attempt.** It is strict-schema JSON and the CLI rejects any unrecognised top-level key: `Error: Invalid vercel.json - should NOT have additional property '_comment_regions'`. An underscore prefix is NOT treated as a comment. Every top-level key is now validated against the documented schema before committing.
+
+## 2026-08-04 (c) — THE THREE THINGS KYSER REJECTED, ALL FIXED AND VERIFIED. Migration APPLIED, code DEPLOYED as of (d).
 tsc clean, **173 tests** (15 new), eslint 0 errors, `next build` green, all four verification scripts passing.
 
 **1. THE THREE SECONDS AT 50 CONCURRENT: FIXED.** Cause was read amplification, not anything inherent. `getDailySignalSummary`, `getMacroTiles`, `getFeaturedPosts` and `getSettings` take **no profile argument** — identical bytes for every member — and every page is `force-dynamic` with no caching, so fifty members meant fifty identical full 815-asset scans queueing behind each other. New `lib/server/sharedCache.ts` wraps them in `unstable_cache` with tagged invalidation (60s market, 30s settings, 60s community). **Measured in a real request context via a temporary harness route, since these are Clerk-gated:**
