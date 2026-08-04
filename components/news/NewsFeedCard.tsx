@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Newspaper, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
+import { Newspaper, ExternalLink, ArrowRight } from 'lucide-react';
 
 type NewsItem = {
   id: string;
@@ -24,7 +25,14 @@ function timeAgo(iso: string | null): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-export function NewsFeedCard() {
+/**
+ * The headline feed.
+ *
+ * `limit` and `viewMoreHref` exist for the Dashboard, which shows a three-article
+ * preview and sends people to the full Market Pulse tab. Without a limit the card
+ * shows everything and scrolls, which is what the dedicated page wants.
+ */
+export function NewsFeedCard({ limit, viewMoreHref }: { limit?: number; viewMoreHref?: string } = {}) {
   const [items, setItems] = useState<NewsItem[] | null>(null);
   const [error, setError] = useState(false);
 
@@ -59,7 +67,7 @@ export function NewsFeedCard() {
         <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Live feed</span>
       </div>
 
-      <div className="max-h-[28rem] flex-1 overflow-y-auto">
+      <div className={limit ? 'flex-1' : 'max-h-[28rem] flex-1 overflow-y-auto'}>
         {error ? (
           <div className="p-5 text-sm text-muted-foreground">News is unavailable right now. It will refresh automatically.</div>
         ) : items == null ? (
@@ -75,7 +83,7 @@ export function NewsFeedCard() {
           <div className="p-5 text-sm text-muted-foreground">No headlines available.</div>
         ) : (
           <ul className="divide-y divide-border">
-            {items.map((item) => (
+            {(limit ? items.slice(0, limit) : items).map((item) => (
               <li key={item.id}>
                 <a
                   href={item.url}
@@ -98,6 +106,15 @@ export function NewsFeedCard() {
           </ul>
         )}
       </div>
+
+      {viewMoreHref && (
+        <Link
+          href={viewMoreHref}
+          className="flex items-center justify-center gap-1.5 border-t border-border px-5 py-3 text-sm font-semibold text-primary transition hover:bg-muted/40"
+        >
+          View more <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      )}
     </div>
   );
 }

@@ -13,11 +13,13 @@ type NavUser = (Pick<SessionUser, 'name' | 'email' | 'role' | 'accessState'> & {
 
 type NavItem = { href: string; label: string; icon: typeof LayoutDashboard };
 
-// Order set by the academy owner, 2 Aug 2026.
+// Order set by the academy owner, 2 Aug 2026, with Market Pulse added
+// immediately before Community Feed on 4 Aug at his direction.
 const memberItems: NavItem[] = [
   { href: '/app', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/app/watchlists', label: 'Watchlists', icon: Bell },
   { href: '/app/portfolio-tools', label: 'Portfolio', icon: Calculator },
+  { href: '/app/market-pulse', label: 'Market Pulse', icon: Newspaper },
   { href: '/app/community', label: 'Community Feed', icon: MessagesSquare },
   { href: '/app/daily-checks', label: 'Daily Checks', icon: Activity },
   // Personal Finance is a destination in its own right, not a sub-tool (24 Jul feedback).

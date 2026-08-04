@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 248 160" role="img" aria-label="Stock Pickers Academy">
+  <defs>
+    <linearGradient id="spaBars" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#7a5320"/>
+      <stop offset="22%" stop-color="#b98f3e"/>
+      <stop offset="44%" stop-color="#e6d689"/>
+      <stop offset="60%" stop-color="#ece49c"/>
+      <stop offset="80%" stop-color="#b3a648"/>
+      <stop offset="100%" stop-color="#5c9e46"/>
+    </linearGradient>
+    <linearGradient id="spaArrow" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2f7d32"/>
+      <stop offset="100%" stop-color="#84d17c"/>
+    </linearGradient>
+  </defs>
+  <rect x="24" y="98" width="14" height="52" rx="5" fill="url(#spaBars)"/>
+  <rect x="56" y="74" width="14" height="76" rx="5" fill="url(#spaBars)"/>
+  <rect x="88" y="50" width="14" height="100" rx="5" fill="url(#spaBars)"/>
+  <rect x="120" y="76" width="14" height="74" rx="5" fill="url(#spaBars)"/>
+  <rect x="152" y="62" width="14" height="88" rx="5" fill="url(#spaBars)"/>
+  <rect x="184" y="48" width="14" height="102" rx="5" fill="url(#spaBars)"/>
+  <rect x="216" y="34" width="14" height="116" rx="5" fill="url(#spaBars)"/>
+  <path d="M28 82 L95 34 L127 60 L210 24" fill="none" stroke="url(#spaArrow)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M232 14 L214 34 L204 13 Z" fill="url(#spaArrow)" stroke="url(#spaArrow)" stroke-width="4" stroke-linejoin="round"/>
+</svg>

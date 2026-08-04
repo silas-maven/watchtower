@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { Fragment, useState, type ReactNode } from 'react';
 import { ChevronRight, CloudLightning, CloudSun, Info, Snowflake, Sun } from 'lucide-react';
 import { formatMacroValue, type MacroTile } from '@/lib/market/macroTypes';
 import type { WeatherReading } from '@/lib/market/weather';
@@ -47,10 +47,24 @@ export function WeatherSnapshotBoard({
   weather,
   tiles,
   rows,
+  interleave,
+  interleaveAfter = 6,
 }: {
   weather: WeatherReading;
   tiles: Record<string, MacroTile>;
   rows: string[][];
+  /**
+   * Rendered inside the tile grid, full width, after `interleaveAfter` tiles.
+   *
+   * The owner drew a line on the mobile Dashboard between the SILVER / BOE RATE
+   * row and the UK 10Y GILT / ITRAXX 5Y row and asked for Market Pulse there. At
+   * the mobile two-column breakpoint that is exactly six tiles in, which is why
+   * the default is 6 rather than something expressed in rows: the grid is flat,
+   * so "after the second row" is only meaningful as a tile count at a known
+   * column width. On wider screens the tiles reflow and the caller hides this.
+   */
+  interleave?: ReactNode;
+  interleaveAfter?: number;
 }) {
   const [expanded, setExpanded] = useState(false);
   const style = WEATHER_STYLES[weather.state];
@@ -94,9 +108,18 @@ export function WeatherSnapshotBoard({
           ten across instead of five and keeps the panel short. Breakpoints
           allow for the 288px sidebar: xl is ~1000px of usable width, not 1280. */}
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8">
-        {visibleRows.flat().map((key) => {
+        {visibleRows.flat().map((key, index) => {
           const tile = tiles[key];
-          return tile ? <Tile key={key} tile={tile} /> : null;
+          const cell = tile ? <Tile key={key} tile={tile} /> : null;
+          if (interleave && index === interleaveAfter - 1) {
+            return (
+              <Fragment key={key}>
+                {cell}
+                <div className="col-span-full my-1">{interleave}</div>
+              </Fragment>
+            );
+          }
+          return cell;
         })}
       </div>
 

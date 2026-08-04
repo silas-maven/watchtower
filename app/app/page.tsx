@@ -15,6 +15,7 @@ import { FeaturedPost } from '@/components/community/FeaturedPost';
 import { getFeaturedPosts } from '@/lib/server/community';
 import { AcademyOffers } from '@/components/AcademyOffers';
 import { MarketPulseRail } from '@/components/news/MarketPulseRail';
+import { NewsFeedCard } from '@/components/news/NewsFeedCard';
 import { WeatherSnapshotBoard } from '@/components/market/WeatherSnapshotBoard';
 import { getMacroTiles, weatherInputsFromTiles } from '@/lib/market/macro';
 import { SNAPSHOT_ROWS } from '@/lib/market/macroTypes';
@@ -94,7 +95,21 @@ export default async function MemberDashboard() {
       </BlurFade>
 
       <BlurFade delay={0.15}>
-        <WeatherSnapshotBoard weather={weather} tiles={macroTileRecord} rows={SNAPSHOT_ROWS} />
+        {/* Market Pulse moved up the mobile Dashboard (owner, 4 Aug): three
+            articles sitting between the SILVER / BOE RATE row and the UK 10Y
+            GILT / ITRAXX 5Y row, with "View more" going to the full tab.
+            Below lg only, because at wider breakpoints the tiles reflow past
+            six across and the right-hand rail already carries the full feed. */}
+        <WeatherSnapshotBoard
+          weather={weather}
+          tiles={macroTileRecord}
+          rows={SNAPSHOT_ROWS}
+          interleave={
+            <div className="lg:hidden">
+              <NewsFeedCard limit={3} viewMoreHref="/app/market-pulse" />
+            </div>
+          }
+        />
       </BlurFade>
 
       <BlurFade delay={0.2}>
@@ -216,8 +231,11 @@ export default async function MemberDashboard() {
             </div>
           </div>
 
-          {/* Collapsible Market Pulse rail */}
-          <MarketPulseRail xHandle={xHandle || 'StockTwits'} xListUrl={xListUrl || ''} />
+          {/* Collapsible Market Pulse rail. Desktop only: on a phone the feed
+              is interleaved into the macro tiles above instead. */}
+          <div className="hidden lg:block">
+            <MarketPulseRail xHandle={xHandle || 'StockTwits'} xListUrl={xListUrl || ''} />
+          </div>
         </div>
       </BlurFade>
 

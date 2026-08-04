@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, PiggyBank, Plus, Trash2 } from 'lucide-react';
 import { Card } from '@/components/Card';
 import { useToast } from '@/components/ui/ToastProvider';
+import { PersonalFinanceTools } from '@/components/portfolio/PersonalFinanceTools';
 
 type Debt = { name: string; balance: string; aprPct: string };
 
@@ -163,6 +164,8 @@ export default function PersonalFinancePage() {
           Everything stays private to your account. Educational analysis, not regulated financial advice.
         </p>
       </div>
+
+      <PersonalFinanceTools />
 
       <Card title="Your numbers">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

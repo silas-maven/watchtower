@@ -1,4 +1,4 @@
-import { Calculator, CheckSquare, History, Wallet, Briefcase, ShieldAlert, PiggyBank, Percent, TrendingUp } from 'lucide-react';
+import { Calculator, CheckSquare, History, Wallet, Briefcase, ShieldAlert, PiggyBank, Percent, TrendingUp, Landmark } from 'lucide-react';
 
 // SINGLE SOURCE OF TRUTH for the Portfolio Tools.
 //
@@ -26,6 +26,13 @@ export type PortfolioTool = {
    * its own layout.tsx gate so the route cannot be reached by typing the URL.
    */
   free?: true;
+  /**
+   * Also surfaced on the Personal Finance page, not only under Portfolio tools.
+   * The owner circled Compound Interest and CAGR in the 4 August screenshots and
+   * asked for the calculators to live where people actually look for them; the
+   * pension calculator joins them because it is the same kind of thing.
+   */
+  personalFinance?: true;
 };
 
 export const PORTFOLIO_TOOLS: PortfolioTool[] = [
@@ -90,6 +97,7 @@ export const PORTFOLIO_TOOLS: PortfolioTool[] = [
       'What a pot becomes over time, with or without regular top-ups. Set the rate, how often it compounds, and how often you pay in, then read the year-by-year breakdown of what came from your money and what came from growth.',
     short: 'Grow a pot over time, year by year.',
     free: true,
+    personalFinance: true,
   },
   {
     href: '/app/portfolio-tools/cagr',
@@ -101,6 +109,19 @@ export const PORTFOLIO_TOOLS: PortfolioTool[] = [
       'The annual growth rate behind a result. Give a starting value, an ending value and a number of years, and get the compound annual rate, the total return, and how long the same rate would take to reach a target.',
     short: 'The yearly rate behind a result.',
     free: true,
+    personalFinance: true,
+  },
+  {
+    href: '/app/portfolio-tools/pension-drawdown',
+    icon: Landmark,
+    iconBg: 'bg-violet-500/10',
+    iconColor: 'text-violet-500',
+    title: 'Pension Drawdown',
+    description:
+      'What a pension pot turns into once you stop paying in. Set the tax-free cash, the withdrawal strategy and your growth, fee and inflation assumptions, then see the income it supports, the tax on it, and the age the fund runs to.',
+    short: 'Income, tax and how long a pot lasts.',
+    /** Paid: the 4 August spec asks for this one behind the paywall. */
+    personalFinance: true,
   },
   {
     href: '/app/portfolio-tools/due-diligence',
