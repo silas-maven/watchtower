@@ -13,7 +13,7 @@ export const maxDuration = 30;
 export async function GET() {
   try {
     await requireUser();
-    await ensureFreshMarketData().catch(() => undefined);
+    ensureFreshMarketData();
 
     const tiles = await getMacroTiles();
     const weather = classifyWeather(weatherInputsFromTiles(tiles));

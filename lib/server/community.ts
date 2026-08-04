@@ -2,6 +2,7 @@ import { Role } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { FEATURED_POOL_SIZE, POSTS_PER_DAY } from '@/lib/community';
 import type { SessionUser } from '@/lib/auth';
+import { sharedCommunity } from '@/lib/server/sharedCache';
 
 // Server-side reads for the community feed. Kept out of the page so the same
 // shapes serve the page, the API and the admin queue.
@@ -100,6 +101,10 @@ export async function getFeed(
  * so a fresh install shows the feed working rather than an empty box.
  */
 export async function getFeaturedPosts(): Promise<Array<{ id: string; alias: string; body: string; createdAt: string }>> {
+  return sharedCommunity('featuredPosts', computeFeaturedPosts)();
+}
+
+async function computeFeaturedPosts(): Promise<Array<{ id: string; alias: string; body: string; createdAt: string }>> {
   const featured = await prisma.communityPost.findMany({
     where: { parentId: null, status: 'PUBLISHED', featured: true },
     orderBy: { createdAt: 'desc' },

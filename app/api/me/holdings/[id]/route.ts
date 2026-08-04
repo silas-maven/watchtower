@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { ok, fail } from '@/lib/api';
 import { requirePaid } from '@/lib/entitlements';
 import { prisma } from '@/lib/prisma';
-import { fromCaughtError } from '@/lib/route';
+import { enforceRateLimit, fromCaughtError } from '@/lib/route';
 import { getLivePortfolioView } from '@/lib/server/livePortfolio';
 import { getVirtualPortfolioView } from '@/lib/server/virtualPortfolio';
 
@@ -21,6 +21,8 @@ const Schema = z.object({
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await requirePaid();
+    const limited = enforceRateLimit('write', user.id);
+    if (limited) return limited;
     const { id } = await params;
     const body = await req.json().catch(() => ({}));
     const parsed = Schema.safeParse(body);

@@ -1,5 +1,6 @@
 import { Prisma, SignalState } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { CACHE_TAGS, invalidateShared } from '@/lib/server/sharedCache';
 import { fetchCryptoQuote } from '@/lib/market/crypto';
 import { fetchFxRates, toGbp } from '@/lib/market/fx';
 import { toQuoteSymbol } from '@/lib/market/symbols';
@@ -299,6 +300,10 @@ async function runRefresh(force: boolean, jobRunId: string): Promise<RefreshMark
   );
 
   await refreshBoeBaseRate().catch((error) => console.error('[refreshMarket] BOE rate refresh failed:', error));
+
+  // New prices landed, so the shared market reads are stale. Drop them now
+  // rather than serving the previous run's numbers for another TTL.
+  invalidateShared(CACHE_TAGS.market);
 
   return result;
 }

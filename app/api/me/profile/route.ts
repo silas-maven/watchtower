@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { fail, ok } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { fromCaughtError } from '@/lib/route';
+import { enforceRateLimit, fromCaughtError } from '@/lib/route';
 import { SUPPORTED_CURRENCIES } from '@/lib/money';
 
 export const runtime = 'nodejs';
@@ -33,6 +33,8 @@ export async function GET() {
 export async function PATCH(req: Request) {
   try {
     const user = await requireUser();
+    const limited = enforceRateLimit('write', user.id);
+    if (limited) return limited;
     const body = await req.json().catch(() => ({}));
     const parsed = Schema.safeParse(body);
     if (!parsed.success) return fail('Invalid payload', 400, 'INVALID_PAYLOAD');

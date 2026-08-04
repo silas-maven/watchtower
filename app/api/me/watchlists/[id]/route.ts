@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { fail, ok } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { fromCaughtError } from '@/lib/route';
+import { enforceRateLimit, fromCaughtError } from '@/lib/route';
 
 export const runtime = 'nodejs';
 export const preferredRegion = 'fra1';
@@ -19,6 +19,8 @@ async function ownedList(profileId: string, id: string) {
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await requireUser();
+    const limited = enforceRateLimit('write', user.id);
+    if (limited) return limited;
     const { id } = await params;
     const body = await req.json().catch(() => ({}));
     const parsed = PatchSchema.safeParse(body);
@@ -53,6 +55,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await requireUser();
+    const limited = enforceRateLimit('write', user.id);
+    if (limited) return limited;
     const { id } = await params;
 
     const list = await ownedList(user.id, id);

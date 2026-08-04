@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { fail, ok } from '@/lib/api';
 import { getDefaultWatchlist, requireUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { fromCaughtError } from '@/lib/route';
+import { enforceRateLimit, fromCaughtError } from '@/lib/route';
 
 export const runtime = 'nodejs';
 export const preferredRegion = 'fra1';
@@ -39,6 +39,8 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const user = await requireUser();
+    const limited = enforceRateLimit('write', user.id);
+    if (limited) return limited;
     const body = await req.json().catch(() => ({}));
     const parsed = CreateSchema.safeParse(body);
     if (!parsed.success) return fail('A list name is required', 400, 'INVALID_PAYLOAD');

@@ -1,6 +1,6 @@
 import { ok, fail } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
-import { fromCaughtError } from '@/lib/route';
+import { enforceRateLimit, fromCaughtError } from '@/lib/route';
 import { trackEvent } from '@/lib/server/trackEvent';
 import type { UsageEventType } from '@prisma/client';
 
@@ -16,6 +16,10 @@ const ALLOWED_TYPES: Set<string> = new Set([
 export async function POST(request: Request) {
   try {
     const user = await requireUser();
+    // Analytics pings are high volume by nature, but metadata is arbitrary caller-supplied JSON, so the write volume needs a ceiling.
+    const limited = enforceRateLimit('track', user.id);
+    if (limited) return limited;
+
     const body = (await request.json()) as { type?: string; metadata?: Record<string, unknown>; path?: string };
     if (!body.type || !ALLOWED_TYPES.has(body.type)) {
       return fail('Invalid event type', 400, 'INVALID_EVENT_TYPE');

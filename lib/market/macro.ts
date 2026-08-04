@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
-import { getSetting, type ManualMacroValue } from '@/lib/server/settings';
+import { getSettings, type ManualMacroValue } from '@/lib/server/settings';
+import { sharedMarket } from '@/lib/server/sharedCache';
 import type { WeatherInputs } from '@/lib/market/weather';
 import type { MacroTile } from '@/lib/market/macroTypes';
 
@@ -44,14 +45,45 @@ const MANUAL_TILES: Array<{ key: string; label: string; setting: 'macro_boe_base
 export { SNAPSHOT_ROWS, TICKER_ORDER, formatMacroValue } from '@/lib/market/macroTypes';
 export type { MacroTile } from '@/lib/market/macroTypes';
 
-/** All macro tiles keyed by instrument key, ready for the ticker/snapshot/weather. */
+/**
+ * All macro tiles keyed by instrument key, ready for the ticker/snapshot/weather.
+ *
+ * The Map is built here rather than inside the cache, because the data cache
+ * serialises what it stores and a Map does not survive that round trip: it would
+ * come back as an empty object and every tile would silently read as missing.
+ * The cached layer therefore returns a plain array of entries, and this rebuilds
+ * the Map from it.
+ */
 export async function getMacroTiles(): Promise<Map<string, MacroTile>> {
+  return new Map(await sharedMarket('macroTiles', computeMacroTileEntries)());
+}
+
+/** The cacheable half: a plain array, which the data cache can round-trip. */
+async function computeMacroTileEntries(): Promise<Array<[string, MacroTile]>> {
   const tiles = new Map<string, MacroTile>();
 
-  const assets = await prisma.asset.findMany({
-    where: { isMacro: true, isActive: true },
-    include: { snapshots: { orderBy: { capturedAt: 'desc' }, take: 1 } },
-  });
+  // One round trip for the instruments, one for every setting they need.
+  //
+  // This used to read the settings one at a time: an await for the BOE auto
+  // value, then another inside the MANUAL_TILES loop, which is a sequential
+  // round trip per tile. Five trips to build a strip of tiles, and because this
+  // runs on the Dashboard it was the slowest thing in that page's Promise.all
+  // while looking like a single call. getSettings() reads them all at once.
+  const [assets, settings] = await Promise.all([
+    prisma.asset.findMany({
+      where: { isMacro: true, isActive: true },
+      select: {
+        id: true,
+        symbol: true,
+        snapshots: {
+          orderBy: { capturedAt: 'desc' },
+          take: 1,
+          select: { currentPrice: true, dailyChangePct: true, capturedAt: true },
+        },
+      },
+    }),
+    getSettings(),
+  ]);
   const bySymbol = new Map(assets.map((a) => [a.symbol, a]));
 
   for (const inst of MACRO_INSTRUMENTS) {
@@ -72,10 +104,10 @@ export async function getMacroTiles(): Promise<Map<string, MacroTile>> {
 
   // The BOE rate auto-updates from the BoE feed; the admin's manual value, when
   // set, overrides the auto value.
-  const boeAuto = (await getSetting('macro_boe_base_rate_auto')) as ManualMacroValue;
+  const boeAuto = settings.macro_boe_base_rate_auto as ManualMacroValue;
 
   for (const manual of MANUAL_TILES) {
-    const setting = (await getSetting(manual.setting)) as ManualMacroValue;
+    const setting = settings[manual.setting] as ManualMacroValue;
     const effective =
       manual.key === 'boe' && setting.value == null && boeAuto.value != null ? boeAuto : setting;
     tiles.set(manual.key, {
@@ -91,7 +123,7 @@ export async function getMacroTiles(): Promise<Map<string, MacroTile>> {
     });
   }
 
-  return tiles;
+  return [...tiles.entries()];
 }
 
 export function weatherInputsFromTiles(tiles: Map<string, MacroTile>): WeatherInputs {

@@ -3,7 +3,7 @@ import { fail, ok } from '@/lib/api';
 import { getDefaultWatchlist } from '@/lib/auth';
 import { requirePaid } from '@/lib/entitlements';
 import { prisma } from '@/lib/prisma';
-import { fromCaughtError } from '@/lib/route';
+import { enforceRateLimit, fromCaughtError } from '@/lib/route';
 import { fetchFxRates } from '@/lib/market/fx';
 import { computeAveragingPlan } from '@/lib/portfolio';
 
@@ -47,6 +47,8 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const user = await requirePaid();
+    const limited = enforceRateLimit('write', user.id);
+    if (limited) return limited;
     const body = await req.json().catch(() => ({}));
     const parsed = PlanSchema.safeParse(body);
     if (!parsed.success) return fail('Invalid plan payload', 400, 'INVALID_PAYLOAD');

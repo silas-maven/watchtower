@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { ok, fail } from '@/lib/api';
 import { requirePaid } from '@/lib/entitlements';
 import { prisma } from '@/lib/prisma';
-import { fromCaughtError } from '@/lib/route';
+import { enforceRateLimit, fromCaughtError } from '@/lib/route';
 import { fetchFxRates } from '@/lib/market/fx';
 import { syncHoldingFromExecutedTranches, toPlanLite } from '@/lib/spartan';
 
@@ -16,6 +16,8 @@ const Schema = z.object({ executed: z.boolean() });
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string; trancheId: string }> }) {
   try {
     const user = await requirePaid();
+    const limited = enforceRateLimit('write', user.id);
+    if (limited) return limited;
     const { id, trancheId } = await params;
     const body = await req.json().catch(() => ({}));
     const parsed = Schema.safeParse(body);

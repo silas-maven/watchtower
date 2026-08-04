@@ -1,5 +1,14 @@
 generator client {
   provider = "prisma-client-js"
+  // Loads relations with a LATERAL JOIN instead of a second round trip.
+  //
+  // Without this, a nested `take: 1` (every "latest snapshot per asset" call in
+  // lib/server) compiles to `WHERE assetId IN (815 ids) ORDER BY capturedAt DESC`
+  // with NO limit: Prisma fetches all 44,153 snapshot rows, ships them over the
+  // wire, and slices one per asset in JavaScript. Measured 3 Aug 2026 at 2505ms
+  // for a result of 815 rows. With the join strategy the database returns 815
+  // rows and the same call takes ~700ms.
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {
@@ -82,6 +91,11 @@ enum AiReportKind {
   PITCH
   STRESS_TEST
   PERSONAL_FINANCE
+  /// Per-asset AI insight. Added so /api/ai-insight can be metered by counting
+  /// rows in the database like every other model-backed feature. It previously
+  /// persisted nothing, which left an in-process rate limit as the only guard on
+  /// an endpoint that spends money and is reachable by any signed-in profile.
+  ASSET_INSIGHT
 
   @@map("watchtower_spa_ai_report_kind")
 }
@@ -185,6 +199,7 @@ model Profile {
   communityPosts         CommunityPost[]      @relation("CommunityPostAuthor")
   moderatedPosts         CommunityPost[]      @relation("CommunityPostModerator")
   communityLikes         CommunityPostLike[]  @relation("CommunityPostLiker")
+  communityReports       CommunityPostReport[] @relation("CommunityPostReporter")
 
   @@index([role, accessState])
   @@index([lastSeenAt(sort: Desc)])
@@ -788,7 +803,9 @@ model CommunityPost {
   likeCount  Int @default(0)
   replyCount Int @default(0)
 
-  /// Set when members report it, cleared when an admin resolves it.
+  /// Denormalised report counter. The rows in CommunityPostReport are the truth,
+  /// exactly as CommunityPostLike is the truth behind likeCount. Cleared when an
+  /// admin resolves the post, which also clears the rows.
   reportCount Int @default(0)
 
   /// The moderation trail. The reason has to survive the status flip, or nobody
@@ -803,14 +820,40 @@ model CommunityPost {
   profile     Profile             @relation("CommunityPostAuthor", fields: [profileId], references: [id], onDelete: Cascade)
   moderatedBy Profile?            @relation("CommunityPostModerator", fields: [moderatedById], references: [id], onDelete: SetNull)
   parent      CommunityPost?      @relation("CommunityPostThread", fields: [parentId], references: [id], onDelete: Cascade)
-  replies     CommunityPost[]     @relation("CommunityPostThread")
+  replies     CommunityPost[]       @relation("CommunityPostThread")
   likes       CommunityPostLike[]
+  reports     CommunityPostReport[]
 
   @@index([parentId, status, createdAt])
   @@index([status, createdAt(sort: Desc)])
   @@index([featured, status, createdAt(sort: Desc)])
   @@index([profileId, createdAt(sort: Desc)])
   @@map("watchtower_spa_community_posts")
+}
+
+/// One report, by one member, on one post.
+///
+/// The composite primary key is the whole point: it makes "report" idempotent at
+/// the database level, so a member can flag a post once and no amount of
+/// retrying, scripting or racing changes that. Before this table, reportCount was
+/// a bare increment on an endpoint anyone could call in a loop, and the
+/// moderation queue sorts by that count, so one member could bury every genuine
+/// report under a post of their choosing.
+///
+/// A rate limit alone could not fix that. It slows the loop down; it does not
+/// make the second report from the same person meaningless, which is what the
+/// moderation queue actually needs to be true.
+model CommunityPostReport {
+  postId    String
+  profileId String
+  createdAt DateTime @default(now())
+
+  post    CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  profile Profile       @relation("CommunityPostReporter", fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@id([postId, profileId])
+  @@index([profileId])
+  @@map("watchtower_spa_community_post_reports")
 }
 
 /// One like, by one member, on one post. The unique pair is what makes liking

@@ -3,7 +3,7 @@ import { fail, ok } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
 import { optionalEnv } from '@/lib/env';
 import { prisma } from '@/lib/prisma';
-import { fromCaughtError } from '@/lib/route';
+import { enforceRateLimit, fromCaughtError } from '@/lib/route';
 import { getStripe } from '@/lib/stripe';
 
 export const runtime = 'nodejs';
@@ -24,6 +24,10 @@ function membershipPrice(): { priceId: string | undefined; mode: 'subscription' 
 export async function POST(req: Request) {
   try {
     const user = await requireUser();
+    // Each call creates a Stripe Checkout Session. Bounded so this cannot be used to spam Stripe's API on our account.
+    const limited = enforceRateLimit('billing', user.id);
+    if (limited) return limited;
+
     const stripe = getStripe();
     if (!stripe) return fail('Stripe checkout is not configured yet', 503, 'STRIPE_NOT_CONFIGURED');
 

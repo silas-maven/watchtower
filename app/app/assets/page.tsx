@@ -17,12 +17,38 @@ export default async function AssetsPage() {
   // Free profiles see the assets, not the academy's call on them. The signal and
   // its price targets are withheld from the payload, not just from the markup.
   const paid = canUse(profile, 'signals');
-  await ensureFreshMarketData();
+  ensureFreshMarketData();
 
+  // Select only the columns LibraryRow renders. `include: { rule: true, ... }`
+  // pulled every column of both tables for all 815 rows, which serialised to
+  // 1.2 MB of RSC payload to render a table that shows fifteen fields.
   const assets = await prisma.asset
     .findMany({
       where: { isActive: true, isMacro: false },
-      include: { rule: true, snapshots: { orderBy: { capturedAt: 'desc' }, take: 1 } },
+      select: {
+        id: true,
+        symbol: true,
+        name: true,
+        assetType: true,
+        currency: true,
+        low52: true,
+        high52: true,
+        marketCap: true,
+        rule: { select: { targetEntry: true, targetExit: true, signalOverride: true } },
+        snapshots: {
+          orderBy: { capturedAt: 'desc' },
+          take: 1,
+          select: {
+            currentPrice: true,
+            dailyChangePct: true,
+            dailyLow: true,
+            dailyHigh: true,
+            low52: true,
+            high52: true,
+            marketCap: true,
+          },
+        },
+      },
       orderBy: { symbol: 'asc' },
     })
     .catch(() => []);

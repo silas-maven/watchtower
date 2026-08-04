@@ -4,7 +4,7 @@ import { fail, ok } from '@/lib/api';
 import { checkDailyAiQuota } from '@/lib/entitlements';
 import { requireUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { fromCaughtError } from '@/lib/route';
+import { enforceRateLimit, fromCaughtError } from '@/lib/route';
 import { runFinanceSimulation } from '@/lib/finance/simulate';
 import { narrateFinance } from '@/lib/ai/financeNarrative';
 
@@ -34,6 +34,10 @@ export async function POST(req: Request) {
     // Personal Finance is on the free side of the line (owner, 2 Aug 2026), but
     // each run costs a model call, so it is metered rather than open.
     const user = await requireUser();
+    // Outer guard in front of the per-day DB quota below.
+    const limited = enforceRateLimit('model', user.id);
+    if (limited) return limited;
+
     const quota = await checkDailyAiQuota(user, 'PERSONAL_FINANCE', { free: 3, paid: 25 });
     if (!quota.allowed) return fail(quota.reason ?? 'Daily limit reached', 402, 'PAYWALL');
     const json = await req.json().catch(() => ({}));

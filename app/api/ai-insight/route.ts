@@ -2,9 +2,10 @@ import { Role } from '@prisma/client';
 import { z } from 'zod';
 import { fail, ok } from '@/lib/api';
 import { callJsonModel, hasLlmProvider } from '@/lib/ai/llm';
+import { checkDailyAiQuota } from '@/lib/entitlements';
 import { requireRole } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { fromCaughtError } from '@/lib/route';
+import { enforceRateLimit, fromCaughtError } from '@/lib/route';
 
 const Schema = z.object({ assetId: z.string() });
 
@@ -26,7 +27,20 @@ function fallbackInsight(symbol: string, state: string) {
 
 export async function POST(req: Request) {
   try {
-    await requireRole([Role.OWNER, Role.ADMIN, Role.MEMBER]);
+    const user = await requireRole([Role.OWNER, Role.ADMIN, Role.MEMBER]);
+    // This endpoint spends money on a model call and is reachable by any
+    // signed-in profile, including a free one. Two guards, because one is not
+    // enough at several hundred members:
+    //
+    //   the rate limit  stops a burst, but is per lambda instance, so its real
+    //                   ceiling is the limit times however many are warm
+    //   the DB quota    is the actual spend control, counted in rows, and cannot
+    //                   be reset by landing on a cold instance
+    const limited = enforceRateLimit('model', user.id);
+    if (limited) return limited;
+    const quota = await checkDailyAiQuota(user, 'ASSET_INSIGHT', { free: 5, paid: 50 });
+    if (!quota.allowed) return fail(quota.reason ?? 'Daily limit reached', 429, 'QUOTA_EXCEEDED');
+
     const json = await req.json().catch(() => ({}));
     const parsed = Schema.safeParse(json);
     if (!parsed.success) return fail('Invalid payload', 400, 'INVALID_PAYLOAD');
@@ -70,13 +84,32 @@ export async function POST(req: Request) {
         return ok({ assetId: asset.id, ...fallback });
       }
 
-      return ok({
-        assetId: asset.id,
+      const insight = {
         summary: parsedOutput.summary,
         bullets: parsedOutput.bullets.slice(0, 4),
         confidence: Math.max(0, Math.min(100, Math.round(parsedOutput.confidence ?? 60))),
         model,
-      });
+      };
+
+      // Persist the row the quota counts. Written only on the path that actually
+      // reached the model: the deterministic fallback above costs nothing, so
+      // charging a member's daily allowance for it would meter our own outage.
+      // Fire and forget, because failing to record a usage row is not a reason to
+      // withhold a result the member has already paid for in compute.
+      void prisma.aiReport
+        .create({
+          data: {
+            kind: 'ASSET_INSIGHT',
+            profileId: user.id,
+            assetId: asset.id,
+            inputs: { assetId: asset.id, symbol: asset.symbol },
+            result: insight,
+            model,
+          },
+        })
+        .catch(() => undefined);
+
+      return ok({ assetId: asset.id, ...insight });
     } catch {
       return ok({ assetId: asset.id, ...fallback });
     }

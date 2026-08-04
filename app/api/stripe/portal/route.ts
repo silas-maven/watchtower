@@ -1,7 +1,7 @@
 import { fail, ok } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { fromCaughtError } from '@/lib/route';
+import { enforceRateLimit, fromCaughtError } from '@/lib/route';
 import { getStripe } from '@/lib/stripe';
 
 export const runtime = 'nodejs';
@@ -14,6 +14,10 @@ export const runtime = 'nodejs';
 export async function POST(req: Request) {
   try {
     const user = await requireUser();
+    // Each call creates a Stripe billing portal session.
+    const limited = enforceRateLimit('billing', user.id);
+    if (limited) return limited;
+
     const stripe = getStripe();
     if (!stripe) return fail('Stripe is not configured yet', 503, 'STRIPE_NOT_CONFIGURED');
 

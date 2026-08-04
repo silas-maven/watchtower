@@ -3,7 +3,7 @@ import { fail, ok } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
 import { requireFeature } from '@/lib/entitlements';
 import { prisma } from '@/lib/prisma';
-import { fromCaughtError } from '@/lib/route';
+import { enforceRateLimit, fromCaughtError } from '@/lib/route';
 import { checkAlias } from '@/lib/community';
 
 export const runtime = 'nodejs';
@@ -35,6 +35,10 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const user = await requireFeature('communityPost');
+    // Setting an alias is a one-off, but every failed attempt costs a uniqueness query, so the failing path is bounded too.
+    const limited = enforceRateLimit('community', user.id);
+    if (limited) return limited;
+
 
     const parsed = Schema.safeParse(await req.json().catch(() => ({})));
     if (!parsed.success) return fail('Invalid payload', 400, 'INVALID_PAYLOAD');

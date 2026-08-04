@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { fail, ok } from '@/lib/api';
-import { requirePaid } from '@/lib/entitlements';
+import { checkDailyAiQuota, requirePaid } from '@/lib/entitlements';
 import { prisma } from '@/lib/prisma';
-import { fromCaughtError } from '@/lib/route';
+import { enforceRateLimit, fromCaughtError } from '@/lib/route';
 import { getLivePortfolioView } from '@/lib/server/livePortfolio';
 import { getVirtualPortfolioView } from '@/lib/server/virtualPortfolio';
 import { runStressTest, type StressHolding } from '@/lib/stressTest';
@@ -22,6 +22,14 @@ const Schema = z.object({
 export async function POST(req: Request) {
   try {
     const user = await requirePaid();
+    // Narrating a stress test is a model call with maxDuration 300, and this was
+    // the one AI route with no quota at all. It already persists a STRESS_TEST
+    // AiReport, so the existing per-day DB counter works with no schema change.
+    const limited = enforceRateLimit('model', user.id);
+    if (limited) return limited;
+    const quota = await checkDailyAiQuota(user, 'STRESS_TEST', { free: 3, paid: 25 });
+    if (!quota.allowed) return fail(quota.reason ?? 'Daily limit reached', 429, 'QUOTA_EXCEEDED');
+
     const json = await req.json().catch(() => ({}));
     const parsed = Schema.safeParse(json);
     if (!parsed.success) return fail('Invalid payload', 400, 'INVALID_PAYLOAD');

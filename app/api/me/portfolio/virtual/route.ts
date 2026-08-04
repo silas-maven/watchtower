@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { fail, ok } from '@/lib/api';
 import { requirePaid } from '@/lib/entitlements';
 import { prisma } from '@/lib/prisma';
-import { fromCaughtError } from '@/lib/route';
+import { enforceRateLimit, fromCaughtError } from '@/lib/route';
 import { getOrCreateVirtualPortfolio, getVirtualPortfolioView } from '@/lib/server/virtualPortfolio';
 
 export const runtime = 'nodejs';
@@ -35,6 +35,8 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const user = await requirePaid();
+    const limited = enforceRateLimit('write', user.id);
+    if (limited) return limited;
     const body = await req.json().catch(() => ({}));
     const parsed = HoldingSchema.safeParse(body);
     if (!parsed.success) return fail('Invalid holding payload', 400, 'INVALID_PAYLOAD');
@@ -66,6 +68,8 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const user = await requirePaid();
+    const limited = enforceRateLimit('write', user.id);
+    if (limited) return limited;
     const body = await req.json().catch(() => ({}));
     const parsed = SettingsSchema.safeParse(body);
     if (!parsed.success) return fail('Invalid settings payload', 400, 'INVALID_PAYLOAD');
@@ -91,6 +95,8 @@ export async function PATCH(req: Request) {
 export async function DELETE(req: Request) {
   try {
     const user = await requirePaid();
+    const limited = enforceRateLimit('write', user.id);
+    if (limited) return limited;
     const assetId = new URL(req.url).searchParams.get('assetId');
     if (!assetId) return fail('assetId is required', 400, 'INVALID_PAYLOAD');
 

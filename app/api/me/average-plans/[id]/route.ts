@@ -1,7 +1,7 @@
 import { ok, fail } from '@/lib/api';
 import { requirePaid } from '@/lib/entitlements';
 import { prisma } from '@/lib/prisma';
-import { fromCaughtError } from '@/lib/route';
+import { enforceRateLimit, fromCaughtError } from '@/lib/route';
 
 export const runtime = 'nodejs';
 export const preferredRegion = 'fra1';
@@ -24,6 +24,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await requirePaid();
+    const limited = enforceRateLimit('write', user.id);
+    if (limited) return limited;
     const { id } = await params;
     const plan = await prisma.averagePlan.findFirst({ where: { id, profileId: user.id } });
     if (!plan) return fail('Plan not found', 404, 'NOT_FOUND');

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { CACHE_TAGS, invalidateShared, sharedSettings } from '@/lib/server/sharedCache';
 
 /**
  * Typed platform settings backed by the watchtower_spa_platform_settings table.
@@ -47,7 +48,15 @@ export async function getSetting<K extends SettingKey>(key: K): Promise<SettingV
   return SETTING_DEFAULTS[key];
 }
 
+/**
+ * Every setting in one query, cached. Identical for every member, and read on
+ * most page loads, so recomputing it per request was pure duplication.
+ */
 export async function getSettings(): Promise<typeof SETTING_DEFAULTS> {
+  return sharedSettings('platformSettings', computeSettings)();
+}
+
+async function computeSettings(): Promise<typeof SETTING_DEFAULTS> {
   try {
     const rows = await prisma.platformSetting.findMany({
       where: { key: { in: Object.keys(SETTING_DEFAULTS) } },
@@ -74,4 +83,8 @@ export async function setSetting<K extends SettingKey>(
     update: { value: value as object, updatedById },
     create: { key, value: value as object, updatedById },
   });
+  // Drop the cached reads immediately, so an admin sees their own edit rather
+  // than waiting out the TTL and assuming the save failed. Macro tiles read
+  // settings, so they go too.
+  invalidateShared(CACHE_TAGS.settings, CACHE_TAGS.market);
 }

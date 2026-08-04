@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { APP_TIMEZONE } from '@/lib/env';
 import { startOfDayInTimeZone } from '@/lib/time';
 import { computeSignalState, isBuyLike, isSellLike } from '@/lib/signals/engine';
+import { sharedMarket } from '@/lib/server/sharedCache';
 
 export type ActiveSignalRow = {
   assetId: string;
@@ -50,7 +51,19 @@ export async function getActiveSignals(): Promise<ActiveSignalRow[]> {
     .sort((a, b) => a.symbol.localeCompare(b.symbol));
 }
 
+/**
+ * The academy-wide picture. Takes no profile, so every member gets the same
+ * bytes, which is exactly why it is cached: this was a full 815-asset scan plus
+ * a signal recomputation, run once per request. See lib/server/sharedCache.ts
+ * for the measurements that motivated it.
+ *
+ * Keyed by date so an explicit historical date does not share a slot with today.
+ */
 export async function getDailySignalSummary(date?: string) {
+  return sharedMarket(`dailySignalSummary:${date ?? 'today'}`, () => computeDailySignalSummary(date))();
+}
+
+async function computeDailySignalSummary(date?: string) {
   const baseDate = date ? new Date(`${date}T12:00:00.000Z`) : new Date();
   const dayStart = startOfDayInTimeZone(baseDate, APP_TIMEZONE);
   const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);

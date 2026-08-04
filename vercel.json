@@ -1,5 +1,6 @@
 {
   "installCommand": "npm install --legacy-peer-deps",
+  "regions": ["fra1"],
   "crons": [
     {
       "path": "/api/cron/refresh-market",

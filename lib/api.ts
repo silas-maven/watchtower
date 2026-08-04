@@ -4,6 +4,6 @@ export function ok<T>(data: T, init?: ResponseInit) {
   return NextResponse.json({ ok: true, data }, init);
 }
 
-export function fail(message: string, status = 400, code = 'BAD_REQUEST') {
-  return NextResponse.json({ ok: false, error: { code, message } }, { status });
+export function fail(message: string, status = 400, code = 'BAD_REQUEST', headers?: HeadersInit) {
+  return NextResponse.json({ ok: false, error: { code, message } }, { status, ...(headers ? { headers } : {}) });
 }

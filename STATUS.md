@@ -3,7 +3,116 @@
 ## Current State
 Deployed at watchtower-virid.vercel.app (Next.js 16 + Prisma + Supabase `watchtower` schema + Clerk + Stripe). Member app (`/app/*`) and admin console (`/admin/*`) functional. Major pushes: Product v2 (2026-06-12/13), Spartan portfolio (2026-06-16), client-feedback round (2026-07-21), 2-Aug owner round (2026-08-03). Typecheck clean, 132 unit tests pass across 18 files.
 
-**⚠ OPEN: the app is slow, and it is measured, not guessed.** Three separate causes, see `docs/HANDOVER-2026-08-03-AGENT.md` §2 and tasks #44-#47. Short version: (1) the Supabase transaction pooler medians **667ms** for `SELECT 1` while the direct connection medians **26ms** over the same network, which distance cannot explain and which looks like connection queuing (`connection_limit=1` is missing from the pooled URL); (2) functions run in **iad1** while the database is in **eu-central-2**, worth ~80-90ms per round trip, real but the smaller effect; (3) `getAssetsForDashboard()` pulls **815 rows / 207 KB in 2980ms** on every dashboard load and filters to a handful in JS. Nothing has been changed. `scripts/perf-probe.ts` reproduces all of it. Also found: production is serving Clerk **test keys** (`pk_test_...`), which is a go-live blocker alongside Stripe test mode.
+**PERFORMANCE: FIXED IN CODE 2026-08-03 (below), NOT YET DEPLOYED.** The cause was none of the three things previously suspected. See the session entry directly below. Still true and still outstanding: production serves Clerk **test keys** (`pk_test_...`) and Stripe is in **test mode**, both go-live blockers.
+
+## 2026-08-04 (c) — THE THREE THINGS KYSER REJECTED, ALL FIXED AND VERIFIED. Migration APPLIED, code uncommitted, NOT deployed.
+tsc clean, **173 tests** (15 new), eslint 0 errors, `next build` green, all four verification scripts passing.
+
+**1. THE THREE SECONDS AT 50 CONCURRENT: FIXED.** Cause was read amplification, not anything inherent. `getDailySignalSummary`, `getMacroTiles`, `getFeaturedPosts` and `getSettings` take **no profile argument** — identical bytes for every member — and every page is `force-dynamic` with no caching, so fifty members meant fifty identical full 815-asset scans queueing behind each other. New `lib/server/sharedCache.ts` wraps them in `unstable_cache` with tagged invalidation (60s market, 30s settings, 60s community). **Measured in a real request context via a temporary harness route, since these are Clerk-gated:**
+
+| | cold | warm |
+| --- | --- | --- |
+| getDailySignalSummary | 758ms | **0ms** |
+| getMacroTiles | 342ms | **0ms** |
+| 50 concurrent signal summaries | 5ms | **1ms** |
+
+- **TTLs are safe, not a correctness trade.** The data cannot change faster than the refresh job produces it (5 min floor, daily cron), so a 60s cache is well inside the rate at which numbers move. Writes invalidate immediately: `setSetting`, `refreshMarketData` and admin moderation all call `invalidateShared`.
+- **⚠ `unstable_cache` THROWS outside a request context** ("Invariant: incrementalCache missing"). The weekly digest, daily brief, pitch builder and several scripts call these functions from outside a request, so the wrapper catches that specific invariant and falls through to the uncached loader. Caching is an optimisation; an optimisation that crashes a cron job is a bug. Verified all four still work from a plain script.
+- **Nothing per-member is cached, deliberately.** The rule in the module: if two members could ever receive different bytes, it does not belong there.
+- `getMacroTiles` returns a `Map`, which does not survive cache serialisation (it would come back `{}` and every tile would read as missing). The cached half returns entries; the Map is rebuilt outside. Verified: 15 tiles, Bitcoin priced.
+
+**2. RLS: NOW ON, AND PROVEN ENFORCING.** Migration `20260804010000_enable_row_level_security` applied. **All 41 tables**, no permissive policies, no FORCE.
+- **`scripts/verify-rls.ts` proves it rather than claiming it.** It creates a throwaway `NOBYPASSRLS` role, **grants it explicit SELECT on the six most sensitive tables** (over-granting on purpose, so a denial cannot be mistaken for a missing privilege), reads as that role, and confirms **0 rows on every one** plus a refused UPDATE, then drops the role. 10 checks, all passing.
+- **What it closes:** a leaked non-superuser credential, the Supabase `anon`/`authenticated` roles, any accidental future exposure of the `watchtower` schema, and any BI/reporting role added later starts closed. `anon` and `authenticated` are also explicitly REVOKEd.
+- **What it does not close, stated plainly:** if `DATABASE_URL` itself leaks, the attacker is the bypassrls owner and RLS is irrelevant. Per-member policies would need `SET LOCAL app.profile_id` per transaction, which is fragile under transaction pooling and a genuine architecture change, not a migration. Shipping policies that look protective and enforce nothing would be worse than this.
+- **No FORCE on purpose:** with no policies, FORCE would lock the app out entirely the moment the connection role lost BYPASSRLS. Failure mode stays "still works".
+- **Verified the app is unaffected:** 4 profiles / 827 assets / 4 holdings / 1 post still readable, and all other verification scripts still pass.
+
+**3. THE ACADEMY BRIEF LEAK: FIXED.** New `lib/briefVisibility.ts`. A free profile no longer sees the model-written summary at all; it gets a breadth-only summary composed deterministically, plus **only** insights matching a positive allowlist (breadth, top gainers/losers, earnings, extreme ranges). **Allowlist, not filter, and default DENY** — the summary is model-written, so any attempt to strip signal talk out of generated prose eventually misses one. `activeSignals` is stripped from the stat payload so it never reaches the browser.
+- **Verified against the live 3 August brief:** withheld "Active BUY signals: 77. Active SELL signals: 20." and the 17 named sell tickers; kept breadth, earnings, gainers and extreme ranges. 15 tests in `tests/briefVisibility.test.ts` built from that real leaking brief, including that a safe-looking prefix ("Market breadth: 12 assets entered the buy zone") is still withheld.
+
+## 2026-08-04 (b) — REPORT DEDUP MIGRATION + ERROR DISCLOSURE FIX. Migration APPLIED, code uncommitted, NOT deployed.
+**⭐ SCALE ASSUMPTION CORRECTED (Kyser, 2026-08-04): this launches to an existing community, 500+ members expected from the first weekend, three figures within a month and four figures within six.** Not a low-traffic beta. Every "nobody would bother" defence was re-examined against that. tsc clean, **158 tests** (18 new), eslint 0 errors, `next build` green.
+
+**Migration `20260804000000_report_dedup_and_insight_quota` APPLIED to the shared DB and verified in `pg_indexes` / `pg_enum`.** Additive: one new table, one new enum value. Nothing dropped or rewritten; there were 0 rows with `reportCount > 0`, so no backfill was needed.
+
+**1. One report per member per post, enforced by the database.** New `CommunityPostReport` with a composite primary key on `(postId, profileId)`, same shape as `CommunityPostLike`. `reportCount` is now a denormalised counter over real rows rather than a number anyone could increment in a loop. A repeat report returns `{ reported: true, alreadyReported: true }` rather than an error, because from the member's side the post IS reported. Admin "clear reports" now **deletes the rows as well as zeroing the counter** in the same transaction; without that, dismissing a report would permanently bar everyone who had reported that post from ever reporting it again, and the counter would disagree with the rows.
+- **Verified against the live database** with `scripts/verify-report-dedup.ts`: 11 checks, all passing, everything cleaned up afterwards and the cleanup itself asserted. The check that mattered was that the route's catch really does receive **P2002** out of `$transaction`. The first version of that script was one big rolled-back transaction and broke on **SQLSTATE 25P02** (a failed statement aborts the whole transaction), which is exactly the failure mode that would have turned "already reported" into a 500 had the route been written the same way. It is not; now proven rather than assumed.
+
+**2. `/api/ai-insight` now has a DURABLE quota.** It calls a model, is reachable by any signed-in profile including free tier, and persisted nothing, so there was no row to count and the in-process rate limit was its only guard. Added `ASSET_INSIGHT` to `AiReportKind`, the route now writes an `AiReport` **only on the path that actually reached the model** (the deterministic fallback costs nothing, so charging a member's allowance for our own outage would be wrong), and it is metered at free 5/day, paid 50/day. At four members the rate limit was arguably enough; at 500 it is not, because its real ceiling is the limit times the number of warm instances.
+
+**3. `fromCaughtError` no longer leaks internals.** It used to end `return fail(error.message, 400, 'REQUEST_FAILED')`, handing raw error text to the caller: Prisma failures name tables, columns and constraints, connection failures can carry the database host. It also mislabelled server faults as 400. Now only four coded errors (UNAUTHENTICATED / FORBIDDEN / ACCESS_SUSPENDED / PAYWALL) produce a message; everything else logs in full server-side with a short random reference and returns a generic **500** carrying only that reference. **Checked first that nothing relied on the passthrough:** the five non-coded throws in the codebase are all internal (`Missing environment variable: …`, `No AI provider configured`, `CoinGecko request failed: 429`), none user-facing, so this is strictly an improvement. Locked by `tests/routeErrors.test.ts` (9), including that a message merely *containing* "FORBIDDEN" is not treated as an auth decision.
+
+**⚠ CORRECTION TO THE 2026-08-03 PERFORMANCE ENTRY, and it cuts both ways.** That entry called `connection_limit=1` a dead end based on a SINGLE sequential client, which is the one scenario the setting does nothing for. Re-measured properly under concurrency (`scripts/perf-concurrency.ts`), the conclusion **holds and is stronger**: at 100 concurrent dashboard queries the default pool sustains **87 req/s, p95 861ms, 0 errors**, while `connection_limit=1` collapses to **6.7 req/s, p95 9.7s, 32 errors**. Keep the default. But the original reasoning was measured on the wrong case and happened to be right.
+- **Useful headroom number for launch:** the database path handles 100 concurrent narrowed-dashboard reads at ~87 req/s with no errors. Caveat: measured from one process, so it models many requests hitting one warm instance, not many instances each with their own pool. The latter is strictly worse.
+- **`max_connections` on the database is 60.** The transaction pooler multiplexes in front of it, so this is not an immediate wall, but it is the number to watch as instance count grows.
+
+**Now more urgent because of the scale correction, NOT done:** the ungated academy daily brief on `/app/daily-checks` (see the 08-03 security entry) currently gives every free profile the full signal list in prose. At four members that was a rounding error; at several hundred free profiles it is the paid product being given away on the busiest page.
+
+## 2026-08-04 — RATE LIMITING BUILT. Uncommitted, NOT deployed.
+Answer to "do we have rate limiting": **three DB-backed quotas existed and were good; everything else had none.** tsc clean, **149 tests** (12 new), eslint 0 errors, `next build` green.
+
+**Two real holes found, both money.** `POST /api/ai-insight` calls a language model, is reachable by **any signed-in profile including free tier** (`requireRole([OWNER, ADMIN, MEMBER])`), persists no AiReport, and had **no quota of any kind**. `POST /api/ai/stress-test` narrates via a model with `maxDuration = 300` and was the one AI route with no quota, despite already persisting a `STRESS_TEST` AiReport that the existing per-day counter could read. The second was fixed durably with `checkDailyAiQuota(user, 'STRESS_TEST', { free: 3, paid: 25 })`, no schema change needed.
+
+**What existed already (kept, still the real cost control):** `checkPitchQuota` (free 1/month, paid 25/day), `checkDailyAiQuota` for PERSONAL_FINANCE (free 3/day, paid 25/day), `overPostingLimit` (20 posts/day), `MAX_WATCHLISTS`. All counted in the DATABASE, so they survive instance recycling.
+
+**New: `lib/rateLimit.ts`** — fixed-window counter, keyed on profile id, six named buckets in one map (`model` 10/min, `write` 60/min, `community` 20/min, `report` 5/hour, `track` 120/min, `billing` 5/min). `enforceRateLimit(bucket, id)` in `lib/route.ts` returns a 429 carrying **Retry-After**; `fail()` gained an optional headers argument for it.
+
+**⚠ BE CLEAR ABOUT WHAT IT IS: in-process, per lambda instance.** It stops runaway loops, stuck retries and curl-in-a-for-loop, which is the abuse an app like this actually gets. It does **not** stop a distributed attacker, because each instance has its own memory. That was a deliberate trade: a durable limiter means a DB round trip (~130ms here) on every guarded write, which would have undone the performance work to defend against an attacker who does not exist at four members. Anything that spends money is metered in the DB as well, which is the layer that actually matters. Swap the store for Redis/Upstash when the member base justifies it; only `hit()` changes.
+
+**Coverage: 23 of 46 mutating routes limited.** The other 23 are exempt with a stated reason: 5 cron (shared-secret, no profile to key on), 2 signature-verified webhooks (throttling would drop real Stripe/Clerk events), 14 admin-only (caller is trusted staff), 2 inert (`auth/logout` is a 410 stub, `email/unsubscribe` only ever unsets a flag with a token that is itself the credential).
+
+**`tests/rateLimitCoverage.test.ts` is the durable part.** It scans every route file and fails if a mutating handler has no limiter and no explicit exemption, and separately fails if anything reaching a model is not on the tight `model` bucket. **Validated by deliberately removing a guard and confirming the test fails**, so it is not passing vacuously. It also fails on stale exemptions. The realistic failure mode was never someone deleting the limiter, it was someone adding a POST route next month without knowing the convention exists.
+
+**Not done, still worth doing:** the post `report` endpoint is now capped at 5/hour, which is mitigation rather than a fix. The structural answer is a `(postId, profileId)` unique table mirroring `CommunityPostLike`, so one member can report a post exactly once. That needs a migration, so it is flagged rather than slipped into a hardening pass.
+
+## 2026-08-03 (c) — SECURITY AUDIT. Read-only, nothing changed. `scripts/security-audit.ts` reproduces it.
+**Headline: RLS is NOT implemented. 0 of 40 tables, 0 policies**, and the connecting role is `postgres` with `rolbypassrls = true`, so policies would not bind this connection even if added. Anyone assuming RLS is on (Kyser did) should stop.
+
+**It is a missing backstop rather than an open door, and the distinction is the whole finding.** The `watchtower` schema is **NOT exposed** to PostgREST (a real anon-key request returns `PGRST106 Invalid schema: watchtower`; only `public` and `graphql_public` are exposed) and there is **no Supabase client anywhere in the codebase**. All access is server-side Prisma over one trusted connection. So the only thing segregating accounts is `where: { profileId }` in application code.
+
+**That control was audited end to end and is correct.** Every member-owned query outside admin/cron paths is scoped, either directly or through a parent already resolved from `user.id`. Every `[id]` route does `findFirst({ where: { id, profileId: user.id } })` before acting. **No IDOR found.**
+
+**Verified clean:** all 58 API routes guarded (only `auth/session`, `auth/logout`, `email/unsubscribe` open, each deliberately); every admin route and page role-gated; **zero raw SQL**, so no injection surface; no `dangerouslySetInnerHTML`, so the community feed cannot XSS; both webhooks verify signatures (svix / Stripe `constructEvent`); strict Zod allowlists mean `role`/`tier` are not member-writable; the feed returns **alias only**, never email or profileId; `.env*` gitignored, nothing tracked.
+- ⚠ `app/admin/subscriptions/page.tsx` looks ungated but re-exports the gated `CustomersPage`. It is fine. Do not re-report it.
+
+**To fix (Watchtower):** no rate limiting anywhere — the post `report` endpoint increments `reportCount` unboundedly with no dedup, so one member can bury genuine reports in the admin queue; `fromCaughtError` returns `error.message` verbatim on unrecognised errors, leaking Prisma internals; `assertCronSecret` uses `!==` not a timing-safe compare (low); `me/track` accepts unbounded arbitrary JSON.
+
+**⚠⚠ NOT WATCHTOWER, NEEDS KYSER — live data exposure in the SHARED database.** The `public` schema is exposed to PostgREST and these tables have **RLS false, 0 policies**, so the *public* anon key reads them: all `fa_*` tables (`fa_enrollments` carries Clerk `user_id`) plus **`dossier_ai_credits`, which exposes a `token` UUID and credit balances**, and `dossier_ai_credit_purchases`. Verified with a real anon-key GET returning rows. Fix in the Dossier / first-agent projects: enable RLS + policies. Other `public` tables are fine (RLS on; even the 0-policy ones fail closed).
+
+## 2026-08-03 (b) — PERFORMANCE: root cause found and fixed. Uncommitted, NOT deployed.
+**The app was slow because of an ORM query strategy, not the region and not the pooler.** tsc clean, **137 tests** (5 new), eslint 0 errors, `next build` green. Every number below is measured against the live database, before and after.
+
+**The actual cause.** Every "latest snapshot per asset" call used a nested `take: 1`, which Prisma compiles to `WHERE assetId IN (815 ids) ORDER BY capturedAt DESC` with **no LIMIT and no per-parent partitioning**. It fetched **all 44,153 snapshot rows**, sent them over the wire, and sliced one per asset in JavaScript. 54x the data needed, on seven call sites, on every page load. Enabling the `relationJoins` preview feature (`prisma/schema.prisma`) switches relation loading to a LATERAL JOIN so the database returns 815 rows:
+
+| Call | Before | After |
+| --- | --- | --- |
+| dashboard, 815 assets + latest snapshot | 2505ms | **220ms** |
+| Asset Centre, 815 full include | 3194ms | **260ms** |
+
+**Verified, not assumed.** `scripts/perf-verify-parity.ts` runs eight relation shapes (dashboard, Asset Centre, watchlists, community feed with nested replies and viewer-scoped likes, holdings, average plans, admin queue, subscription mirrors) through BOTH strategies against live data and deep-compares. All eight byte-identical. Three of them only have 1-4 rows in production, so that part of the check is real but thin.
+
+**Four more fixes, each measured:**
+- **`fetchFxRates()` had no cache** and sat on the Dashboard's critical path via `getLivePortfolioView`. It called Yahoo, the provider this project already knows rate-limits, on **every page view**: 677ms. Only the *fallback* source was cached. Now a 10 minute in-process cache plus in-flight dedupe, so the six concurrent callers in one render make one request. Locked by 5 new tests in `tests/fx.test.ts`, mocked so the suite does no network I/O.
+  - ⚠ **A bug in the first version of that cache was caught by its own test:** `loadFxRates()` never throws, so the `.catch()` was dead code and the hardcoded `FALLBACK_RATES` were being written into the cache and served for the full TTL even after the provider recovered. It now returns `null` on total failure and never caches a guess.
+- **`getMacroTiles()` made 5 sequential round trips** (assets, then BOE auto, then one `getSetting()` per manual tile inside a loop). Now 2 in parallel via the existing bulk `getSettings()`. **1394ms → 124ms.**
+- **`ensureFreshMarketData()` was awaited on three pages** and its result is never used. The refresh was already deferred with `after()`, but the two freshness queries deciding whether to refresh ran inline first. Both now run after the response. It returns `void` so it cannot be put back on the critical path.
+- **Payload narrowing.** `getDashboardAssets()` filters candidates in SQL (tracked assets, plus anything with an entry target, exit target **or owner override** — the override clause matters, `FORCE_BUY` pins a signal on an asset with no targets): **815 rows/207 KB → 256 rows/64 KB**. `scripts/perf-verify-dashboard.ts` proves the two rendered lists are identical for all 4 profiles. Asset Centre and `briefHighlights` swapped `include` for a narrow `select`: **1212 KB → far less**.
+
+**Page wall clock, what a member actually waits for:** Dashboard **1396ms → 582ms**, watchlists 375ms → 349ms, daily-checks ~490ms → ~430ms (cold FX still costs the first request in a fresh lambda; warm it is ~250ms).
+
+**Corrections to the previous handover, which was honest but wrong in three places:**
+1. `DIRECT_URL` is **not** a direct connection. Both URLs point at `pooler.supabase.com`; 6543 is transaction mode, 5432 is session mode. Same host, same distance. That strengthens its conclusion (distance cannot explain the gap) but "the database instance itself is healthy and fast" was never actually measured.
+2. **`connection_limit=1` is not the fix.** Measured directly: 3553/2002/1693ms with it versus 2258/1495/2004ms without. No improvement, arguably worse. It was the top recommendation and it is a dead end.
+3. The whole-universe scan is in **seven** places, not one, and the two using `include: { rule: true, ... }` were heavier than the dashboard call that got measured.
+
+**⚠ `vercel.json` TAKES NO COMMENTS.** It is strict-schema JSON and the CLI rejects any unrecognised top-level key outright: `Error: Invalid vercel.json - should NOT have additional property`. An underscore-prefixed `_comment_*` key is NOT ignored, it fails the deploy. I shipped one and it blocked the first deploy attempt. The reasoning for `regions` lives here instead. **Do not delete the `regions` key** without reading the next paragraph.
+
+**Region:** `vercel.json` now pins `"regions": ["fra1"]` (nearest to the eu-central-2 database, and matching the `preferredRegion` already declared on the routes). This is the one change I could not verify from here, since it only takes effect on deploy. Worth keeping, but note the query fix made pooler mode almost irrelevant: the same query through both modes came back 692ms vs 699ms once it stopped over-fetching.
+
+**Follow-ups not done:** `AssetSnapshot` is at 50,925 rows and grows daily with no retention policy; `getLivePortfolioView` and `getDisplayContext` each fetch the same Profile row separately (one avoidable round trip on the busiest page).
+
+**New read-only scripts:** `perf-audit.ts` (which hop costs the time, statement counts, EXPLAIN), `perf-pages.ts` (page wall clock, sequential and parallel), `perf-verify-parity.ts`, `perf-verify-dashboard.ts`.
 
 ## 2026-08-03 — HANDOVER (weekly limit reached, work continues on another account)
 `docs/HANDOVER-2026-08-03-AGENT.md` is the agent-to-agent handover: state, the performance investigation with its evidence and its caveats, the conventions that are easy to get wrong, and the one bulk-script failure not to repeat. Read it before picking anything up.

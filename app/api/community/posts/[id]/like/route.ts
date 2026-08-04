@@ -1,7 +1,7 @@
 import { fail, ok } from '@/lib/api';
 import { requireFeature } from '@/lib/entitlements';
 import { prisma } from '@/lib/prisma';
-import { fromCaughtError } from '@/lib/route';
+import { enforceRateLimit, fromCaughtError } from '@/lib/route';
 
 export const runtime = 'nodejs';
 export const preferredRegion = 'fra1';
@@ -18,6 +18,10 @@ export const preferredRegion = 'fra1';
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await requireFeature('communityPost');
+    // Each toggle is a transaction with two writes, so an unbounded like/unlike loop is a cheap way to hammer the database.
+    const limited = enforceRateLimit('community', user.id);
+    if (limited) return limited;
+
     const { id } = await params;
 
     const post = await prisma.communityPost.findUnique({ where: { id }, select: { status: true } });

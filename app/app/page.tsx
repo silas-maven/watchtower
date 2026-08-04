@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Card } from '@/components/Card';
 import { Badge } from '@/components/Badge';
 import { requirePageUser } from '@/lib/server/pageAuth';
-import { getAssetsForDashboard } from '@/lib/server/dashboard';
+import { getDashboardAssets } from '@/lib/server/dashboard';
 import { getLivePortfolioView } from '@/lib/server/livePortfolio';
 import { prisma } from '@/lib/prisma';
 import { BorderBeam } from '@/components/ui/border-beam';
@@ -20,7 +20,7 @@ import { getMacroTiles, weatherInputsFromTiles } from '@/lib/market/macro';
 import { SNAPSHOT_ROWS } from '@/lib/market/macroTypes';
 import { classifyWeather } from '@/lib/market/weather';
 import { formatMoney } from '@/lib/money';
-import { getSetting } from '@/lib/server/settings';
+import { getSettings } from '@/lib/server/settings';
 import { trackEvent } from '@/lib/server/trackEvent';
 
 export const dynamic = 'force-dynamic';
@@ -45,18 +45,22 @@ export default async function MemberDashboard() {
   const paidSignals = canUse(profile, 'signals');
   const paidTools = canUse(profile, 'portfolio');
 
-  const [live, rows, watchItems, xHandle, xListUrl, macroTiles, featured] = await Promise.all([
+  // getSettings() reads every setting in one query. The two news keys used to be
+  // fetched as separate getSetting() calls, which is two round trips for two
+  // rows of the same table.
+  const [live, rows, watchItems, settings, macroTiles, featured] = await Promise.all([
     getLivePortfolioView(profile.id).catch(() => null),
-    getAssetsForDashboard().catch(() => []),
+    getDashboardAssets(profile.id).catch(() => []),
     prisma.userWatchlistItem.findMany({
       where: { watchlist: { profileId: profile.id } },
       select: { assetId: true },
     }).catch(() => []),
-    getSetting('news_x_handle').catch(() => 'StockTwits'),
-    getSetting('news_x_list_url').catch(() => ''),
+    getSettings().catch(() => null),
     getMacroTiles().catch(() => new Map()),
     getFeaturedPosts().catch(() => []),
   ]);
+  const xHandle = settings?.news_x_handle ?? 'StockTwits';
+  const xListUrl = settings?.news_x_list_url ?? '';
 
   const weather = classifyWeather(weatherInputsFromTiles(macroTiles));
   const macroTileRecord = Object.fromEntries(macroTiles);

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { fail, ok } from '@/lib/api';
 import { requirePaid } from '@/lib/entitlements';
 import { prisma } from '@/lib/prisma';
-import { fromCaughtError } from '@/lib/route';
+import { enforceRateLimit, fromCaughtError } from '@/lib/route';
 import { REQUEST_TYPES } from '@/lib/securityRequests';
 
 export const runtime = 'nodejs';
@@ -45,6 +45,8 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const user = await requirePaid();
+    const limited = enforceRateLimit('write', user.id);
+    if (limited) return limited;
     const body = await req.json().catch(() => ({}));
     const parsed = Schema.safeParse(body);
     if (!parsed.success) return fail('Enter a ticker symbol', 400, 'INVALID_PAYLOAD');

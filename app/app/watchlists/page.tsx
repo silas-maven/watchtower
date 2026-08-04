@@ -14,7 +14,7 @@ export default async function WatchlistsPage() {
   // membership. What stays behind the paywall is the academy's call on each one
   // (the signal and its price targets) and the tools built on top of the list.
   const paid = canUse(profile, 'signals');
-  await ensureFreshMarketData();
+  ensureFreshMarketData();
 
   const { assets, lists } = await getWatchlistsPageData(profile.id, { includeSignals: paid });
 

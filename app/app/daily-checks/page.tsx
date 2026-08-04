@@ -12,6 +12,7 @@ import { ensureFreshMarketData } from '@/lib/server/marketFreshness';
 import { trackEvent } from '@/lib/server/trackEvent';
 import { canUse } from '@/lib/entitlements';
 import { BriefHeading } from '@/components/brief/BriefHeading';
+import { freeSummary, insightsFor, statsFor, type BriefAudience } from '@/lib/briefVisibility';
 
 export const dynamic = 'force-dynamic';
 export const preferredRegion = 'fra1';
@@ -53,7 +54,7 @@ export default async function DailyChecksPage({
   // Signals are the paid product; the earnings calendar and the market breadth
   // are not (owner, 2 Aug 2026: "Earnings but is fine for freemium").
   const paid = canUse(profile, 'signals');
-  await ensureFreshMarketData();
+  ensureFreshMarketData();
 
   // Holdings default to the member's real book; the toggle switches to paper.
   const scope: BriefScope = (await searchParams).book === 'virtual' ? 'virtual' : 'live';
@@ -83,8 +84,21 @@ export default async function DailyChecksPage({
   const market = summary?.market;
   const fallbackBrief = summary ? buildFallbackBrief(summary) : null;
 
+  // The academy brief is the paid product written as prose. A free profile gets
+  // a breadth-only summary composed by us and only the insights that positively
+  // match a safe shape; the model's own summary never reaches them, because
+  // filtering generated prose for signal talk is a game you eventually lose.
+  // See lib/briefVisibility.ts.
+  const audience: BriefAudience = paid ? 'paid' : 'free';
+  const shape = (raw: { date: string; summary: string; insights: string[]; model: string; isFallback: boolean; stats: DailyBriefStats | null; statsAreLive: boolean }) => ({
+    ...raw,
+    summary: paid ? raw.summary : freeSummary(raw.stats),
+    insights: insightsFor(audience, raw.insights),
+    stats: statsFor(audience, raw.stats),
+  });
+
   const brief = latest
-    ? {
+    ? shape({
         date: latest.briefDate.toISOString().slice(0, 10),
         summary: latest.summary,
         insights: asStringArray(latest.insights),
@@ -94,9 +108,9 @@ export default async function DailyChecksPage({
         // have no persisted stats, so fall back to the live summary for those.
         stats: asStats(latest.stats) ?? market ?? null,
         statsAreLive: asStats(latest.stats) == null,
-      }
+      })
     : fallbackBrief
-      ? {
+      ? shape({
           date: summary!.date,
           summary: fallbackBrief.summary,
           insights: fallbackBrief.insights,
@@ -105,7 +119,7 @@ export default async function DailyChecksPage({
           // This brief was just built from the same live summary, so they agree.
           stats: fallbackBrief.stats ?? market ?? null,
           statsAreLive: false,
-        }
+        })
       : null;
 
   return (

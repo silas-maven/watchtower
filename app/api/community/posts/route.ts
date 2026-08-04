@@ -3,7 +3,7 @@ import { fail, ok } from '@/lib/api';
 import { requireUser } from '@/lib/auth';
 import { requireFeature } from '@/lib/entitlements';
 import { prisma } from '@/lib/prisma';
-import { fromCaughtError } from '@/lib/route';
+import { enforceRateLimit, fromCaughtError } from '@/lib/route';
 import { checkBody } from '@/lib/community';
 import { getFeed, overPostingLimit } from '@/lib/server/community';
 
@@ -33,6 +33,10 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const user = await requireFeature('communityPost');
+    // overPostingLimit below is the durable 20-a-day cap; this stops per-second hammering, which a daily counter cannot see.
+    const limited = enforceRateLimit('community', user.id);
+    if (limited) return limited;
+
 
     const profile = await prisma.profile.findUnique({
       where: { id: user.id },

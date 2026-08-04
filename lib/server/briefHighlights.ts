@@ -116,9 +116,22 @@ export async function getBriefHighlights(
   const scope = assetIds ? { id: { in: assetIds } } : {};
 
   const [assets, events] = await Promise.all([
+    // Only the fields this function reads. The full include pulled every column
+    // of both tables for all 815 assets to compute four short lists.
     prisma.asset.findMany({
       where: { isActive: true, isMacro: false, ...scope },
-      include: { rule: true, snapshots: { orderBy: { capturedAt: 'desc' }, take: 1 } },
+      select: {
+        symbol: true,
+        name: true,
+        closeYest: true,
+        nextEarningsDate: true,
+        rule: { select: { targetEntry: true, targetExit: true, signalOverride: true } },
+        snapshots: {
+          orderBy: { capturedAt: 'desc' },
+          take: 1,
+          select: { dailyLow: true, dailyHigh: true, closeYest: true },
+        },
+      },
     }),
     prisma.signalEvent.findMany({
       where: { occurredAt: { gte: since }, ...(assetIds ? { assetId: { in: assetIds } } : {}) },

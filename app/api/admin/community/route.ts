@@ -5,6 +5,7 @@ import { requireRole } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { fromCaughtError } from '@/lib/route';
 import { POST_STATUSES } from '@/lib/community';
+import { CACHE_TAGS, invalidateShared } from '@/lib/server/sharedCache';
 
 export const runtime = 'nodejs';
 
@@ -79,6 +80,17 @@ export async function PATCH(req: Request) {
     const replyDelta = post.parentId && wasVisible !== willBeVisible ? (willBeVisible ? 1 : -1) : 0;
 
     const updated = await prisma.$transaction(async (tx) => {
+      // Clearing reports has to remove the rows as well as zero the counter.
+      // CommunityPostReport is the truth behind reportCount, and one report per
+      // member is enforced by its primary key, so leaving the rows behind would
+      // both make the counter disagree with them and permanently bar everyone
+      // who reported this post once from ever reporting it again. Dismissing a
+      // report means "this was looked at and it was fine", which has to reset
+      // the slate on both sides.
+      if (clearReports) {
+        await tx.communityPostReport.deleteMany({ where: { postId: id } });
+      }
+
       const row = await tx.communityPost.update({
         where: { id },
         data: {
@@ -106,6 +118,10 @@ export async function PATCH(req: Request) {
       await prisma.communityPost.update({ where: { id }, data: { featured: false } });
       updated.featured = false;
     }
+
+    // A moderator hiding or featuring a post should see the Dashboard slot
+    // change now, not in a minute.
+    invalidateShared(CACHE_TAGS.community);
 
     return ok({ post: updated });
   } catch (error) {
