@@ -6,7 +6,7 @@ export function MarketingFooter() {
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-10 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/brand/spa-logo.svg" alt="Stock Pickers Academy" className="h-9 w-9" />
+          <img src="/brand/spa-logo.png" alt="Stock Pickers Academy" className="h-9 w-auto" />
           <div className="text-sm text-muted-foreground">Stock Pickers Academy</div>
         </div>
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">

@@ -103,7 +103,7 @@ export function TopNav({ children, initialUser }: { children: React.ReactNode; i
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 overflow-y-auto border-r border-border bg-card/95 px-4 py-5 shadow-2xl backdrop-blur-xl lg:block">
         <Link href="/app" className="group flex items-center gap-3 px-1">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/brand/spa-logo.svg" alt="Stock Pickers Academy" className="h-10 w-10" />
+          <img src="/brand/spa-logo.png" alt="Stock Pickers Academy" className="h-10 w-auto" />
           <div>
             <div className="text-sm font-bold tracking-tight text-foreground">Stock Pickers Academy</div>
             <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Investment console</div>
@@ -139,7 +139,7 @@ export function TopNav({ children, initialUser }: { children: React.ReactNode; i
           <div className="lg:hidden">
             <Link href="/app" className="flex items-center gap-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/brand/spa-logo.svg" alt="Stock Pickers Academy" className="h-7 w-7" />
+              <img src="/brand/spa-logo.png" alt="Stock Pickers Academy" className="h-7 w-auto" />
               <span className="text-sm font-bold tracking-tight text-foreground">Stock Pickers Academy</span>
             </Link>
           </div>
