@@ -5,6 +5,15 @@ Deployed at watchtower-virid.vercel.app (Next.js 16 + Prisma + Supabase `watchto
 
 **PERFORMANCE: FIXED IN CODE 2026-08-03 (below), NOT YET DEPLOYED.** The cause was none of the three things previously suspected. See the session entry directly below. Still true and still outstanding: production serves Clerk **test keys** (`pk_test_...`) and Stripe is in **test mode**, both go-live blockers.
 
+## 2026-08-04 (e) — LOGO SWAPPED, PUSHED TO GITHUB, DEPLOYED (`9c5ccc0`). Everything in sync for the first time.
+**Nav and footer now use `public/brand/spa-logo.png`**, the real artwork, replacing the hand-drawn `spa-logo.svg` which is deleted. Also fixed an aspect-ratio bug that predates this change: the logo is **1040x719 (~1.45:1)** and all four call sites rendered it in a **square** box (`h-10 w-10`, `h-7 w-7`, `h-11 w-11`, `h-9 w-9`), squashing it. Width is now `auto`; the marketing nav renders 64x44 instead of 44x44. Verified in the browser: the PNG is RGBA with a real alpha channel and was checked against white, light grey and black, because a logo without transparency shows as a white box on the dark shell. **The animated hero lockup still uses the inline `SpaEmblem` vector deliberately — it animates and a PNG cannot.** `spa-logo1.svg` is an untracked byte-identical duplicate of the old logo, referenced by nothing; left in place, not mine to delete.
+
+**⚠⚠ GITHUB HAD DIVERGED FROM LOCAL, AND IT WAS MY FAULT.** I committed `840c884` with the broken `vercel.json`, it got pushed, the deploy failed, and I then **amended** the commit to fix it. Amending rewrites history and is only safe on an unpushed commit; I did not re-check the remote first. GitHub was left holding the one version that cannot deploy while production ran the fixed one. Resolved with `git push --force-with-lease`. **Local, GitHub and production are now all `9c5ccc0`.** Lesson: check `git ls-remote` before amending, every time.
+
+**Note for anyone reading old entries: Vercel on this project has NO GitHub integration** (`.vercel/project.json` has no git link). It deploys local files via `vercel --prod`. That is why production could run newer code than GitHub had, and why "GitHub is behind" does not mean "production is stale".
+
+**Post-deploy verification:** commit `9c5ccc0` / region `fra1` / env production confirmed from inside the function; `/brand/spa-logo.png` 200 `image/png`; `/brand/spa-logo.svg` now 404 as intended; live HTML references the png. Perf holding on the new build: db **39-47ms**, shared summary **6-13ms**, 50 concurrent **2-8ms**, per-member query **66-112ms**. One 305ms shared-summary sample was a fresh instance reading a cold data cache, which matches the cold-start behaviour documented in (d).
+
 ## 2026-08-04 (d) — DEPLOYED (`bca2c26`) AND MEASURED FROM PRODUCTION. First real numbers this project has ever had.
 Every performance figure before today came from a laptop in London against a database in Zurich, which is the wrong journey. `/api/diagnostics/perf` (cron-secret guarded) measures from **inside the deployed function**.
 
