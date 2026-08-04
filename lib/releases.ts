@@ -25,6 +25,141 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: '2026.08.04',
+    date: '2026-08-04',
+    title: 'Faster, locked down, and three new things',
+    summary:
+      'The app is several times quicker on the pages members use most, the database now refuses anyone who is not the app itself, and the signals stopped leaking to free members. Plus a Market Pulse tab, a pension calculator, and the calculators moved to where people look for them.',
+    feedbackDoc: '2026-08-04 WhatsApp round, plus a performance and security review',
+    groups: [
+      {
+        heading: 'Speed',
+        items: [
+          {
+            title: 'Pages stopped asking for far more than they show',
+            body: 'Every page that showed prices was quietly loading the entire watchlist and its whole price history, then throwing nearly all of it away before drawing anything. On the Dashboard that meant pulling roughly forty-four thousand rows to display a handful. It now asks only for what it puts on the screen. The Dashboard went from about two and a half seconds to a fifth of a second on that step alone, and the Asset Centre the same. Nothing about what you see changed, only how much work happens behind it.',
+            feedback: 'Performance review',
+            href: '/app',
+            linkLabel: 'Open Dashboard',
+          },
+          {
+            title: 'Members stopped queueing behind each other',
+            body: 'The market summary is the same for everybody, but it was being worked out again from scratch for each person who opened the page. One member at a time, fine. Fifty at once and they queued, and the fiftieth waited over three seconds for a number the first one had already calculated. It is now worked out once and shared. Fifty people at the same moment now costs the same as one. This is the change that matters most as the community grows.',
+            feedback: 'Performance review',
+            href: '/app/daily-checks',
+            linkLabel: 'Open Daily Checks',
+          },
+          {
+            title: 'The app moved next door to its own data',
+            body: 'The app was running in Washington while its database sits in Zurich, so every single question it asked crossed the Atlantic and came back. It now runs in Frankfurt, beside the database. Each of those round trips dropped from roughly a tenth of a second to around a thirtieth, and a single page asks a lot of them.',
+            feedback: 'Performance review',
+            href: '/admin/system-jobs',
+            linkLabel: 'System jobs',
+          },
+        ],
+      },
+      {
+        heading: 'Security',
+        items: [
+          {
+            title: 'The database now refuses everyone except the app',
+            body: 'Previously the only thing keeping one member\'s data separate from another\'s was the app asking the right questions. That was being done correctly, and it was checked line by line, but it was the only thing standing there. The database itself now refuses to hand rows to anything that is not the app, on all forty-one tables. It was tested by creating a throwaway account, deliberately granting it permission to read the most sensitive tables, and confirming it still got nothing back.',
+            feedback: 'Security review',
+            href: '/admin',
+            linkLabel: 'Admin overview',
+          },
+          {
+            title: 'Nothing can be hammered any more',
+            body: 'There were no limits on how fast anything could be used. Someone could sit on a script and call the same thing thousands of times a minute, which costs money on anything that uses AI and slows the app for everyone else. Every action that changes something now has a sensible ceiling, tightest on the parts that spend money. A test now fails the build if anyone adds a new action without one, so this cannot quietly come undone later.',
+            feedback: 'Security review',
+            href: '/admin',
+            linkLabel: 'Admin overview',
+          },
+          {
+            title: 'The AI features have spending caps',
+            body: 'Two AI features had no limit at all, and one of them could be used by anyone signed in, including free members. Left alone, a single person could have run up a real bill in an afternoon. Both are now capped per person per day, counted in the database so the limit holds properly rather than resetting on its own.',
+            feedback: 'Security review',
+            href: '/app/assets',
+            linkLabel: 'Asset Centre',
+          },
+          {
+            title: 'The daily brief stopped giving the signals away',
+            body: 'This one was costing you money. The academy brief at the bottom of Daily Checks was printing the day\'s buy and sell calls in plain writing, tickers and all, to free members, directly underneath the panel that tells them those sections need a membership. A free member now gets the market summary and the earnings calendar, and nothing that names a signal. It is built as a list of what is allowed through rather than a list of what to block, so anything new stays private until somebody decides otherwise.',
+            feedback: 'Security review',
+            href: '/app/daily-checks',
+            linkLabel: 'Open Daily Checks',
+          },
+          {
+            title: 'Reporting a post counts once per person',
+            body: 'The report button added one to a counter with nothing stopping the same person pressing it repeatedly. Since your moderation queue sorts by report count, one determined member could have pushed any post to the top and buried the genuine reports underneath. The database now allows one report per person per post, so pressing it again does nothing. Clearing reports on a post wipes the slate so people can report it again later if it deserves it.',
+            feedback: 'Security review',
+            href: '/admin/community',
+            linkLabel: 'Moderation queue',
+          },
+          {
+            title: 'Error messages stopped saying too much',
+            body: 'When something went wrong unexpectedly, the app handed the raw technical error back to whoever was on the page, which can include the names of internal tables and settings. Members now see a short apology and a reference code, and the detail goes to the logs where it belongs. It also reports these honestly as our fault rather than the member\'s, which was making real outages look like people mistyping things.',
+            feedback: 'Security review',
+            href: '/admin/system-jobs',
+            linkLabel: 'System jobs',
+          },
+        ],
+      },
+      {
+        heading: 'New this round',
+        items: [
+          {
+            title: 'Market Pulse has its own tab',
+            body: 'The news feed, the X timeline and the full macro board now have a dedicated place, sitting just before Community Feed in the menu. On a phone the Dashboard shows the top three headlines up between the macro tiles, where you asked for them, with a link through to the rest. On a desktop the side panel keeps the full feed, so the same thing is not shown twice.',
+            feedback: '4 August, sections 1 and 2',
+            href: '/app/market-pulse',
+            linkLabel: 'Open Market Pulse',
+          },
+          {
+            title: 'A UK pension drawdown calculator',
+            body: 'Enter a pot, a retirement age and how much you want to take, and it works out the tax-free lump sum, the income that leaves, the tax on it, and the age the money runs to, year by year with charts. It handles the tax-free cash limits, the State Pension starting later than retirement, and the way the personal allowance disappears on larger incomes. It is a members feature. Every assumption is on screen and changeable, and it says plainly that it is an educational projection rather than advice.',
+            feedback: '4 August, new calculator',
+            href: '/app/portfolio-tools/pension-drawdown',
+            linkLabel: 'Open the calculator',
+          },
+          {
+            title: 'The calculators moved to where people look for them',
+            body: 'Compound Interest, CAGR and the new pension calculator now appear on the Personal Finance page as well as under Portfolio tools, which is what you circled. They are listed from one shared place, so a calculator added later shows up in both automatically rather than being remembered in one and forgotten in the other.',
+            feedback: '4 August, section 3',
+            href: '/app/portfolio-tools/personal-finance',
+            linkLabel: 'Open Personal Finance',
+          },
+        ],
+      },
+      {
+        heading: 'Notes for the owner',
+        items: [
+          {
+            title: 'Sign-in and payments are still on test settings',
+            body: 'This is the one thing standing between you and taking real money. Both the sign-in system and Stripe are still running in test mode in production, and no payment has ever actually reached the app. Switching both over is your job rather than a code change, and it needs doing before members arrive, not after. Everything else described here is live and working.',
+            feedback: 'Launch blocker',
+            href: '/admin/subscriptions',
+            linkLabel: 'Subscriptions',
+          },
+          {
+            title: 'The pension calculator uses English tax bands',
+            body: 'Scotland has different income tax rates and the calculator does not model them. It says so on the page. That was the agreed starting point, but if a decent share of your community is in Scotland their figures will be wrong, and it needs a country selector before you promote it rather than afterwards.',
+            feedback: '4 August, open decision',
+            href: '/app/portfolio-tools/pension-drawdown',
+            linkLabel: 'Open the calculator',
+          },
+          {
+            title: 'The first visit after a quiet spell is still slow',
+            body: 'When nobody has used the app for a while it goes to sleep, and waking it up takes a second or two for whoever arrives first. Everyone after that gets the fast version. This is normal for how the app is hosted and it was not worth chasing before launch, but if you see a slow load first thing in the morning, that is what it is rather than a fault.',
+            feedback: 'Performance review',
+            href: '/app',
+            linkLabel: 'Open Dashboard',
+          },
+        ],
+      },
+    ],
+  },
+  {
     version: '2026.08.03c',
     date: '2026-08-03',
     title: 'The community feed is live',
