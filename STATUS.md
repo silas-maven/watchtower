@@ -5,6 +5,26 @@ Deployed at watchtower-virid.vercel.app (Next.js 16 + Prisma + Supabase `watchto
 
 **PERFORMANCE: FIXED IN CODE 2026-08-03 (below), NOT YET DEPLOYED.** The cause was none of the three things previously suspected. See the session entry directly below. Still true and still outstanding: production serves Clerk **test keys** (`pk_test_...`) and Stripe is in **test mode**, both go-live blockers.
 
+## 2026-08-04 (f) — THE 4 AUGUST ROUND BUILT AND DEPLOYED (`c374be6`). 202 tests.
+Source: `feedback/2026-08-04-dashboard-updates/` (committed before any of it was built, so the requirements were backed up rather than living on one machine).
+
+**Market Pulse tab.** New `/app/market-pulse` with the full feed, the curated X timeline and the macro board, placed immediately before Community Feed in the nav. Free to read: market news and public macro data, not the academy's call on anything.
+
+**Dashboard.** On mobile the news feed now sits INSIDE the macro tile grid, three articles plus a "View more" action, between the SILVER / BOE RATE row and the UK 10Y GILT / ITRAXX 5Y row, which is exactly where the blue line was drawn on screenshot 004. ⚠ The tile grid is FLAT, not row-based, so "after the second row" is implemented as a tile count (`interleaveAfter = 6`) and that is only correct at the two-column mobile breakpoint. Above `lg` the tiles reflow past six across and the instruction stops meaning anything, so there the existing right-hand rail carries the feed and is now `hidden lg:block` so it cannot appear twice.
+
+**Personal Finance** surfaces the calculators circled on screenshot 003 plus the pension tool, driven off a `personalFinance` flag in the shared registry. Never hand-list tools: a hand-written Dashboard subset is what hid the Stress Test and Personal Finance for weeks in July.
+
+**UK Pension Drawdown Calculator**, behind the paywall via a layout `MemberGate` so the URL cannot be typed past. Engine in `lib/pension/`, every tax figure in `config.ts` rather than inline because they change each April. Models tax-free cash capped at BOTH 25% and the Lump Sum Allowance, the withdrawal strategies, State Pension starting at its own age, income tax with the personal-allowance taper, and a year-by-year projection applying growth then fees then withdrawal, stopping at zero rather than going negative.
+
+**⚠⚠ THE BUG THE TESTS CAUGHT, worth remembering.** The 29 tests are written against **published HMRC figures**, not against this implementation. That is what exposed it: I had modelled the tax bands as bounds on TOTAL income. They are widths on TAXABLE income. The familiar £50,270 figure is only where the higher rate starts for someone with the full personal allowance, and it slides down as the allowance tapers above £100,000. The wrong model **under-taxed a £130,000 income by £2,514** and showed the 60% taper zone as 50%. A test that agrees with the implementation would have passed happily.
+
+**Verified in a browser** (temporary harness under `app/harness-*`, deleted after): charts render with real geometry, inputs rewire the projection, and the arithmetic was hand-checked both ways — £400k pot with no tax-free cash gives £20,000 gross and £1,486 tax; with the 25% lump sum, £15,000 gross and £486.
+
+**⚠ OPEN DECISION, flagged in the owner's own spec:** Scottish income tax bands differ and are NOT modelled. Defaulted to England, Wales and Northern Ireland with the limitation disclosed in the UI. Needs a region selector before launch if a meaningful share of the community is in Scotland.
+
+**Post-deploy:** commit `c374be6` / `fra1` / production confirmed from inside the function; perf unchanged (db **35-36ms**, shared summary **5-8ms**, 50 concurrent **2-3ms**, per-member **56-73ms**, total **151-167ms** warm); landing and pricing 200, API 401, logo 200.
+- **⚠ Note on verifying gated routes from outside:** a 404 on `/app/*` proves nothing either way. Clerk's matcher rewrites EVERY path under `/app` identically before Next routing, so a fabricated route returns the same status, the same `x-clerk-auth-reason` header and the same RSC byte count as a real one. The route existing was confirmed from the build manifest for that commit plus the SHA read back out of the running function, not from a live probe.
+
 ## 2026-08-04 (e) — LOGO SWAPPED, PUSHED TO GITHUB, DEPLOYED (`9c5ccc0`). Everything in sync for the first time.
 **Nav and footer now use `public/brand/spa-logo.png`**, the real artwork, replacing the hand-drawn `spa-logo.svg` which is deleted. Also fixed an aspect-ratio bug that predates this change: the logo is **1040x719 (~1.45:1)** and all four call sites rendered it in a **square** box (`h-10 w-10`, `h-7 w-7`, `h-11 w-11`, `h-9 w-9`), squashing it. Width is now `auto`; the marketing nav renders 64x44 instead of 44x44. Verified in the browser: the PNG is RGBA with a real alpha channel and was checked against white, light grey and black, because a logo without transparency shows as a white box on the dark shell. **The animated hero lockup still uses the inline `SpaEmblem` vector deliberately — it animates and a PNG cannot.** `spa-logo1.svg` is an untracked byte-identical duplicate of the old logo, referenced by nothing; left in place, not mine to delete.
 
