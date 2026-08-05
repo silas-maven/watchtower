@@ -30,7 +30,7 @@
 ### Access and commercial rule
 
 - Place in the **Personal Finance** tab.
-- Make it a **freemium-gated feature**: locked for free members at this location, using the existing server-side entitlement/paywall pattern rather than a visual-only lock.
+- ~~Make it a **freemium-gated feature**: locked for free members at this location, using the existing server-side entitlement/paywall pattern rather than a visual-only lock.~~ **Reversed 5 August: the calculator is free for everyone. See `005-2026-08-05-revisions.md`.**
 
 ### Inputs
 

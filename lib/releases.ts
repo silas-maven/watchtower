@@ -25,6 +25,42 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: '2026.08.05',
+    date: '2026-08-05',
+    title: 'A shorter Dashboard, and the pension calculator opened up',
+    summary:
+      'The wall of market cards on the Dashboard is now six, with a link through to the rest, and the pension calculator is free for everyone instead of members only.',
+    feedbackDoc: '2026-08-05 WhatsApp round',
+    groups: [
+      {
+        heading: 'This round',
+        items: [
+          {
+            title: 'The Dashboard market cards are condensed',
+            body: 'The Dashboard was showing ten market cards before you reached anything of your own, which on a phone is five rows of scrolling past prices to get to your portfolio. It now shows six, ending exactly where you drew your line last time, under Silver and the BoE rate, with a "View more" going through to the full board on Market Pulse. Two of the four cards it drops, UK 10Y Gilt and iTraxx 5Y, were showing a dash anyway because neither has a live price feed. Nothing was removed from the app, only from the first screen.',
+            feedback: '5 August, Dashboard overview',
+            href: '/app',
+            linkLabel: 'Open Dashboard',
+          },
+          {
+            title: 'Market Pulse opens on the full board',
+            body: 'Since the Dashboard now sends people there for the rest of the market, Market Pulse shows every card as soon as it loads rather than making you press another button for the same thing.',
+            feedback: '5 August, Dashboard overview',
+            href: '/app/market-pulse',
+            linkLabel: 'Open Market Pulse',
+          },
+          {
+            title: 'The pension calculator is free for everyone',
+            body: 'It was behind the membership when it shipped yesterday, which is what the MEMBERS label on Personal Finance was. It is now open to every signed-in member, alongside Compound Interest and CAGR. It sits well as a free tool: it runs entirely in the browser, so it costs nothing to give away, and it is the kind of thing someone finds useful before they are ready to pay for signals.',
+            feedback: '5 August, Personal Finance',
+            href: '/app/portfolio-tools/pension-drawdown',
+            linkLabel: 'Open the calculator',
+          },
+        ],
+      },
+    ],
+  },
+  {
     version: '2026.08.04',
     date: '2026-08-04',
     title: 'Faster, locked down, and three new things',
@@ -117,7 +153,7 @@ export const RELEASES: Release[] = [
           },
           {
             title: 'A UK pension drawdown calculator',
-            body: 'Enter a pot, a retirement age and how much you want to take, and it works out the tax-free lump sum, the income that leaves, the tax on it, and the age the money runs to, year by year with charts. It handles the tax-free cash limits, the State Pension starting later than retirement, and the way the personal allowance disappears on larger incomes. It is a members feature. Every assumption is on screen and changeable, and it says plainly that it is an educational projection rather than advice.',
+            body: 'Enter a pot, a retirement age and how much you want to take, and it works out the tax-free lump sum, the income that leaves, the tax on it, and the age the money runs to, year by year with charts. It handles the tax-free cash limits, the State Pension starting later than retirement, and the way the personal allowance disappears on larger incomes. Every assumption is on screen and changeable, and it says plainly that it is an educational projection rather than advice. It shipped as a members feature and was opened up to everyone on 5 August.',
             feedback: '4 August, new calculator',
             href: '/app/portfolio-tools/pension-drawdown',
             linkLabel: 'Open the calculator',

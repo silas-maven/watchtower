@@ -49,7 +49,10 @@ export default async function MarketPulsePage() {
       </BlurFade>
 
       <BlurFade delay={0.1}>
-        <WeatherSnapshotBoard weather={weather} tiles={macroTileRecord} rows={SNAPSHOT_ROWS} />
+        {/* Opens with every row showing. This is where the Dashboard's "View
+            more" lands, so arriving to a collapsed board with its own expander
+            would be asking for the same thing twice. */}
+        <WeatherSnapshotBoard weather={weather} tiles={macroTileRecord} rows={SNAPSHOT_ROWS} defaultExpanded />
       </BlurFade>
 
       <BlurFade delay={0.15}>

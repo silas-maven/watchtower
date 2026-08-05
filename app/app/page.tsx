@@ -18,7 +18,7 @@ import { MarketPulseRail } from '@/components/news/MarketPulseRail';
 import { NewsFeedCard } from '@/components/news/NewsFeedCard';
 import { WeatherSnapshotBoard } from '@/components/market/WeatherSnapshotBoard';
 import { getMacroTiles, weatherInputsFromTiles } from '@/lib/market/macro';
-import { SNAPSHOT_ROWS } from '@/lib/market/macroTypes';
+import { DASHBOARD_TILE_LIMIT, SNAPSHOT_ROWS } from '@/lib/market/macroTypes';
 import { classifyWeather } from '@/lib/market/weather';
 import { formatMoney } from '@/lib/money';
 import { getSettings } from '@/lib/server/settings';
@@ -95,18 +95,26 @@ export default async function MemberDashboard() {
       </BlurFade>
 
       <BlurFade delay={0.15}>
-        {/* Market Pulse moved up the mobile Dashboard (owner, 4 Aug): three
-            articles sitting between the SILVER / BOE RATE row and the UK 10Y
-            GILT / ITRAXX 5Y row, with "View more" going to the full tab.
-            Below lg only, because at wider breakpoints the tiles reflow past
-            six across and the right-hand rail already carries the full feed. */}
+        {/* Condensed on the Dashboard (owner, 5 Aug): six tiles and a "View
+            more" out to Market Pulse, rather than ten tiles and an expander.
+            The three-article news preview keeps the 4 August placement, which
+            is now simply "under the tiles" because the condensed set ends at
+            SILVER / BOE RATE, exactly where he drew his line. Below lg only:
+            wider screens have the right-hand rail carrying the full feed, and
+            duplicating it would be showing the same thing twice.
+
+            The news card deliberately has no "View more" of its own here. The
+            panel's link sits directly beneath it and goes to the same page, so
+            two would be the same action twice over. */}
         <WeatherSnapshotBoard
           weather={weather}
           tiles={macroTileRecord}
           rows={SNAPSHOT_ROWS}
+          maxTiles={DASHBOARD_TILE_LIMIT}
+          viewMoreHref="/app/market-pulse"
           interleave={
             <div className="lg:hidden">
-              <NewsFeedCard limit={3} viewMoreHref="/app/market-pulse" />
+              <NewsFeedCard limit={3} />
             </div>
           }
         />

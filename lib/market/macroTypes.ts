@@ -21,6 +21,21 @@ export const SNAPSHOT_ROWS: string[][] = [
   ['eurusd', 'nasdaq', 'oil', 'natgas', 'ftse100'],
 ];
 
+/**
+ * How many tiles the Dashboard shows before handing over to Market Pulse.
+ *
+ * The owner asked on 5 August for the Dashboard cards to be condensed with a
+ * "View more" instead of the full board. Six is not arbitrary: on 4 August he
+ * drew a line across the mobile Dashboard directly under SILVER and BOE RATE,
+ * and those are tiles five and six of the flat order. So the condensed set is
+ * exactly what sat above his own mark, and it drops UK 10Y GILT and ITRAXX 5Y,
+ * which render as "—" on that screenshot because neither has a live feed.
+ *
+ * Six also lands cleanly on both breakpoints: three rows on a phone's two
+ * columns, one row on a desktop's six.
+ */
+export const DASHBOARD_TILE_LIMIT = 6;
+
 export const TICKER_ORDER: string[] = [
   'gbpusd', 'sp500', 'gold', 'bitcoin', 'silver', 'boe', 'gilt10y', 'itraxx', 'vix', 'dxy',
   'eurusd', 'nasdaq', 'oil', 'natgas', 'ftse100',

@@ -120,7 +120,14 @@ export const PORTFOLIO_TOOLS: PortfolioTool[] = [
     description:
       'What a pension pot turns into once you stop paying in. Set the tax-free cash, the withdrawal strategy and your growth, fee and inflation assumptions, then see the income it supports, the tax on it, and the age the fund runs to.',
     short: 'Income, tax and how long a pot lasts.',
-    /** Paid: the 4 August spec asks for this one behind the paywall. */
+    /**
+     * Free. The 4 August spec asked for this one behind the paywall; the owner
+     * reversed that on 5 August after seeing the MEMBERS badge on the Personal
+     * Finance page. It sits with the other give-away calculators now, which is
+     * also where it belongs commercially: it runs entirely in the browser and
+     * costs nothing to serve.
+     */
+    free: true,
     personalFinance: true,
   },
   {

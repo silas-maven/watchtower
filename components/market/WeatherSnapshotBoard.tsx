@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Fragment, useState, type ReactNode } from 'react';
-import { ChevronRight, CloudLightning, CloudSun, Info, Snowflake, Sun } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
+import { ArrowRight, ChevronRight, CloudLightning, CloudSun, Info, Snowflake, Sun } from 'lucide-react';
 import { formatMacroValue, type MacroTile } from '@/lib/market/macroTypes';
 import type { WeatherReading } from '@/lib/market/weather';
 
@@ -39,37 +39,56 @@ function Tile({ tile }: { tile: MacroTile }) {
 }
 
 /**
- * Weather Outside panel + Market Snapshot grid (client feedback section F):
- * rows 1+2 visible by default, "View full market dashboard" reveals row 3.
- * Every live tile opens the instrument in the Asset Centre.
+ * Weather Outside panel + Market Snapshot grid (client feedback section F).
+ *
+ * Two shapes, chosen by whether `viewMoreHref` is passed:
+ *
+ * - **Condensed** (Dashboard). A capped set of tiles ending in a "View more"
+ *   link out to the full board. No expander, because the destination is a page
+ *   rather than the rest of this grid.
+ * - **Full** (Market Pulse). Every row, with the inline expander for anything
+ *   past the first two rows.
+ *
+ * Every live tile opens the instrument in the Asset Centre either way.
  */
 export function WeatherSnapshotBoard({
   weather,
   tiles,
   rows,
+  maxTiles,
+  viewMoreHref,
+  defaultExpanded = false,
   interleave,
-  interleaveAfter = 6,
 }: {
   weather: WeatherReading;
   tiles: Record<string, MacroTile>;
   rows: string[][];
+  /** Cap the tiles shown. Ignored when the board is expanded. */
+  maxTiles?: number;
   /**
-   * Rendered inside the tile grid, full width, after `interleaveAfter` tiles.
+   * Turns the panel into the condensed shape: the expander is replaced by a
+   * full-width link to the full board (owner, 5 Aug 2026, "condense the cards
+   * and have a View More option").
+   */
+  viewMoreHref?: string;
+  /** Open with every row already showing. The full-board destination wants this. */
+  defaultExpanded?: boolean;
+  /**
+   * Rendered between the tiles and the "View more" link.
    *
-   * The owner drew a line on the mobile Dashboard between the SILVER / BOE RATE
-   * row and the UK 10Y GILT / ITRAXX 5Y row and asked for Market Pulse there. At
-   * the mobile two-column breakpoint that is exactly six tiles in, which is why
-   * the default is 6 rather than something expressed in rows: the grid is flat,
-   * so "after the second row" is only meaningful as a tile count at a known
-   * column width. On wider screens the tiles reflow and the caller hides this.
+   * The owner drew a line on the mobile Dashboard directly under the SILVER /
+   * BOE RATE row and asked for Market Pulse there. Those are the last two tiles
+   * of the condensed set, so "after the tiles" and "on his line" are now the
+   * same place. On wider screens the right-hand rail already carries the feed,
+   * so the caller hides this.
    */
   interleave?: ReactNode;
-  interleaveAfter?: number;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const style = WEATHER_STYLES[weather.state];
   const Icon = style.icon;
-  const visibleRows = expanded ? rows : rows.slice(0, 2);
+  const flatKeys = (expanded ? rows : rows.slice(0, 2)).flat();
+  const visibleKeys = maxTiles != null && !expanded ? flatKeys.slice(0, maxTiles) : flatKeys;
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
@@ -94,13 +113,15 @@ export function WeatherSnapshotBoard({
             Market Mood: <span className={`font-bold ${style.accent}`}>{weather.mood}</span>
           </div>
         </div>
-        <button
-          onClick={() => setExpanded((v) => !v)}
-          className="inline-flex items-center gap-1 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-foreground transition hover:bg-muted/40"
-        >
-          {expanded ? 'Show less' : 'View full market dashboard'}
-          <ChevronRight className={`h-3.5 w-3.5 transition-transform ${expanded ? 'rotate-90' : ''}`} />
-        </button>
+        {!viewMoreHref && (
+          <button
+            onClick={() => setExpanded((v) => !v)}
+            className="inline-flex items-center gap-1 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-foreground transition hover:bg-muted/40"
+          >
+            {expanded ? 'Show less' : 'View full market dashboard'}
+            <ChevronRight className={`h-3.5 w-3.5 transition-transform ${expanded ? 'rotate-90' : ''}`} />
+          </button>
+        )}
       </div>
 
       {/* One flat grid rather than one grid per row of five. The rows are only a
@@ -108,25 +129,29 @@ export function WeatherSnapshotBoard({
           ten across instead of five and keeps the panel short. Breakpoints
           allow for the 288px sidebar: xl is ~1000px of usable width, not 1280. */}
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8">
-        {visibleRows.flat().map((key, index) => {
+        {visibleKeys.map((key) => {
           const tile = tiles[key];
-          const cell = tile ? <Tile key={key} tile={tile} /> : null;
-          if (interleave && index === interleaveAfter - 1) {
-            return (
-              <Fragment key={key}>
-                {cell}
-                <div className="col-span-full my-1">{interleave}</div>
-              </Fragment>
-            );
-          }
-          return cell;
+          return tile ? <Tile key={key} tile={tile} /> : null;
         })}
       </div>
 
+      {/* Closes the tiles, so it must sit above anything interleaved. Below the
+          news card it reads as if "tap any item" meant the headlines. */}
       <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
         <span>All prices delayed by up to 15 minutes.</span>
         <span>Tap any item to view in the Asset Centre.</span>
       </div>
+
+      {interleave && <div className="mt-4">{interleave}</div>}
+
+      {viewMoreHref && (
+        <Link
+          href={viewMoreHref}
+          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm font-semibold text-primary transition hover:bg-muted/60"
+        >
+          View more <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      )}
     </div>
   );
 }
