@@ -7,12 +7,13 @@ import { MarketingNav } from '@/components/marketing/MarketingNav';
 import { MarketingFooter } from '@/components/marketing/MarketingFooter';
 import { Reveal } from '@/components/marketing/Reveal';
 import { ACADEMY_OFFERS } from '@/lib/academyOffers';
+import { MEMBERSHIP_PRICE, MEMBERSHIP_PRICE_PROSE } from '@/lib/membershipPrice';
 
 const ECOURSE = ACADEMY_OFFERS.find((o) => o.id === 'ecourse')!;
 
 export const metadata = {
   title: 'Pricing — Stock Pickers Academy',
-  description: 'Membership is £50 a month, with checkout inside the members area. The SPArtan Investing eCourse is a separate one-time purchase.',
+  description: `Membership is ${MEMBERSHIP_PRICE_PROSE}, with checkout inside the members area. The SPArtan Investing eCourse is a separate one-time purchase.`,
 };
 
 // What the membership adds on top of the free plan. Keep this list to things a
@@ -101,7 +102,7 @@ export default async function PricingPage() {
               <div className="absolute right-6 top-6 rounded-full bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">Most popular</div>
               <div className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Membership</div>
               <div className="mt-3 flex items-end gap-1">
-                <span className="text-5xl font-black tracking-tight text-foreground">£50</span>
+                <span className="text-5xl font-black tracking-tight text-foreground">{MEMBERSHIP_PRICE}</span>
                 <span className="mb-1.5 text-sm text-muted-foreground">/ month</span>
               </div>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">Everything on the free plan, plus the academy&rsquo;s own calls.</p>

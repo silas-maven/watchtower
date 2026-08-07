@@ -74,13 +74,31 @@ export function BillingPanel({ hasCustomer, membershipStatus, currentPeriodEnd, 
               <div className="text-xs text-emerald-500">
                 Active{currentPeriodEnd ? ` · renews ${currentPeriodEnd}` : ''}
               </div>
-              <button
-                onClick={openPortal}
-                disabled={busy != null}
-                className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground transition hover:bg-muted/40 disabled:opacity-60"
-              >
-                {busy === 'portal' ? 'Opening…' : 'Manage billing'}
-              </button>
+              {/* Active and paying: the portal is the place to change a card or
+                  cancel.
+
+                  Active WITHOUT a billing account is a real and permanent case,
+                  not an edge one: the academy grants access directly for comped
+                  members and for anyone migrated in from the existing community,
+                  so there is no customer record to open a portal for. This used
+                  to show "Manage billing" to them regardless, which called the
+                  portal, failed to find a customer and returned a 404 telling
+                  them to "start a membership first" while their membership was
+                  plainly active. */}
+              {hasCustomer ? (
+                <button
+                  onClick={openPortal}
+                  disabled={busy != null}
+                  className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground transition hover:bg-muted/40 disabled:opacity-60"
+                >
+                  {busy === 'portal' ? 'Opening…' : 'Manage billing'}
+                </button>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Your membership was set up by the academy, so there is nothing to manage here. To change or end it,
+                  contact the academy.
+                </p>
+              )}
             </div>
           ) : (
             <button

@@ -204,13 +204,20 @@ export function WatchlistsClient({
 
       {!paid && <UpgradePrompt feature="watchlistTools" />}
 
-      {/* Sublist switcher */}
+      {/* Sublist switcher.
+          Scrolls sideways on one line instead of wrapping (owner, 5 Aug 2026:
+          with ten or more lists "those pill buttons would stretch across the
+          screen"). Wrapping turned a long list into four stacked rows that
+          pushed the table itself below the fold; a single scrolling line stays
+          one row tall however many lists exist. The scrollbar is hidden because
+          the row is drag- and swipe-scrollable and a visible bar under the pills
+          reads as a divider. */}
       {paid && (
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {lists.map((l) => (
           <div
             key={l.id}
-            className={`group flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition ${
+            className={`group flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition ${
               activeId === l.id ? 'border-primary bg-primary/10 text-foreground' : 'border-border text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -249,13 +256,13 @@ export function WatchlistsClient({
         ))}
         <button
           onClick={() => document.getElementById('master-watchlist')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-          className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-sm font-semibold text-muted-foreground transition hover:border-primary hover:text-foreground"
+          className="flex shrink-0 items-center gap-2 rounded-full border border-border px-3 py-1.5 text-sm font-semibold text-muted-foreground transition hover:border-primary hover:text-foreground"
         >
           Master Watchlist <span className="text-xs font-normal">{assets.length}</span>
         </button>
         <button
           onClick={() => { setNewListName(''); setShowCreate(true); }}
-          className="flex items-center gap-1 rounded-full border border-dashed border-border px-3 py-1.5 text-sm text-muted-foreground transition hover:text-foreground"
+          className="flex shrink-0 items-center gap-1 rounded-full border border-dashed border-border px-3 py-1.5 text-sm text-muted-foreground transition hover:text-foreground"
         >
           <Plus className="h-3.5 w-3.5" /> New list
         </button>

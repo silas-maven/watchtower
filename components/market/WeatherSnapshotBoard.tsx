@@ -18,7 +18,7 @@ const WEATHER_STYLES = {
  * smaller to fit more"): label on its own line, then value and change side by
  * side rather than stacked, which is what buys back the vertical space.
  */
-function Tile({ tile }: { tile: MacroTile }) {
+function Tile({ tile, className = '' }: { tile: MacroTile; className?: string }) {
   const up = tile.changePct != null && tile.changePct >= 0;
   const isStatic = tile.kind === 'static';
   const body = (
@@ -35,7 +35,37 @@ function Tile({ tile }: { tile: MacroTile }) {
       <div className="mt-0.5 font-mono text-xs font-bold tabular-nums text-foreground">{formatMacroValue(tile)}</div>
     </div>
   );
-  return tile.assetId ? <Link href={`/assets/${tile.assetId}`}>{body}</Link> : body;
+  return tile.assetId ? (
+    <Link href={`/assets/${tile.assetId}`} className={className}>{body}</Link>
+  ) : (
+    <div className={className}>{body}</div>
+  );
+}
+
+/**
+ * Per-tile visibility while collapsed, so a collapsed board never ends in a
+ * stranded part-row (owner, 5 Aug 2026: eight cards then an orphan row of two
+ * "is kind of poor").
+ *
+ * The grid runs 2/3/4/5/6/8 columns as it widens. These classes cut the visible
+ * count to a whole number of rows at each of those widths: 6, 6, 4, 5, 6, 8. So
+ * every screen gets full rows, and a phone keeps six rather than collapsing to a
+ * pointless single row of two.
+ *
+ * Written out per index rather than computed, because Tailwind only ships class
+ * names it can find as literal text in the source. A built-up string would be
+ * correct in the markup and missing from the stylesheet.
+ */
+const COLLAPSED_VISIBILITY: string[] = [
+  '', '', '', '',           // 0-3: every width shows at least four
+  'md:hidden lg:block',      // 4: dropped only at the 4-column width
+  'md:hidden xl:block',      // 5: dropped at the 4- and 5-column widths
+  'hidden 2xl:block',        // 6-7: the widest grid only
+  'hidden 2xl:block',
+];
+
+function collapsedClass(index: number): string {
+  return COLLAPSED_VISIBILITY[index] ?? 'hidden';
 }
 
 /**
@@ -129,9 +159,10 @@ export function WeatherSnapshotBoard({
           ten across instead of five and keeps the panel short. Breakpoints
           allow for the 288px sidebar: xl is ~1000px of usable width, not 1280. */}
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8">
-        {visibleKeys.map((key) => {
+        {visibleKeys.map((key, index) => {
           const tile = tiles[key];
-          return tile ? <Tile key={key} tile={tile} /> : null;
+          if (!tile) return null;
+          return <Tile key={key} tile={tile} className={expanded ? '' : collapsedClass(index)} />;
         })}
       </div>
 

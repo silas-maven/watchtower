@@ -6,6 +6,7 @@ import { DailyBriefEmailToggle } from '@/components/DailyBriefEmailToggle';
 import { BlurFade } from '@/components/ui/blur-fade';
 import { requirePageUser } from '@/lib/server/pageAuth';
 import { prisma } from '@/lib/prisma';
+import { MEMBERSHIP_PRICE_LABEL } from '@/lib/membershipPrice';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,7 +71,7 @@ export default async function AccountPage() {
             hasCustomer={customer != null}
             membershipStatus={mirror?.status ?? null}
             currentPeriodEnd={mirror?.currentPeriodEnd ? mirror.currentPeriodEnd.toISOString().slice(0, 10) : null}
-            membershipPriceLabel="£50 / month"
+            membershipPriceLabel={MEMBERSHIP_PRICE_LABEL}
           />
         </Card>
       </BlurFade>

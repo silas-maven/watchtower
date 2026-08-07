@@ -8,6 +8,7 @@ import { MarketingFooter } from '@/components/marketing/MarketingFooter';
 import { HeroBackground } from '@/components/marketing/HeroBackground';
 import { Reveal } from '@/components/marketing/Reveal';
 import { SpaLogoLockup } from '@/components/brand/SpaLogoLockup';
+import { MEMBERSHIP_PRICE_PROSE } from '@/lib/membershipPrice';
 
 export const metadata = {
   title: 'Stock Pickers Academy — the watchlist, rebuilt',
@@ -154,7 +155,7 @@ export default async function LandingPage() {
             Join the academy and trade with the whole picture.
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-muted-foreground">
-            Membership is £50 a month. The full SPArtan Investing eCourse is a separate one-time purchase.
+            Membership is {MEMBERSHIP_PRICE_PROSE}. The full SPArtan Investing eCourse is a separate one-time purchase.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             {signedIn ? (

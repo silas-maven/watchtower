@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
 import { Badge } from '@/components/Badge';
 import { BlurFade } from '@/components/ui/blur-fade';
-import { resolveHref, type Release } from '@/lib/releases';
+import { isExternalHref, resolveHref, type Release } from '@/lib/releases';
 
 /**
  * The rendered release notes. Kept out of the page so the same markup can be
@@ -19,7 +19,12 @@ export function ReleaseNotes({ releases, sampleAssetId }: { releases: Release[];
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="text-xl font-bold text-foreground">{release.title}</h2>
-                  <Badge tone="emerald">v{release.version}</Badge>
+                  {/* Dated releases read as "v2026.08.05". The go-live checklist
+                      is not a version, and prefixing it produced "vgo-live", so
+                      a non-numeric version renders as its own label instead. */}
+                  <Badge tone={/^\d/.test(release.version) ? 'emerald' : 'amber'}>
+                    {/^\d/.test(release.version) ? `v${release.version}` : release.version.replace(/-/g, ' ')}
+                  </Badge>
                 </div>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{release.summary}</p>
               </div>
@@ -45,12 +50,25 @@ export function ReleaseNotes({ releases, sampleAssetId }: { releases: Release[];
                           </span>
                         </div>
                         <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.body}</p>
-                        <Link
-                          href={resolveHref(item.href, sampleAssetId)}
-                          className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-primary transition hover:underline"
-                        >
-                          {item.linkLabel} <ArrowUpRight className="h-3.5 w-3.5" />
-                        </Link>
+                        {isExternalHref(item.href) ? (
+                          // Provider dashboards on the go-live checklist. A new
+                          // tab, so a half-finished checklist is not lost.
+                          <a
+                            href={item.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-primary transition hover:underline"
+                          >
+                            {item.linkLabel} <ArrowUpRight className="h-3.5 w-3.5" />
+                          </a>
+                        ) : (
+                          <Link
+                            href={resolveHref(item.href, sampleAssetId)}
+                            className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-primary transition hover:underline"
+                          >
+                            {item.linkLabel} <ArrowUpRight className="h-3.5 w-3.5" />
+                          </Link>
+                        )}
                       </div>
                     ))}
                   </div>

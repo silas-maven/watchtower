@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { RELEASES } from '@/lib/releases';
+import { isExternalHref, RELEASES } from '@/lib/releases';
 
 /**
  * The release notes are the owner's view of what shipped, and every item carries
@@ -10,6 +10,17 @@ import { RELEASES } from '@/lib/releases';
  * rather than trusted.
  */
 function routeExists(href: string): boolean {
+  // The go-live checklist links to provider dashboards. There is no route to
+  // check, and a broken one fails visibly on click rather than silently, so
+  // these are only required to be well-formed absolute URLs.
+  if (isExternalHref(href)) {
+    try {
+      new URL(href);
+      return true;
+    } catch {
+      return false;
+    }
+  }
   const [pathname] = href.split(/[?#]/);
   const clean = pathname.replace(/\/$/, '') || '/';
   // {assetId} is substituted at render time with a live asset.

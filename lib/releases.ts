@@ -25,16 +25,132 @@ export type Release = {
 
 export const RELEASES: Release[] = [
   {
+    version: 'action required',
+    date: '2026-08-05',
+    title: 'Going live: what we need from you',
+    summary:
+      'You have created the accounts, which is the first half. This is the second half: what has to be set up inside each one before the app can move off test settings and onto your own infrastructure. Nothing here is a code change. Every item is something only the account owner can do.',
+    feedbackDoc: '2026-08-05 production handover',
+    groups: [
+      {
+        heading: 'Start here, in this order',
+        items: [
+          {
+            title: 'Invite me to your Vercel team',
+            body: 'Vercel is where the app runs. Right now it runs in my account and I deploy from my own machine, which is fine for building and wrong for a live business: if you and I ever part ways, your product is sitting in my account. Invite me to your team as a Member and I will move the project across and connect it to the code repository, so that from then on deploys happen from your account and you can see them. Do this one first, because the rest of the settings live inside that project.',
+            feedback: 'Ownership',
+            href: 'https://vercel.com/dashboard',
+            linkLabel: 'Open Vercel',
+          },
+          {
+            title: 'Invite me to your Supabase organisation',
+            body: 'Supabase is the database. Yours needs to be a new project rather than the shared development one the app currently uses, and it should be created in the Frankfurt (eu-central-1) region. That matters: the app itself now runs in Frankfurt, and the single biggest speed gain we made came from putting the app next to its database. A database in the wrong region gives that back. Create the project, then invite me and I will run the setup and move the data.',
+            feedback: 'Ownership',
+            href: 'https://supabase.com/dashboard',
+            linkLabel: 'Open Supabase',
+          },
+          {
+            title: 'Point your domain at Vercel',
+            body: 'Your domain is registered with GoDaddy and currently points nowhere. Once the project is in your Vercel team, Vercel will show you the exact DNS records to add. You add them in GoDaddy. Two decisions to make while you are there: whether the site lives at the plain domain or at www, and that the same domain is used for sign-in, because the next item depends on it. Allow a few hours for DNS to take effect, so do not leave this to launch morning.',
+            feedback: 'Domain',
+            href: 'https://dcc.godaddy.com/manage/dns',
+            linkLabel: 'Open GoDaddy DNS',
+          },
+        ],
+      },
+      {
+        heading: 'Then these, once the domain resolves',
+        items: [
+          {
+            title: 'Switch Clerk from development to production',
+            body: 'Clerk handles sign-in. It is on development keys today, which is why anyone can currently sign in and why sessions behave oddly. A Clerk production instance is a separate thing you create, not a switch you flip, and it requires your domain plus a few DNS records that Clerk gives you. Once created, send me the production publishable and secret keys. Also tell me which email addresses should be owners and which should be admins, because that is a setting rather than something anyone can grant themselves.',
+            feedback: 'Launch blocker',
+            href: 'https://dashboard.clerk.com',
+            linkLabel: 'Open Clerk',
+          },
+          {
+            title: 'Turn on live payments',
+            body: 'No payment has ever gone through this app. It is wired to Stripe in test mode, so the buttons work and nothing is ever charged. Going live needs your Stripe account activated, which means submitting your business details to Stripe and waiting for approval, then a subscription product at the price you are advertising. Note that you have asked to move to Square instead. I am scoping that separately, because it is a real piece of work and Square does not offer the self-service billing page that Stripe does. Until that decision is made, Stripe is the path that gets you taking money.',
+            feedback: 'Launch blocker',
+            href: 'https://dashboard.stripe.com',
+            linkLabel: 'Open Stripe',
+          },
+          {
+            title: 'Add billing to your OpenAI account',
+            body: 'The daily briefs, the trade pitches and the portfolio analysis use OpenAI. An account on its own is not enough; the key will fail until there is a payment method and some credit on it. Set a low monthly spending cap while you are in there, because the app already limits how much each member can trigger and a cap protects you from anything unexpected on top. If this is not ready, the app does not break: the briefs fall back to a plain factual version written from the numbers rather than by AI.',
+            feedback: 'Content features',
+            href: 'https://platform.openai.com/settings/organization/billing',
+            linkLabel: 'Open OpenAI billing',
+          },
+          {
+            title: 'Create a Resend account for member email',
+            body: 'This is the one account on the list you have not made yet. The app sends email to members, and it currently cannot, because there is no email provider connected. Resend is free at your expected volume. You create the account, verify the same domain from the step above by adding a few more DNS records, and send me the key plus the address you want mail to come from, for example hello@ your domain. Without this, nothing that involves emailing a member works.',
+            feedback: 'Missing account',
+            href: 'https://resend.com',
+            linkLabel: 'Open Resend',
+          },
+        ],
+      },
+      {
+        heading: 'What I do once you have done the above',
+        items: [
+          {
+            title: 'Move the project and the data across',
+            body: 'Connect the code to your Vercel team, create the database structure in your Supabase project, move the existing assets and member records over, and put every key from the steps above into your project settings rather than a file on my machine. Then a full check on your own domain: sign in, subscribe, cancel, and the daily jobs that refresh prices.',
+            feedback: 'My side',
+            href: '/admin',
+            linkLabel: 'Admin overview',
+          },
+          {
+            title: 'What to expect on the first day',
+            body: 'Two things worth knowing in advance so they do not read as faults. The first person to open the app after a quiet spell waits a second or two while it wakes up; everyone after them does not. And prices are delayed by up to fifteen minutes throughout, which is deliberate and stated on the pages, because live tick data is a different and much more expensive class of service.',
+            feedback: 'Expectations',
+            href: '/app',
+            linkLabel: 'Open Dashboard',
+          },
+        ],
+      },
+    ],
+  },
+  {
     version: '2026.08.05',
     date: '2026-08-05',
     title: 'A shorter Dashboard, and the pension calculator opened up',
     summary:
-      'The wall of market cards on the Dashboard is now six, with a link through to the rest, and the pension calculator is free for everyone instead of members only.',
+      'The wall of market cards on the Dashboard is now six, with a link through to the rest, and the pension calculator is free for everyone instead of members only. Membership is priced at £99.',
     feedbackDoc: '2026-08-05 WhatsApp round',
     groups: [
       {
         heading: 'This round',
         items: [
+          {
+            title: 'Membership now reads £99 a month',
+            body: 'It said £50 in four separate places: the home page, the pricing page headline, the pricing page card and your account panel. Those are now driven from one figure, so the next change is one edit rather than four and cannot end up half done. Worth being clear about what this does not do: it changes what members are told, not what they are charged. The amount actually taken comes from the price set in the payment provider, so that has to be set to £99 as well or the site will quote one number and the card statement will show another.',
+            feedback: '5 August, pricing',
+            href: '/pricing',
+            linkLabel: 'Open pricing',
+          },
+          {
+            title: 'Manage billing no longer dead-ends',
+            body: 'On an account whose membership was granted by the academy rather than paid for through the payment provider, the Manage billing button led to an error saying there was no billing account and to start a membership first, which is confusing when your membership is plainly active. Those accounts now get a line explaining there is nothing to manage and to contact the academy instead. This will affect a lot of people, since anyone you move across from the existing community is in exactly that position.',
+            feedback: '5 August, account',
+            href: '/app/account',
+            linkLabel: 'Open Account',
+          },
+          {
+            title: 'The market board no longer ends in a stray half row',
+            body: 'The full board was showing eight cards and then an orphan row of two, which looked broken rather than deliberate. It now always ends on a complete row at every screen width, and a phone keeps six cards rather than collapsing to a pointless single row of two.',
+            feedback: '5 August, Market Pulse',
+            href: '/app/market-pulse',
+            linkLabel: 'Open Market Pulse',
+          },
+          {
+            title: 'Watchlist buttons stay on one line',
+            body: 'The buttons for your personal lists used to wrap onto more and more rows as you added lists, pushing the list itself off the screen. They now sit on a single line you can swipe or drag sideways, so ten lists take the same vertical space as two.',
+            feedback: '5 August, Watchlists',
+            href: '/app/watchlists',
+            linkLabel: 'Open Watchlists',
+          },
           {
             title: 'The Dashboard market cards are condensed',
             body: 'The Dashboard was showing ten market cards before you reached anything of your own, which on a phone is five rows of scrolling past prices to get to your portfolio. It now shows six, ending exactly where you drew your line last time, under Silver and the BoE rate, with a "View more" going through to the full board on Market Pulse. Two of the four cards it drops, UK 10Y Gilt and iTraxx 5Y, were showing a dash anyway because neither has a live price feed. Nothing was removed from the app, only from the first screen.',
@@ -1091,6 +1207,15 @@ export const RELEASES: Release[] = [
     ],
   },
 ];
+
+/**
+ * True for a link that leaves the app. The go-live checklist points at the
+ * provider dashboards the owner has to act in, which are the one case where the
+ * useful destination is not a route we control.
+ */
+export function isExternalHref(href: string): boolean {
+  return href.startsWith('https://') || href.startsWith('http://');
+}
 
 export function resolveHref(href: string, sampleAssetId: string | null): string {
   if (!href.includes('{assetId}')) return href;
